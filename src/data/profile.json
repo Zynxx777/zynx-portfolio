@@ -1,0 +1,219 @@
+{
+  "basics": {
+    "name": "JOSHUA D",
+    "aliases": ["ZYNX", "7YNX"],
+    "label": "Creative Technologist & Systems Engineer",
+    "sublabel": "B.E. Electronics & Communication Engineering | Audio Producer",
+    "email": "joshuajosh3055@gmail.com",
+    "phone": "+91 72599 87691",
+    "location": {
+      "city": "Channapatna",
+      "region": "Ramanagar, Karnataka",
+      "country": "India"
+    },
+    "summary": "Driven by intense curiosity and engineering rigor in breaking, building, and optimizing systems. Electronics and Communication Engineering background with deep hands-on expertise in full-stack web architectures, Linux/Unix kernels, Android Automotive OS (AAOS), embedded controllers (CAN / VLSI), reverse engineering, and audio signal processing.",
+    "profiles": {
+      "github": "https://github.com/Zynxx777",
+      "linkedin": "https://linkedin.com/in/Zynx",
+      "instagram": "https://instagram.com/zynxx777",
+      "portfolio": "https://github.com/Zynxx777",
+      "whatsapp": "https://wa.me/917259987691"
+    }
+  },
+  "education": [
+    {
+      "institution": "Don Bosco Institute of Technology (DBIT)",
+      "degree": "Bachelor of Engineering (B.E.) in Electronics & Communication Engineering",
+      "dates": "2021 – 2025",
+      "cgpa": "7.16",
+      "courses": [
+        "Embedded Systems",
+        "VLSI Chip Design",
+        "Telecommunications",
+        "Computer Networks & Security",
+        "Digital Signal Processing",
+        "Electric Vehicles & Control Systems",
+        "AI & Machine Learning Foundations"
+      ]
+    },
+    {
+      "institution": "Shanthiniketan PU College",
+      "degree": "Pre-University Course (Science)",
+      "dates": "2019 – 2021",
+      "score": "71.6%"
+    },
+    {
+      "institution": "St. Joseph's English Medium High School",
+      "degree": "SSLC",
+      "dates": "2018 – 2019",
+      "score": "78.72%"
+    }
+  ],
+  "experience": [
+    {
+      "company": "eTech Prowess",
+      "role": "Full-Stack Developer Intern",
+      "location": "JP Nagar, Bengaluru",
+      "dates": "August 2024 – Present",
+      "type": "Internship",
+      "highlights": [
+        "Architecting responsive web interfaces and reusable component systems using React, TypeScript, and modern styling libraries.",
+        "Optimized client-side rendering pipelines and asset delivery, improving page load benchmarks and user experience metrics across multiple modules.",
+        "Engineered modular table and data-filtering components with aggregation and sorting to handle dense operational data sets."
+      ]
+    },
+    {
+      "company": "Automotive & Embedded Systems R&D",
+      "role": "Systems & Embedded Engineer",
+      "location": "Bengaluru",
+      "dates": "2023 – 2024",
+      "type": "Project & Research",
+      "highlights": [
+        "Developed Cockpit Domain Controller (Luxoft CDC) prototypes supporting CAN bus protocol integration for automotive EC controls.",
+        "Explored Android Automotive OS (AAOS) HAL and system services integration for connected vehicle infotainment clusters.",
+        "Conducted board-level diagnostics, bootloader unlocking, and custom kernel configurations."
+      ]
+    },
+    {
+      "company": "Sound Lab & Audio Engineering",
+      "role": "Electronic Music Producer & Sound Designer (7YNX)",
+      "location": "Independent",
+      "dates": "Ongoing",
+      "type": "Creative Technology",
+      "highlights": [
+        "FL Studio Power User specializing in Melodic Techno, Future Bounce, and EDM sound design.",
+        "Created custom WebGL audio-reactive visualizers (FFT spectrum analyzers, CRT oscilloscopes, fluid particle smoke shaders).",
+        "Engineered spatial sound mixing, stem separation, and audio-reactive digital interactions."
+      ]
+    }
+  ],
+  "skills": {
+    "systemsAndLinux": [
+      { "name": "Arch Linux", "level": "Advanced", "category": "OS & Kernel" },
+      { "name": "AOSP & Custom ROMs", "level": "Intermediate", "category": "Mobile OS" },
+      { "name": "Bootloader & Root", "level": "Advanced", "category": "Low Level" },
+      { "name": "Bash & Shell Scripting", "level": "Advanced", "category": "Scripting" },
+      { "name": "Git & DevOps", "level": "Advanced", "category": "DevOps" }
+    ],
+    "embeddedAndAutomotive": [
+      { "name": "AAOS (Android Automotive)", "level": "Intermediate", "category": "Automotive" },
+      { "name": "CAN Bus Protocol", "level": "Intermediate", "category": "Protocols" },
+      { "name": "VLSI & Verilog HDL", "level": "Intermediate", "category": "Hardware Design" },
+      { "name": "Arduino & Embedded C/C++", "level": "Advanced", "category": "Microcontrollers" }
+    ],
+    "frontendAndCreative": [
+      { "name": "React / Next.js", "level": "Advanced", "category": "Framework" },
+      { "name": "TypeScript", "level": "Advanced", "category": "Language" },
+      { "name": "Three.js / WebGL", "level": "Intermediate", "category": "3D & WebGL" },
+      { "name": "Tailwind CSS & SCSS", "level": "Advanced", "category": "Styling" },
+      { "name": "GLSL Shaders", "level": "Intermediate", "category": "Graphics" }
+    ],
+    "languagesAndBackend": [
+      { "name": "JavaScript (ESNext)", "level": "Advanced" },
+      { "name": "Python", "level": "Advanced" },
+      { "name": "C / C++", "level": "Intermediate" },
+      { "name": "Kotlin / Java", "level": "Intermediate" },
+      { "name": "Node.js & Express", "level": "Advanced" }
+    ],
+    "securityAndAudio": [
+      { "name": "Penetration Testing Fundamentals", "level": "Intermediate", "category": "Security" },
+      { "name": "Cryptography & Reverse Engineering", "level": "Intermediate", "category": "Security" },
+      { "name": "FL Studio & Sound Synthesis", "level": "Expert", "category": "Audio" },
+      { "name": "Web Audio API", "level": "Advanced", "category": "Audio Engineering" }
+    ]
+  },
+  "projects": [
+    {
+      "id": "luxoft-cdc",
+      "name": "Luxoft Cockpit Domain Controller",
+      "subtitle": "Automotive Embedded & CAN Support",
+      "category": "Automotive & Embedded",
+      "description": "Embedded automotive system design integrating CAN bus protocol architecture to manage Electronic Control (EC) domains and instrument cluster telemetry for connected vehicle platforms.",
+      "skills": ["C", "C++", "CAN Bus", "Linux", "AAOS"],
+      "badge": "Automotive ECE",
+      "img": "/images/futuristic-dubai-landscape.jpg",
+      "link": "https://github.com/Zynxx777"
+    },
+    {
+      "id": "medivend",
+      "name": "MediVend Smart Vending",
+      "subtitle": "Automated Medical Dispenser",
+      "category": "Hardware & VLSI",
+      "description": "A modern smart medicine vending machine combining Verilog HDL hardware logic, Arduino controller interfacing, and embedded circuit design for contactless medication dispatching.",
+      "skills": ["Verilog", "Arduino", "C++", "Python", "VLSI"],
+      "badge": "Embedded VLSI",
+      "img": "/images/bright-pop-landscape-design.jpg",
+      "link": "https://github.com/Zynxx777"
+    },
+    {
+      "id": "audio-visualizer-lab",
+      "name": "Audio Visualizer Lab & Synth Engine",
+      "subtitle": "GLSL Audio Reactive System",
+      "category": "WebGL & Audio",
+      "description": "An interactive WebGL audio playground featuring CRT terminal oscilloscopes, FFT spectrum monitoring, fluid particle smoke drift, and gravitational black hole audio reactivity.",
+      "skills": ["Three.js", "WebGL", "GLSL", "Web Audio API", "TypeScript"],
+      "badge": "Creative WebGL",
+      "img": "/images/digital-art-beautiful-mountains.jpg",
+      "link": "#sound-lab"
+    },
+    {
+      "id": "mini-music-player",
+      "name": "Mini Music Player App",
+      "subtitle": "Cross-Platform Mobile Audio Suite",
+      "category": "Mobile & Systems",
+      "description": "A high-performance personal music player application built with clean UI architecture, custom audio service background playback, and waveform visualizations.",
+      "skills": ["Flutter", "Dart", "Kotlin", "Android"],
+      "badge": "Mobile Audio",
+      "img": "/images/illustration-tourist-attraction-city.jpg",
+      "link": "https://zynxx777.github.io/mini-music-player/"
+    },
+    {
+      "id": "cyberpunk-3d-space",
+      "name": "Cyberpunk 3D Room & Studio",
+      "subtitle": "Three.js Spatial Showroom",
+      "category": "3D & Creative",
+      "description": "An interactive 3D studio environment featuring real-time physics cursor smoke bursts, volumetric studio lighting, and inspectable digital setup assets.",
+      "skills": ["Three.js", "WebGL", "3D Math", "Blender"],
+      "badge": "Three.js 3D",
+      "img": "/images/discourse.gif",
+      "link": "#3d-studio"
+    },
+    {
+      "id": "black-hole-universe",
+      "name": "Black Hole Gravitational Sim",
+      "subtitle": "8,000 Particle N-Body Simulation",
+      "category": "Creative & Math",
+      "description": "Gravitational starfield simulation in Three.js where 8,000 particles are dynamically pulled into an accretion disk with audio frequency modulation and cursor gravitational deflection.",
+      "skills": ["Three.js", "GLSL", "Physics", "Math"],
+      "badge": "Physics Sim",
+      "img": "/images/blackhole.jpeg",
+      "link": "#sound-lab"
+    }
+  ],
+  "certifications": [
+    {
+      "title": "Bug Bounty Contest Winner",
+      "issuer": "7chats Messenger",
+      "date": "September 2021",
+      "detail": "Discovered and responsibly reported security vulnerability in messaging protocol."
+    },
+    {
+      "title": "VLSI Digital Design & Chip Design",
+      "issuer": "Verilog Programming Specialization",
+      "date": "July 2024",
+      "detail": "Digital logic synthesis, RTL verification, and Verilog hardware modeling."
+    },
+    {
+      "title": "Network Security & Protocols",
+      "issuer": "Professional Certificate",
+      "date": "February 2025",
+      "detail": "TCP/IP architecture, cryptographic authentication, and network defense."
+    },
+    {
+      "title": "Python Programming Foundations",
+      "issuer": "Certified Python Specialist",
+      "date": "July 2024",
+      "detail": "Core data structures, object-oriented software patterns, and scripting."
+    }
+  ]
+}
