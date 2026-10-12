@@ -1,6 +1,7 @@
 import React from "react";
 import { Room3DStudio } from "../components/Room3DStudio";
-import { Monitor, Music, Cpu, ArrowLeft, Disc3, Sparkles, Heart } from "lucide-react";
+import { AmbientGallery } from "../components/AmbientGallery";
+import { Monitor, Music, Cpu, ArrowLeft, Disc3, Sparkles, Heart, Gamepad2 } from "lucide-react";
 
 interface BedroomSpacePageProps {
   onNavigatePortfolio: () => void;
@@ -26,16 +27,16 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
           <span className="text-zinc-600 font-mono text-xs">/</span>
           <span className="text-xs font-mono text-purple-300 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
-            <span>PERSONAL 3D BEDROOM SANCTUARY</span>
+            <span>PERSONAL 3D BEDROOM & SANCTUARY</span>
           </span>
         </div>
 
         <button
           onClick={onNavigateCommunity}
-          className="px-4 py-1.5 rounded-xl bg-purple-900/40 border border-purple-400/50 hover:border-purple-300 text-xs font-mono text-purple-200 hover:text-white flex items-center gap-2 transition-all shadow-md shadow-purple-900/30"
+          className="px-4 py-1.5 rounded-xl bg-pink-900/40 border border-pink-400/50 hover:border-pink-300 text-xs font-mono text-pink-200 hover:text-white flex items-center gap-2 transition-all shadow-md shadow-pink-900/30"
         >
-          <Disc3 size={13} className="text-purple-400" />
-          <span>7YNX Music & Gaming Space</span>
+          <Disc3 size={13} className="text-pink-400" />
+          <span>7YNX Music & Sound Lab</span>
         </button>
       </div>
 
@@ -43,22 +44,26 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
       <div className="max-w-3xl mx-auto text-center space-y-4">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full cyber-glass border border-purple-400/30 text-purple-300 text-xs font-mono">
           <Sparkles size={12} />
-          <span>ZYNX PRIVATE CREATIVE WORKSTATION</span>
+          <span>ZYNX PRIVATE DIGITAL SANCTUARY</span>
         </div>
 
         <h1 className="text-5xl sm:text-4xl xs:text-3xl font-display font-extrabold text-white tracking-tight">
-          Welcome to My 3D Digital Room
+          Welcome to My 3D Bedroom Space
         </h1>
 
         <p className="text-sm text-zinc-400 font-sans leading-relaxed">
-          This is my personal creative home on the web. An interactive 3D studio where I write low-level code, rice Arch Linux, produce electronic music, and curate soothing aesthetic art. Drag to orbit 360°, inspect specific workstation gear, or turn on the procedural lo-fi rain soundscape.
+          This is my personal digital sanctuary on the web. An interactive 3D studio bedroom where I experiment with Linux kernel builds, play games, curate aesthetic wallpapers, and relax. Drag to orbit 360°, inspect specific workstation gear, or turn on the procedural lo-fi rain soundscape.
         </p>
       </div>
 
-      {/* 3D Bedroom Viewport Component */}
+      {/* ══════════════════════════════════════════════════════════
+          3D BEDROOM VIEWPORT COMPONENT (aengel.io / CGTrader Style)
+      ══════════════════════════════════════════════════════════ */}
       <Room3DStudio />
 
-      {/* Workstation Deep-Dive Breakdown */}
+      {/* ══════════════════════════════════════════════════════════
+          WORKSTATION & ROOM ASSETS DEEP-DIVE
+      ══════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-3 md:grid-cols-1 gap-6">
         {/* Card 1: PC Battlestation */}
         <div className="p-6 rounded-2xl cyber-glass border border-white/10 hover:border-cyan-400/40 transition-all space-y-3">
@@ -109,6 +114,50 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
         </div>
       </div>
 
+      {/* ══════════════════════════════════════════════════════════
+          GAMING & BATTLESTATION HUB
+      ══════════════════════════════════════════════════════════ */}
+      <section className="p-8 sm:p-6 rounded-3xl cyber-glass border border-white/10 space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-400/30 flex items-center justify-center text-cyan-400">
+            <Gamepad2 size={20} />
+          </div>
+          <div>
+            <h3 className="font-display font-bold text-2xl text-white">Gaming & Battlestation Hub</h3>
+            <p className="text-xs text-zinc-400 font-mono">Arch Linux Performance Rig & Competitive Squad Lobbies</p>
+          </div>
+        </div>
+
+        <p className="text-xs text-zinc-300 font-sans max-w-2xl leading-relaxed">
+          When not writing low-level code or sculpting synth waveforms, Joshua operates as a faceless gamer and competitive enthusiast. Here is the active gaming rig and setup breakdown:
+        </p>
+
+        <div className="grid grid-cols-3 md:grid-cols-1 gap-4">
+          <div className="p-4 rounded-xl cyber-glass border border-white/5 space-y-2">
+            <h4 className="font-mono text-xs text-cyan-400 font-bold uppercase">OS & Compositor</h4>
+            <p className="text-sm text-zinc-200 font-sans">Arch Linux + Gamescope / Hyprland</p>
+            <p className="text-[11px] text-zinc-500 font-sans">Tuned kernel with custom Proton GE patches for maximum FPS and low input latency.</p>
+          </div>
+
+          <div className="p-4 rounded-xl cyber-glass border border-white/5 space-y-2">
+            <h4 className="font-mono text-xs text-purple-400 font-bold uppercase">Audio Monitoring</h4>
+            <p className="text-sm text-zinc-200 font-sans">Studio IEMs + Audio Interface</p>
+            <p className="text-[11px] text-zinc-500 font-sans">Flat response curve for pinpoint spatial audio cues and lossless FLAC playback.</p>
+          </div>
+
+          <div className="p-4 rounded-xl cyber-glass border border-white/5 space-y-2">
+            <h4 className="font-mono text-xs text-pink-400 font-bold uppercase">Community & Co-op</h4>
+            <p className="text-sm text-zinc-200 font-sans">Faceless Voice & Squad Lobbies</p>
+            <p className="text-[11px] text-zinc-500 font-sans">Join the Discord server for track listening parties, gaming sessions, and wallpaper drops.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════
+          CURATED VISUAL ARTS & 4K/8K WALLPAPERS SANCTUARY
+      ══════════════════════════════════════════════════════════ */}
+      <AmbientGallery />
+
       {/* Personal Sanctuary Philosophy Banner */}
       <div className="p-8 rounded-3xl cyber-glass border border-white/10 text-center space-y-4 max-w-3xl mx-auto bg-gradient-to-b from-black/60 to-purple-950/20">
         <Heart size={22} className="text-purple-400 mx-auto animate-pulse" />
@@ -116,7 +165,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
           A Space That Feels Like Home
         </h3>
         <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-          Inspired by late-night coding sessions, Japanese lo-fi study culture, and the freedom of open-source computing. This digital room represents my true personal identity away from corporate job applications.
+          Inspired by late-night coding sessions, Japanese lo-fi study culture, and the freedom of open-source computing. This digital bedroom represents my true personal identity away from corporate job applications.
         </p>
 
         <div className="pt-4 flex justify-center gap-4">
@@ -128,9 +177,9 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
           </button>
           <button
             onClick={onNavigateCommunity}
-            className="px-6 py-2.5 rounded-full bg-purple-600 hover:bg-purple-500 text-xs font-mono font-bold text-white transition-colors shadow-lg shadow-purple-600/30"
+            className="px-6 py-2.5 rounded-full bg-pink-600 hover:bg-pink-500 text-xs font-mono font-bold text-white transition-colors shadow-lg shadow-pink-600/30"
           >
-            Visit 7YNX Community Hub →
+            Visit 7YNX Sound Lab →
           </button>
         </div>
       </div>

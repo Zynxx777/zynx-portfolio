@@ -26,14 +26,14 @@ export const Navbar: React.FC<NavbarProps> = ({
     },
     {
       id: "space",
-      label: "3D Bedroom Space",
+      label: "3D Bedroom & Sanctuary",
       icon: Monitor,
       color: "text-purple-400",
       activeColor: "from-purple-500 to-indigo-400 text-white",
     },
     {
       id: "community",
-      label: "7YNX Music & Gaming",
+      label: "7YNX Music & Sound Lab",
       icon: Disc3,
       color: "text-pink-400",
       activeColor: "from-pink-500 to-purple-600 text-white",
