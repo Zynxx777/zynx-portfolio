@@ -1,65 +1,76 @@
-import { useState } from "react";
-import { Navbar } from "./components/Navbar";
-import { Hero } from "./components/Hero";
-import { Projects3D } from "./components/Projects3D";
-import { Room3DStudio } from "./components/Room3DStudio";
-import { SoundLab } from "./components/SoundLab";
-import { AmbientGallery } from "./components/AmbientGallery";
-import { SkillsMatrix } from "./components/SkillsMatrix";
-import { ExperienceTimeline } from "./components/ExperienceTimeline";
-import { ContactTerminal } from "./components/ContactTerminal";
+import { useState, useEffect } from "react";
+import { Navbar, type EcosystemView } from "./components/Navbar";
+import { PortfolioPage } from "./pages/PortfolioPage";
+import { BedroomSpacePage } from "./pages/BedroomSpacePage";
+import { CommunityMusicPage } from "./pages/CommunityMusicPage";
 import { Footer } from "./components/Footer";
 import { ResumeModal } from "./components/ResumeModal";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<string>("hero");
+  const [currentView, setCurrentView] = useState<EcosystemView>(() => {
+    const hash = window.location.hash.toLowerCase();
+    if (hash.includes("space") || hash.includes("bedroom") || hash.includes("room")) return "space";
+    if (hash.includes("community") || hash.includes("7ynx") || hash.includes("music") || hash.includes("gaming")) return "community";
+    return "portfolio";
+  });
+
   const [isResumeOpen, setIsResumeOpen] = useState<boolean>(false);
 
-  const scrollToSection = (id: string) => {
-    setActiveTab(id);
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
+  // Sync hash changes (browser back/forward button)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.toLowerCase();
+      if (hash.includes("space") || hash.includes("bedroom") || hash.includes("room")) {
+        setCurrentView("space");
+      } else if (hash.includes("community") || hash.includes("7ynx") || hash.includes("music") || hash.includes("gaming")) {
+        setCurrentView("community");
+      } else {
+        setCurrentView("portfolio");
+      }
+    };
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  const handleNavigate = (view: EcosystemView) => {
+    setCurrentView(view);
+    window.location.hash = view === "portfolio" ? "" : view;
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <div className="min-h-screen bg-[#030306] text-zinc-100 bg-cyber-grid relative selection:bg-cyan-400 selection:text-black">
-      {/* Top Navbar */}
+      {/* Top Universal Navbar & Ecosystem Switcher */}
       <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        currentView={currentView}
+        setCurrentView={handleNavigate}
         openResume={() => setIsResumeOpen(true)}
       />
 
-      {/* Main Experience Stream */}
+      {/* Main Active Independent Website / Webpage */}
       <main>
-        {/* Origin / Hero with Lusion Fluid Particles */}
-        <Hero
-          openResume={() => setIsResumeOpen(true)}
-          scrollToSection={scrollToSection}
-        />
+        {currentView === "portfolio" && (
+          <PortfolioPage
+            openResume={() => setIsResumeOpen(true)}
+            onNavigateSpace={() => handleNavigate("space")}
+            onNavigateCommunity={() => handleNavigate("community")}
+          />
+        )}
 
-        {/* 01 // Projects 3D with moto-card Tilt */}
-        <Projects3D />
+        {currentView === "space" && (
+          <BedroomSpacePage
+            onNavigatePortfolio={() => handleNavigate("portfolio")}
+            onNavigateCommunity={() => handleNavigate("community")}
+          />
+        )}
 
-        {/* 02 // 3D Digital Room & Workstation with Three.js (aengel.io / CGTrader style) */}
-        <Room3DStudio />
-
-        {/* 03 // 7YNX Sound Lab with Web Audio FFT Visualizer */}
-        <SoundLab />
-
-        {/* 04 // Curated Visual Aesthetics & Ambient Art Sanctuary */}
-        <AmbientGallery />
-
-        {/* 05 // Technical Capabilities Arsenal */}
-        <SkillsMatrix />
-
-        {/* 05 // Career & Academic Timeline */}
-        <ExperienceTimeline />
-
-        {/* 06 // Contact Transmission Terminal */}
-        <ContactTerminal />
+        {currentView === "community" && (
+          <CommunityMusicPage
+            onNavigatePortfolio={() => handleNavigate("portfolio")}
+            onNavigateSpace={() => handleNavigate("space")}
+          />
+        )}
       </main>
 
       {/* Footer */}
