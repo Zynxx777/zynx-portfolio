@@ -33,13 +33,47 @@ export const BlackHoleSimulation: React.FC<BlackHoleProps> = ({ className = "" }
     const eventHorizon = new THREE.Mesh(horizonGeo, horizonMat);
     scene.add(eventHorizon);
 
+    // Authentic Black Hole Texture Accretion Disk (Interstellar Gargantua Style)
+    const textureLoader = new THREE.TextureLoader();
+    const bhTexture = textureLoader.load("/images/blackhole.jpeg");
+    bhTexture.wrapS = THREE.RepeatWrapping;
+    bhTexture.wrapT = THREE.RepeatWrapping;
+
+    // Glowing Textured Relativistic Accretion Plane
+    const bhPlaneGeo = new THREE.PlaneGeometry(9.6, 9.6);
+    const bhPlaneMat = new THREE.MeshBasicMaterial({
+      map: bhTexture,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const bhMesh = new THREE.Mesh(bhPlaneGeo, bhPlaneMat);
+    bhMesh.rotation.x = Math.PI / 2.35;
+    scene.add(bhMesh);
+
+    // Upper Gravitational Lensing Halo (Interstellar top warped light)
+    const upperHaloGeo = new THREE.RingGeometry(1.68, 3.6, 96, 1, 0, Math.PI);
+    const upperHaloMat = new THREE.MeshBasicMaterial({
+      map: bhTexture,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const upperHalo = new THREE.Mesh(upperHaloGeo, upperHaloMat);
+    upperHalo.position.set(0, 0, -0.05);
+    scene.add(upperHalo);
+
     // Einstein Ring / Gravitational Lensing Glow Ring
     const ringGeo = new THREE.RingGeometry(1.68, 2.35, 96);
     const ringMat = new THREE.MeshBasicMaterial({
       color: 0x00F2FE,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.55,
+      opacity: 0.65,
       blending: THREE.AdditiveBlending,
     });
     const einsteinRing = new THREE.Mesh(ringGeo, ringMat);
@@ -52,7 +86,7 @@ export const BlackHoleSimulation: React.FC<BlackHoleProps> = ({ className = "" }
       color: 0xff8833,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.7,
+      opacity: 0.75,
       blending: THREE.AdditiveBlending,
     });
     const photonHalo = new THREE.Mesh(haloGeo, haloMat);
@@ -175,6 +209,8 @@ export const BlackHoleSimulation: React.FC<BlackHoleProps> = ({ className = "" }
       // Smooth camera/disk orientation tilt with mouse
       accretionDisk.rotation.x += (targetRotX - accretionDisk.rotation.x) * 0.05;
       accretionDisk.rotation.z += (targetRotY - accretionDisk.rotation.z) * 0.05;
+      bhMesh.rotation.x = accretionDisk.rotation.x;
+      bhMesh.rotation.z += 0.002;
       einsteinRing.rotation.x = accretionDisk.rotation.x;
       einsteinRing.rotation.z = accretionDisk.rotation.z;
 
