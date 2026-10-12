@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Terminal, Music, Cpu, FileText, Send, Sparkles } from "lucide-react";
+import { Terminal, Music, Cpu, FileText, Send, Sparkles, Image } from "lucide-react";
 
 interface NavbarProps {
   activeTab: string;
@@ -15,7 +15,8 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, openRes
     { id: "projects", label: "01 // Projects", icon: Cpu },
     { id: "3d-studio", label: "02 // 3D Studio", icon: Sparkles },
     { id: "sound-lab", label: "03 // Sound Lab", icon: Music },
-    { id: "contact", label: "04 // Contact", icon: Send },
+    { id: "ambient-gallery", label: "04 // Sanctuary", icon: Image },
+    { id: "contact", label: "05 // Contact", icon: Send },
   ];
 
   const handleNavClick = (id: string) => {

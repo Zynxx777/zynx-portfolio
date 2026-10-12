@@ -4,6 +4,7 @@ import { Hero } from "./components/Hero";
 import { Projects3D } from "./components/Projects3D";
 import { Room3DStudio } from "./components/Room3DStudio";
 import { SoundLab } from "./components/SoundLab";
+import { AmbientGallery } from "./components/AmbientGallery";
 import { SkillsMatrix } from "./components/SkillsMatrix";
 import { ExperienceTimeline } from "./components/ExperienceTimeline";
 import { ContactTerminal } from "./components/ContactTerminal";
@@ -48,7 +49,10 @@ export default function App() {
         {/* 03 // 7YNX Sound Lab with Web Audio FFT Visualizer */}
         <SoundLab />
 
-        {/* 04 // Technical Capabilities Arsenal */}
+        {/* 04 // Curated Visual Aesthetics & Ambient Art Sanctuary */}
+        <AmbientGallery />
+
+        {/* 05 // Technical Capabilities Arsenal */}
         <SkillsMatrix />
 
         {/* 05 // Career & Academic Timeline */}

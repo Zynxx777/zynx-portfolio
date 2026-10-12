@@ -17,7 +17,7 @@ export const SoundLab: React.FC = () => {
       bpm: "128 BPM",
       year: "2024",
       src: "/music/Regardless.mp3",
-      artwork: "/images/bright-pop-landscape-design.jpg",
+      artwork: "/images/sound/sound-regardless.jpg",
       description: "Punchy metallic leads with heavy sub-bass compression and dynamic sidechain bounce.",
     },
     {
@@ -26,7 +26,7 @@ export const SoundLab: React.FC = () => {
       bpm: "126 BPM",
       year: "2025",
       src: "/music/Joris Voorn - Studio Jam ｜ Melodic Atmospheric Techno House.opus",
-      artwork: "/images/digital-art-beautiful-mountains.jpg",
+      artwork: "/images/sound/sound-studiojam.jpg",
       description: "Deep hypnotic modular synth riffs with analog tape saturation and spatial delay.",
     },
   ];

@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { Monitor, Music, BookOpen, Layers, RotateCcw } from "lucide-react";
+import { Monitor, Music, BookOpen, Layers, RotateCcw, CloudRain, Volume2, VolumeX } from "lucide-react";
 
 export const Room3DStudio: React.FC = () => {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [activePreset, setActivePreset] = useState<string>("overview");
   const [activeInspect, setActiveInspect] = useState<string | null>(null);
+  const [ambientAudioActive, setAmbientAudioActive] = useState<boolean>(false);
+  const ambientAudioCtxRef = useRef<AudioContext | null>(null);
 
   // Inspection presets for camera targets
   const presets = [
@@ -34,6 +36,74 @@ export const Room3DStudio: React.FC = () => {
       } else {
         setActiveInspect(null);
       }
+    }
+  };
+
+  const toggleAmbientAudio = () => {
+    if (ambientAudioActive) {
+      if (ambientAudioCtxRef.current) {
+        ambientAudioCtxRef.current.suspend();
+      }
+      setAmbientAudioActive(false);
+      return;
+    }
+
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = ambientAudioCtxRef.current || new AudioCtx();
+      ambientAudioCtxRef.current = ctx;
+
+      if (ctx.state === "suspended") {
+        ctx.resume();
+      }
+
+      // Procedural soothing rain buffer (2 second pink noise loop)
+      const bufferSize = ctx.sampleRate * 2;
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        b0 = 0.99886 * b0 + white * 0.0555179;
+        b1 = 0.99332 * b1 + white * 0.0750759;
+        b2 = 0.96900 * b2 + white * 0.1538520;
+        b3 = 0.86650 * b3 + white * 0.3104856;
+        b4 = 0.55000 * b4 + white * 0.5329522;
+        b5 = -0.7616 * b5 - white * 0.0168980;
+        output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.035;
+        b6 = white * 0.115926;
+      }
+
+      const whiteNoiseSource = ctx.createBufferSource();
+      whiteNoiseSource.buffer = noiseBuffer;
+      whiteNoiseSource.loop = true;
+
+      // Warm lowpass filter for gentle rain acoustics
+      const filter = ctx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.value = 650;
+
+      // Soft ambient 55Hz sub drone
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = 55;
+      const oscGain = ctx.createGain();
+      oscGain.gain.value = 0.012;
+      osc.connect(oscGain);
+
+      const masterGain = ctx.createGain();
+      masterGain.gain.value = 0.35;
+
+      whiteNoiseSource.connect(filter);
+      filter.connect(masterGain);
+      oscGain.connect(masterGain);
+      masterGain.connect(ctx.destination);
+
+      whiteNoiseSource.start();
+      osc.start();
+      setAmbientAudioActive(true);
+    } catch (err) {
+      console.warn("Ambient audio error:", err);
     }
   };
 
@@ -101,12 +171,40 @@ export const Room3DStudio: React.FC = () => {
     gridHelper.position.y = 0.01;
     scene.add(gridHelper);
 
+    // Texture Loader for Inspiring HQ Artwork
+    const textureLoader = new THREE.TextureLoader();
+    const posterLofi = textureLoader.load("/images/ambient/lofi-study-night.jpg");
+    const posterRain = textureLoader.load("/images/ambient/soothing-rain.jpg");
+    const screenCockpit = textureLoader.load("/images/projects/cockpit-cdc.jpg");
+    const screenSynth = textureLoader.load("/images/projects/audio-visualizer.jpg");
+
     // Back Wall
     const wallGeo = new THREE.BoxGeometry(16, 8, 0.2);
     const wallMat = new THREE.MeshStandardMaterial({ color: "#080811", roughness: 0.9 });
     const backWall = new THREE.Mesh(wallGeo, wallMat);
     backWall.position.set(0, 4, -4);
     scene.add(backWall);
+
+    // Wall Art Posters (Inspiring & Soothing HQ Media)
+    const posterGeo = new THREE.PlaneGeometry(2.8, 1.6);
+    const frameGeo = new THREE.BoxGeometry(2.9, 1.7, 0.05);
+    const frameMat = new THREE.MeshStandardMaterial({ color: "#111122", roughness: 0.5, metalness: 0.5 });
+
+    // Poster 1: Left Wall (Lo-Fi Study Night)
+    const p1 = new THREE.Mesh(posterGeo, new THREE.MeshBasicMaterial({ map: posterLofi }));
+    p1.position.set(-3.2, 4.4, -3.88);
+    const f1 = new THREE.Mesh(frameGeo, frameMat);
+    f1.position.set(-3.2, 4.4, -3.92);
+    scene.add(p1);
+    scene.add(f1);
+
+    // Poster 2: Right Wall (Soothing Rain)
+    const p2 = new THREE.Mesh(posterGeo, new THREE.MeshBasicMaterial({ map: posterRain }));
+    p2.position.set(3.2, 4.4, -3.88);
+    const f2 = new THREE.Mesh(frameGeo, frameMat);
+    f2.position.set(3.2, 4.4, -3.92);
+    scene.add(p2);
+    scene.add(f2);
 
     // ══════════════════════════════════════════════════════════
     // DESK SETUP (PC WORKSTATION)
@@ -130,9 +228,9 @@ export const Room3DStudio: React.FC = () => {
 
     // Dual Curved Monitors
     const monMat = new THREE.MeshStandardMaterial({ color: "#000", roughness: 0.2 });
-    const screenMat = new THREE.MeshBasicMaterial({ color: "#00F2FE" });
+    const screenMat = new THREE.MeshBasicMaterial({ map: screenCockpit });
 
-    // Center Monitor
+    // Center Monitor (Cockpit CDC display)
     const mon1Geo = new THREE.BoxGeometry(1.6, 0.9, 0.06);
     const mon1 = new THREE.Mesh(mon1Geo, monMat);
     mon1.position.set(-0.8, 2.2, -0.7);
@@ -144,13 +242,13 @@ export const Room3DStudio: React.FC = () => {
     screen1.rotation.y = 0.15;
     scene.add(screen1);
 
-    // Secondary Monitor
+    // Secondary Monitor (Audio Visualizer & Synth Engine)
     const mon2 = new THREE.Mesh(mon1Geo, monMat);
     mon2.position.set(0.8, 2.2, -0.7);
     mon2.rotation.y = -0.15;
     scene.add(mon2);
 
-    const screen2Mat = new THREE.MeshBasicMaterial({ color: "#9D4EDD" });
+    const screen2Mat = new THREE.MeshBasicMaterial({ map: screenSynth });
     const screen2 = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.8), screen2Mat);
     screen2.position.set(0.8, 2.2, -0.66);
     screen2.rotation.y = -0.15;
@@ -326,6 +424,31 @@ export const Room3DStudio: React.FC = () => {
           <RotateCcw size={12} className="text-cyan-400 animate-spin" />
           <span>DRAG MOUSE TO ORBIT 360°</span>
         </div>
+
+        {/* Soothing Lo-Fi Ambient Soundscape Toggle */}
+        <button
+          onClick={toggleAmbientAudio}
+          className={`absolute top-4 right-4 z-20 px-3.5 py-1.5 rounded-full text-xs font-mono transition-all duration-300 flex items-center gap-2 border shadow-lg ${
+            ambientAudioActive
+              ? "bg-emerald-500/25 border-emerald-400 text-emerald-200 shadow-emerald-500/20 animate-pulse"
+              : "bg-black/70 backdrop-blur-md border-white/10 text-zinc-300 hover:text-white hover:border-cyan-400/50"
+          }`}
+          title="Toggle soothing procedural rain and sub-harmonic room ambience"
+        >
+          {ambientAudioActive ? (
+            <>
+              <CloudRain size={13} className="text-emerald-400" />
+              <span>LO-FI RAIN AMBIENCE [ON]</span>
+              <Volume2 size={13} className="text-emerald-400" />
+            </>
+          ) : (
+            <>
+              <CloudRain size={13} className="text-cyan-400" />
+              <span>PLAY LO-FI RAIN AMBIENCE</span>
+              <VolumeX size={13} className="text-zinc-500" />
+            </>
+          )}
+        </button>
 
         {/* Inspection Details Floating HUD (when focused) */}
         {activeInspect && (

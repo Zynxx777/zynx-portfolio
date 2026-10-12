@@ -131,7 +131,7 @@
       "description": "Embedded automotive system design integrating CAN bus protocol architecture to manage Electronic Control (EC) domains and instrument cluster telemetry for connected vehicle platforms.",
       "skills": ["C", "C++", "CAN Bus", "Linux", "AAOS"],
       "badge": "Automotive ECE",
-      "img": "/images/futuristic-dubai-landscape.jpg",
+      "img": "/images/projects/cockpit-cdc.jpg",
       "link": "https://github.com/Zynxx777"
     },
     {
@@ -142,7 +142,7 @@
       "description": "A modern smart medicine vending machine combining Verilog HDL hardware logic, Arduino controller interfacing, and embedded circuit design for contactless medication dispatching.",
       "skills": ["Verilog", "Arduino", "C++", "Python", "VLSI"],
       "badge": "Embedded VLSI",
-      "img": "/images/bright-pop-landscape-design.jpg",
+      "img": "/images/projects/medivend-hardware.jpg",
       "link": "https://github.com/Zynxx777"
     },
     {
@@ -153,7 +153,7 @@
       "description": "An interactive WebGL audio playground featuring CRT terminal oscilloscopes, FFT spectrum monitoring, fluid particle smoke drift, and gravitational black hole audio reactivity.",
       "skills": ["Three.js", "WebGL", "GLSL", "Web Audio API", "TypeScript"],
       "badge": "Creative WebGL",
-      "img": "/images/digital-art-beautiful-mountains.jpg",
+      "img": "/images/projects/audio-visualizer.jpg",
       "link": "#sound-lab"
     },
     {
@@ -164,7 +164,7 @@
       "description": "A high-performance personal music player application built with clean UI architecture, custom audio service background playback, and waveform visualizations.",
       "skills": ["Flutter", "Dart", "Kotlin", "Android"],
       "badge": "Mobile Audio",
-      "img": "/images/illustration-tourist-attraction-city.jpg",
+      "img": "/images/projects/mobile-player.jpg",
       "link": "https://zynxx777.github.io/mini-music-player/"
     },
     {
@@ -175,7 +175,7 @@
       "description": "An interactive 3D studio environment featuring real-time physics cursor smoke bursts, volumetric studio lighting, and inspectable digital setup assets.",
       "skills": ["Three.js", "WebGL", "3D Math", "Blender"],
       "badge": "Three.js 3D",
-      "img": "/images/discourse.gif",
+      "img": "/images/projects/lofi-bedroom.jpg",
       "link": "#3d-studio"
     },
     {
@@ -186,7 +186,7 @@
       "description": "Gravitational starfield simulation in Three.js where 8,000 particles are dynamically pulled into an accretion disk with audio frequency modulation and cursor gravitational deflection.",
       "skills": ["Three.js", "GLSL", "Physics", "Math"],
       "badge": "Physics Sim",
-      "img": "/images/blackhole.jpeg",
+      "img": "/images/projects/cosmic-singularity.jpg",
       "link": "#sound-lab"
     }
   ],
