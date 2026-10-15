@@ -126,7 +126,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
       {/* ══════════════════════════════════════════════════════════
           ACT I: THE MONOLITH (Chromatic Liquid Ferrofluid Hero)
       ══════════════════════════════════════════════════════════ */}
-      <section id="hero" className="relative min-h-[96svh] flex flex-col justify-between pt-24 pb-10 px-6 overflow-hidden">
+      <section id="hero" className="relative min-h-[96svh] flex flex-col justify-between pt-16 sm:pt-20 pb-8 px-4 sm:px-8 overflow-hidden">
         {/* Full-Page Dynamic Hero WebGL Background (Liquid Chrome Ferrofluid by default) */}
         {heroBackground === "liquid-chrome" ? (
           <LiquidMercuryCanvas className="z-0 opacity-95" />
@@ -135,19 +135,12 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
         )}
 
         {/* Jesper Landberg 4-Corner Top Header HUD */}
-        <div className="relative z-10 w-full max-w-[1700px] mx-auto flex items-center justify-between pointer-events-auto gap-4">
+        <div className="relative z-10 w-full max-w-[1700px] mx-auto flex items-center justify-between pointer-events-auto gap-4 -mt-2 sm:-mt-1 mb-2">
           {/* Top-Left Telemetry Capsule & Shader Mode Switcher */}
           <div className="flex items-center gap-2.5">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full backdrop-blur-2xl bg-[#090d18]/80 border border-cyan-400/25 text-[10px] sm:text-xs font-mono tracking-[0.16em] text-zinc-300 shadow-xl">
-              <img
-                src="/images/z7x-logo.svg"
-                alt="Z7X"
-                className="w-4 h-4 object-contain drop-shadow-[0_0_8px_rgba(34,211,238,0.75)]"
-              />
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5" aria-hidden="true" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
               <span>BENGALURU, INDIA</span>
-              <span className="text-zinc-600 hidden sm:inline" aria-hidden="true">/</span>
-              <span className="text-cyan-300 hidden sm:inline">EMBEDDED · AAOS · WEBGL</span>
             </div>
 
             {/* Background Shader Mode Switcher Pill */}
@@ -194,22 +187,8 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
         </div>
 
         {/* Hero Content Centerpiece */}
-        <div className="relative z-10 w-full max-w-5xl mx-auto flex flex-col items-center text-center space-y-7 my-auto py-8">
+        <div className="relative z-10 w-full max-w-5xl mx-auto flex flex-col items-center text-center space-y-7 my-auto py-6">
           
-          {/* Cybernetic Z7X Monogram Insignia (Floating Liquid Chrome Emblem) */}
-          <div className="flex items-center justify-center -mb-2">
-            <div className="relative group">
-              <div className="absolute -inset-2.5 rounded-2xl bg-gradient-to-r from-cyan-500/25 via-purple-500/30 to-cyan-500/25 blur-lg opacity-75 group-hover:opacity-100 transition-opacity duration-500 animate-pulse" />
-              <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl backdrop-blur-2xl bg-[#080b15]/85 border border-cyan-400/40 hover:border-cyan-300 p-2.5 shadow-[0_0_25px_rgba(34,211,238,0.35)] flex items-center justify-center group-hover:scale-105 group-hover:rotate-3 transition-all duration-300">
-                <img
-                  src="/images/z7x-logo.svg"
-                  alt="Z7X Logo"
-                  className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(34,211,238,0.85)]"
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Bold Masthead Display Typography (Jesper Landberg & Locomotive style) */}
           <div className="space-y-3">
             <h2 className="text-zinc-500 text-xs font-mono tracking-[0.32em] uppercase">
