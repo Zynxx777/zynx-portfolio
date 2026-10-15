@@ -65,7 +65,7 @@ const InteractiveTiltCard: React.FC<{
         <div
           className="pointer-events-none absolute -inset-px rounded-[inherit] transition-opacity duration-200"
           style={{
-            background: `radial-gradient(320px circle at ${sheen.x}px ${sheen.y}px, rgba(0, 242, 254, 0.12), transparent 70%)`,
+            background: `radial-gradient(320px circle at ${sheen.x}px ${sheen.y}px, rgba(0, 242, 254, 0.16), rgba(168, 85, 247, 0.10) 45%, transparent 75%)`,
           }}
         />
       )}
@@ -117,6 +117,12 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
 
   return (
     <div className="relative space-y-24 select-none">
+      {/* ── Ambient Chromatic Flow Aura (Liquid Chrome & Obsidian Vibe Continuity) ── */}
+      <div className="pointer-events-none absolute top-[20%] -left-32 w-[520px] h-[520px] rounded-full bg-cyan-500/[0.04] blur-[150px] -z-10" />
+      <div className="pointer-events-none absolute top-[45%] -right-32 w-[600px] h-[600px] rounded-full bg-purple-500/[0.035] blur-[170px] -z-10" />
+      <div className="pointer-events-none absolute top-[70%] left-1/4 w-[650px] h-[650px] rounded-full bg-cyan-400/[0.03] blur-[180px] -z-10" />
+      <div className="pointer-events-none absolute top-[90%] right-1/4 w-[500px] h-[500px] rounded-full bg-purple-600/[0.03] blur-[160px] -z-10" />
+
       {/* ══════════════════════════════════════════════════════════
           ACT I: THE MONOLITH (Chromatic Liquid Ferrofluid Hero)
       ══════════════════════════════════════════════════════════ */}
@@ -132,8 +138,13 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
         <div className="relative z-10 w-full max-w-[1700px] mx-auto flex items-center justify-between pointer-events-auto gap-4">
           {/* Top-Left Telemetry Capsule & Shader Mode Switcher */}
           <div className="flex items-center gap-2.5">
-            <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full backdrop-blur-2xl bg-[#090d18]/80 border border-white/15 text-[10px] sm:text-xs font-mono tracking-[0.16em] text-zinc-300 shadow-xl">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full backdrop-blur-2xl bg-[#090d18]/80 border border-cyan-400/25 text-[10px] sm:text-xs font-mono tracking-[0.16em] text-zinc-300 shadow-xl">
+              <img
+                src="/images/z7x-logo.svg"
+                alt="Z7X"
+                className="w-4 h-4 object-contain drop-shadow-[0_0_8px_rgba(34,211,238,0.75)]"
+              />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5" aria-hidden="true" />
               <span>BENGALURU, INDIA</span>
               <span className="text-zinc-600 hidden sm:inline" aria-hidden="true">/</span>
               <span className="text-cyan-300 hidden sm:inline">EMBEDDED · AAOS · WEBGL</span>
@@ -185,6 +196,20 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
         {/* Hero Content Centerpiece */}
         <div className="relative z-10 w-full max-w-5xl mx-auto flex flex-col items-center text-center space-y-7 my-auto py-8">
           
+          {/* Cybernetic Z7X Monogram Insignia (Floating Liquid Chrome Emblem) */}
+          <div className="flex items-center justify-center -mb-2">
+            <div className="relative group">
+              <div className="absolute -inset-2.5 rounded-2xl bg-gradient-to-r from-cyan-500/25 via-purple-500/30 to-cyan-500/25 blur-lg opacity-75 group-hover:opacity-100 transition-opacity duration-500 animate-pulse" />
+              <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl backdrop-blur-2xl bg-[#080b15]/85 border border-cyan-400/40 hover:border-cyan-300 p-2.5 shadow-[0_0_25px_rgba(34,211,238,0.35)] flex items-center justify-center group-hover:scale-105 group-hover:rotate-3 transition-all duration-300">
+                <img
+                  src="/images/z7x-logo.svg"
+                  alt="Z7X Logo"
+                  className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(34,211,238,0.85)]"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Bold Masthead Display Typography (Jesper Landberg & Locomotive style) */}
           <div className="space-y-3">
             <h2 className="text-zinc-500 text-xs font-mono tracking-[0.32em] uppercase">
@@ -365,7 +390,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
 
         {/* Brief, High-End Technical Arsenal Capsule (Zero Bloat) */}
         <div className="px-6 sm:px-12 max-w-[1700px] mx-auto">
-          <div className="p-6 sm:p-8 rounded-3xl bg-[#090d18]/80 border border-white/10 backdrop-blur-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-2xl">
+          <div className="p-6 sm:p-8 rounded-3xl bg-[#090d18]/75 border border-white/10 hover:border-cyan-400/35 backdrop-blur-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-2xl hover:shadow-[0_0_30px_rgba(34,211,238,0.08)] transition-all duration-300">
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.22em] text-cyan-300">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -436,7 +461,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
           {/* Portal 1: 3D Bedroom Space Sanctuary */}
           <InteractiveTiltCard
             onClick={() => { soundFX.playClick(); onNavigateSpace(); }}
-            className="group h-[380px] sm:h-[440px] rounded-3xl border border-cyan-400/25 hover:border-cyan-300 shadow-2xl cursor-pointer flex flex-col justify-between p-8"
+            className="group h-[380px] sm:h-[440px] rounded-3xl border border-cyan-400/25 hover:border-cyan-300 shadow-2xl hover:shadow-[0_0_40px_rgba(34,211,238,0.22)] cursor-pointer flex flex-col justify-between p-8"
           >
             <img
               src="/images/projects/lofi-bedroom.jpg"
@@ -474,7 +499,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
           {/* Portal 2: 7YNX Music & Gaming Space */}
           <InteractiveTiltCard
             onClick={() => { soundFX.playClick(); onNavigateCommunity(); }}
-            className="group h-[380px] sm:h-[440px] rounded-3xl border border-purple-500/25 hover:border-purple-400 shadow-2xl cursor-pointer flex flex-col justify-between p-8"
+            className="group h-[380px] sm:h-[440px] rounded-3xl border border-purple-500/25 hover:border-purple-400 shadow-2xl hover:shadow-[0_0_40px_rgba(168,85,247,0.22)] cursor-pointer flex flex-col justify-between p-8"
           >
             <img
               src="/images/space/gaming-cyber-room.jpg"

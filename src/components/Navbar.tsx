@@ -62,9 +62,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={() => handleWorldClick("portfolio")}
           className="pointer-events-auto flex items-center gap-3 px-3.5 py-2 rounded-full backdrop-blur-2xl bg-[#0a0d18]/80 border border-white/10 hover:border-cyan-400/40 cursor-pointer group transition-all duration-300 shadow-xl"
         >
-          <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-cyan-400 to-purple-500 p-[1px] group-hover:rotate-180 transition-transform duration-700">
-            <div className="w-full h-full bg-[#080911] rounded-full flex items-center justify-center font-display font-black text-[11px] text-cyan-300">
-              Z7
+          <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-cyan-400/60 via-purple-500/40 to-white/20 p-[1px] group-hover:scale-110 transition-transform duration-300 shadow-[0_0_12px_rgba(34,211,238,0.35)]">
+            <div className="w-full h-full bg-[#080911] rounded-full flex items-center justify-center p-0.5">
+              <img
+                src="/images/z7x-logo.svg"
+                alt="Z7X Logo"
+                className="w-full h-full object-contain drop-shadow-[0_0_6px_rgba(34,211,238,0.7)]"
+              />
             </div>
           </div>
           <div className="flex items-center gap-2">

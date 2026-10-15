@@ -11,8 +11,8 @@ export const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-6 h-6 rounded-lg bg-cyan-400/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 font-bold text-[11px]">
-              X7
+            <div className="w-7 h-7 rounded-lg bg-cyan-400/10 border border-cyan-400/30 p-1 flex items-center justify-center shadow-[0_0_10px_rgba(34,211,238,0.25)]">
+              <img src="/images/z7x-logo.svg" alt="Z7X" className="w-full h-full object-contain" />
             </div>
             <span className="font-display font-bold text-sm text-zinc-200">
               ZYNX // JOSHUA D

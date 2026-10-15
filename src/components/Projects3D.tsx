@@ -551,7 +551,7 @@ export const Projects3D: React.FC = () => {
   const activeProject = filteredProjects[activeIndex] || filteredProjects[0];
 
   return (
-    <section id="projects" className="relative w-full bg-[#050505] text-white overflow-hidden scroll-mt-16 select-none">
+    <section id="projects" className="relative w-full bg-transparent text-white overflow-hidden scroll-mt-16 select-none">
       {/* ── TOP HUD HEADER (Jesper Landberg Minimalist Swedish Aesthetic) ── */}
       <div className="relative z-30 pt-16 pb-6 px-6 sm:px-12 max-w-[1700px] mx-auto flex flex-col md:flex-row items-start md:items-end justify-between gap-6 border-b border-white/10">
         <div>
