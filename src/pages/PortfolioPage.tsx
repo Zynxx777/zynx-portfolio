@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ArrowRight, Terminal, FileText, Cpu, Compass, Disc3, Shield, Monitor, Orbit, ArrowUpRight, Sparkles, User } from "lucide-react";
 import { BlackHoleSimulation } from "../components/BlackHoleSimulation";
+import { LiquidMercuryCanvas } from "../components/LiquidMercuryCanvas";
 import { BlackHoleModal } from "../components/BlackHoleModal";
 import { Projects3D } from "../components/Projects3D";
 import { TapeTicker } from "../components/TapeTicker";
@@ -81,6 +82,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
 }) => {
   const [isBlackHoleModalOpen, setIsBlackHoleModalOpen] = useState(false);
   const [isProfileDrawerOpen, setIsProfileDrawerOpen] = useState(false);
+  const [heroBackground, setHeroBackground] = useState<"liquid-chrome" | "black-hole">("liquid-chrome");
   const [roleIndex, setRoleIndex] = useState(0);
 
   const roles = [
@@ -116,20 +118,54 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
   return (
     <div className="relative space-y-24 select-none">
       {/* ══════════════════════════════════════════════════════════
-          ACT I: THE SINGULARITY (Hero Scene with Gargantua Black Hole)
+          ACT I: THE MONOLITH (Chromatic Liquid Ferrofluid Hero)
       ══════════════════════════════════════════════════════════ */}
       <section id="hero" className="relative min-h-[96svh] flex flex-col justify-between pt-24 pb-10 px-6 overflow-hidden">
-        {/* Full-Page Relativistic Black Hole Simulation (Interstellar Accretion Disk) */}
-        <BlackHoleSimulation className="z-0 opacity-85" />
+        {/* Full-Page Dynamic Hero WebGL Background (Liquid Chrome Ferrofluid by default) */}
+        {heroBackground === "liquid-chrome" ? (
+          <LiquidMercuryCanvas className="z-0 opacity-95" />
+        ) : (
+          <BlackHoleSimulation className="z-0 opacity-85" />
+        )}
 
         {/* Jesper Landberg 4-Corner Top Header HUD */}
-        <div className="relative z-10 w-full max-w-[1700px] mx-auto flex items-center justify-between pointer-events-auto">
-          {/* Top-Left Telemetry Capsule */}
-          <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full backdrop-blur-2xl bg-[#090d18]/80 border border-white/15 text-[10px] sm:text-xs font-mono tracking-[0.16em] text-zinc-300 shadow-xl">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
-            <span>BENGALURU, INDIA</span>
-            <span className="text-zinc-600 hidden sm:inline" aria-hidden="true">/</span>
-            <span className="text-cyan-300 hidden sm:inline">EMBEDDED · AAOS · WEBGL</span>
+        <div className="relative z-10 w-full max-w-[1700px] mx-auto flex items-center justify-between pointer-events-auto gap-4">
+          {/* Top-Left Telemetry Capsule & Shader Mode Switcher */}
+          <div className="flex items-center gap-2.5">
+            <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full backdrop-blur-2xl bg-[#090d18]/80 border border-white/15 text-[10px] sm:text-xs font-mono tracking-[0.16em] text-zinc-300 shadow-xl">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
+              <span>BENGALURU, INDIA</span>
+              <span className="text-zinc-600 hidden sm:inline" aria-hidden="true">/</span>
+              <span className="text-cyan-300 hidden sm:inline">EMBEDDED · AAOS · WEBGL</span>
+            </div>
+
+            {/* Background Shader Mode Switcher Pill */}
+            <div className="hidden sm:inline-flex items-center p-0.5 rounded-full backdrop-blur-2xl bg-black/60 border border-white/10 text-[10px] font-mono shadow-xl">
+              <button
+                onClick={() => { soundFX.playClick(); setHeroBackground("liquid-chrome"); }}
+                className={`px-3 py-1 rounded-full transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
+                  heroBackground === "liquid-chrome"
+                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-sm"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+                title="Active: Liquid Chrome Ferrofluid Ribbon"
+              >
+                <Sparkles size={11} className={heroBackground === "liquid-chrome" ? "text-cyan-300" : "text-zinc-500"} />
+                <span>LIQUID CHROME</span>
+              </button>
+              <button
+                onClick={() => { soundFX.playClick(); setHeroBackground("black-hole"); }}
+                className={`px-3 py-1 rounded-full transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
+                  heroBackground === "black-hole"
+                    ? "bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-sm"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+                title="Switch to Gargantua Black Hole"
+              >
+                <Orbit size={11} className={heroBackground === "black-hole" ? "text-amber-300" : "text-zinc-500"} />
+                <span>BLACK HOLE</span>
+              </button>
+            </div>
           </div>
 
           {/* Top-Right Jesper Landberg Profile Dossier Trigger */}
@@ -138,7 +174,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
               soundFX.playZoom();
               setIsProfileDrawerOpen(true);
             }}
-            className="group px-4 py-1.5 rounded-full backdrop-blur-2xl bg-white/5 hover:bg-white/10 border border-white/15 hover:border-cyan-400/50 text-xs font-mono tracking-wider text-zinc-200 hover:text-white transition-all duration-300 flex items-center gap-2 shadow-xl hover:scale-105"
+            className="group px-4 py-1.5 rounded-full backdrop-blur-2xl bg-white/5 hover:bg-white/10 border border-white/15 hover:border-cyan-400/50 text-xs font-mono tracking-wider text-zinc-200 hover:text-white transition-all duration-300 flex items-center gap-2 shadow-xl hover:scale-105 cursor-pointer"
           >
             <User size={13} className="text-cyan-400 group-hover:rotate-12 transition-transform" />
             <span>PROFILE & DOSSIER</span>
@@ -196,13 +232,27 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
               <span>View Dossier</span>
             </button>
 
-            <button
-              onClick={() => { soundFX.playClick(); setIsBlackHoleModalOpen(true); }}
-              className="px-5 py-3 rounded-full backdrop-blur-2xl bg-amber-950/25 hover:bg-amber-900/35 border border-amber-400/35 hover:border-amber-300 text-amber-200 font-mono text-xs tracking-wider transition-all duration-300 flex items-center gap-2 hover:scale-[1.03]"
-            >
-              <Orbit size={14} className="text-amber-300" />
-              <span>Singularity Study</span>
-            </button>
+            {heroBackground === "liquid-chrome" ? (
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  window.dispatchEvent(new CustomEvent("trigger-liquid-ripple"));
+                }}
+                className="px-5 py-3 rounded-full backdrop-blur-2xl bg-cyan-950/25 hover:bg-cyan-900/35 border border-cyan-400/35 hover:border-cyan-300 text-cyan-200 font-mono text-xs tracking-wider transition-all duration-300 flex items-center gap-2 hover:scale-[1.03] cursor-pointer"
+                title="Send a physical wave impulse through the liquid chrome"
+              >
+                <Sparkles size={14} className="text-cyan-300 animate-pulse" />
+                <span>Fluid Wave Impulse</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => { soundFX.playClick(); setIsBlackHoleModalOpen(true); }}
+                className="px-5 py-3 rounded-full backdrop-blur-2xl bg-amber-950/25 hover:bg-amber-900/35 border border-amber-400/35 hover:border-amber-300 text-amber-200 font-mono text-xs tracking-wider transition-all duration-300 flex items-center gap-2 hover:scale-[1.03] cursor-pointer"
+              >
+                <Orbit size={14} className="text-amber-300" />
+                <span>Singularity Study</span>
+              </button>
+            )}
           </div>
 
           {/* Direct Ecosystem Navigation Links */}

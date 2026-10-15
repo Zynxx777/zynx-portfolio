@@ -1,7 +1,9 @@
 {
   "basics": {
     "name": "JOSHUA D",
-    "aliases": ["ZYNX", "7YNX"],
+    "handle": "ZYNX",
+    "musicProducerAlias": "7YNX",
+    "aliases": ["ZYNX"],
     "label": "Systems & Embedded Software Engineer",
     "sublabel": "B.E. Electronics & Communication Engineering | Automotive & Full-Stack",
     "email": "joshuajosh3055@gmail.com",
