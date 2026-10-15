@@ -126,7 +126,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
       {/* ══════════════════════════════════════════════════════════
           ACT I: THE MONOLITH (Chromatic Liquid Ferrofluid Hero)
       ══════════════════════════════════════════════════════════ */}
-      <section id="hero" className="relative min-h-[96svh] flex flex-col justify-between pt-16 sm:pt-20 pb-8 px-4 sm:px-8 overflow-hidden">
+      <section id="hero" className="relative min-h-[96svh] flex flex-col justify-between pt-12 sm:pt-14 pb-8 px-4 sm:px-8 overflow-hidden">
         {/* Full-Page Dynamic Hero WebGL Background (Liquid Chrome Ferrofluid by default) */}
         {heroBackground === "liquid-chrome" ? (
           <LiquidMercuryCanvas className="z-0 opacity-95" />
@@ -135,19 +135,19 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
         )}
 
         {/* Jesper Landberg 4-Corner Top Header HUD */}
-        <div className="relative z-10 w-full max-w-[1700px] mx-auto flex items-center justify-between pointer-events-auto gap-4 -mt-2 sm:-mt-1 mb-2">
+        <div className="relative z-10 w-full max-w-[1700px] mx-auto flex items-center justify-between pointer-events-auto gap-2 sm:gap-4 -mt-3 sm:-mt-2 mb-1 sm:mb-2">
           {/* Top-Left Telemetry Capsule & Shader Mode Switcher */}
-          <div className="flex items-center gap-2.5">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full backdrop-blur-2xl bg-[#090d18]/80 border border-cyan-400/25 text-[10px] sm:text-xs font-mono tracking-[0.16em] text-zinc-300 shadow-xl">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-2xl bg-[#090d18]/80 border border-cyan-400/25 text-[10px] sm:text-xs font-mono tracking-[0.16em] text-zinc-300 shadow-xl">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
               <span>BENGALURU, INDIA</span>
             </div>
 
             {/* Background Shader Mode Switcher Pill */}
-            <div className="hidden sm:inline-flex items-center p-0.5 rounded-full backdrop-blur-2xl bg-black/60 border border-white/10 text-[10px] font-mono shadow-xl">
+            <div className="inline-flex items-center p-0.5 rounded-full backdrop-blur-2xl bg-black/60 border border-white/10 text-[9px] sm:text-[10px] font-mono shadow-xl">
               <button
                 onClick={() => { soundFX.playClick(); setHeroBackground("liquid-chrome"); }}
-                className={`px-3 py-1 rounded-full transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
+                className={`px-2.5 sm:px-3 py-1 rounded-full transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
                   heroBackground === "liquid-chrome"
                     ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-sm"
                     : "text-zinc-400 hover:text-white"
@@ -155,11 +155,11 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                 title="Active: Liquid Chrome Ferrofluid Ribbon"
               >
                 <Sparkles size={11} className={heroBackground === "liquid-chrome" ? "text-cyan-300" : "text-zinc-500"} />
-                <span>LIQUID CHROME</span>
+                <span>CHROME</span>
               </button>
               <button
                 onClick={() => { soundFX.playClick(); setHeroBackground("black-hole"); }}
-                className={`px-3 py-1 rounded-full transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
+                className={`px-2.5 sm:px-3 py-1 rounded-full transition-all duration-300 flex items-center gap-1.5 cursor-pointer ${
                   heroBackground === "black-hole"
                     ? "bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-sm"
                     : "text-zinc-400 hover:text-white"
