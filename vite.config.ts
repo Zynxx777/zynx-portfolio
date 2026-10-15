@@ -5,6 +5,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: true,
     proxy: {
       '/api/lofi-stats': {
         target: 'https://boxradio-edge-00.streamafrica.net',
