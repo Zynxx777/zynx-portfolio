@@ -126,7 +126,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
       {/* ══════════════════════════════════════════════════════════
           ACT I: THE MONOLITH (Chromatic Liquid Ferrofluid Hero)
       ══════════════════════════════════════════════════════════ */}
-      <section id="hero" className="relative min-h-[96svh] flex flex-col justify-between pt-12 sm:pt-14 pb-8 px-4 sm:px-8 overflow-hidden">
+      <section id="hero" className="relative min-h-[96svh] flex flex-col justify-between pb-8 px-4 sm:px-8 overflow-hidden">
         {/* Full-Page Dynamic Hero WebGL Background (Liquid Chrome Ferrofluid by default) */}
         {heroBackground === "liquid-chrome" ? (
           <LiquidMercuryCanvas className="z-0 opacity-95" />
@@ -134,8 +134,8 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
           <BlackHoleSimulation className="z-0 opacity-85" />
         )}
 
-        {/* Jesper Landberg 4-Corner Top Header HUD */}
-        <div className="relative z-10 w-full max-w-[1700px] mx-auto flex items-center justify-between pointer-events-auto gap-2 sm:gap-4 -mt-3 sm:-mt-2 mb-1 sm:mb-2">
+        {/* Jesper Landberg 4-Corner Top Header HUD - Anchored cleanly under top Navbar */}
+        <div className="absolute top-14 sm:top-16 inset-x-0 z-20 w-full max-w-[1600px] mx-auto px-4 sm:px-8 flex items-center justify-between pointer-events-auto gap-2 sm:gap-4">
           {/* Top-Left Telemetry Capsule & Shader Mode Switcher */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-2xl bg-[#090d18]/80 border border-cyan-400/25 text-[10px] sm:text-xs font-mono tracking-[0.16em] text-zinc-300 shadow-xl">
@@ -178,16 +178,17 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
               soundFX.playZoom();
               setIsProfileDrawerOpen(true);
             }}
-            className="group px-4 py-1.5 rounded-full backdrop-blur-2xl bg-white/5 hover:bg-white/10 border border-white/15 hover:border-cyan-400/50 text-xs font-mono tracking-wider text-zinc-200 hover:text-white transition-all duration-300 flex items-center gap-2 shadow-xl hover:scale-105 cursor-pointer"
+            className="group px-3.5 sm:px-4 py-1.5 rounded-full backdrop-blur-2xl bg-white/5 hover:bg-white/10 border border-white/15 hover:border-cyan-400/50 text-xs font-mono tracking-wider text-zinc-200 hover:text-white transition-all duration-300 flex items-center gap-2 shadow-xl hover:scale-105 cursor-pointer shrink-0"
           >
             <User size={13} className="text-cyan-400 group-hover:rotate-12 transition-transform" />
-            <span>PROFILE & DOSSIER</span>
+            <span className="hidden xs:inline sm:inline">PROFILE & DOSSIER</span>
+            <span className="xs:hidden sm:hidden">DOSSIER</span>
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
           </button>
         </div>
 
         {/* Hero Content Centerpiece */}
-        <div className="relative z-10 w-full max-w-5xl mx-auto flex flex-col items-center text-center space-y-7 my-auto py-6">
+        <div className="relative z-10 w-full max-w-5xl mx-auto flex flex-col items-center text-center space-y-6 my-auto pt-28 sm:pt-32 pb-4">
           
           {/* Bold Masthead Display Typography (Jesper Landberg & Locomotive style) */}
           <div className="space-y-3">
@@ -323,7 +324,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
         </div>
 
         {/* Jesper Landberg Bottom Minimal Navigation Jump HUD */}
-        <div className="relative z-10 w-full max-w-[1700px] mx-auto pt-6 border-t border-white/10 flex flex-wrap items-center justify-between gap-4 text-[11px] font-mono text-zinc-400">
+        <div className="relative z-10 w-full max-w-[1600px] mx-auto pt-6 border-t border-white/10 flex flex-wrap items-center justify-between gap-4 text-[11px] font-mono text-zinc-400">
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             {navJumps.map((jump) => (
               <button
