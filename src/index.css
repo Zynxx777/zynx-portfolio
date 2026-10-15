@@ -9,7 +9,7 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: #030306;
+  background-color: #07080d;
   color: #f3f4f6;
   font-family: 'Space Grotesk', -apple-system, sans-serif;
   overflow-x: hidden;
@@ -20,10 +20,10 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #030306;
+  background: #07080d;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1f2937;
+  background: #1c2333;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -83,3 +83,36 @@ body {
     linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 28s linear infinite;
+}
+
+.animate-marquee-slow {
+  animation: marquee 56s linear infinite;
+}
+

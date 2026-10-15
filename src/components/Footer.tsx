@@ -15,7 +15,7 @@ export const Footer: React.FC = () => {
               X7
             </div>
             <span className="font-display font-bold text-sm text-zinc-200">
-              JOSHUA D // ZYNX (7YNX)
+              ZYNX // JOSHUA D
             </span>
           </div>
           <p className="text-[11px] text-zinc-600 max-w-sm">
@@ -41,7 +41,7 @@ export const Footer: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto mt-10 pt-6 border-t border-white/[0.04] flex flex-col sm:flex-row items-center justify-between text-[11px] text-zinc-600 gap-2">
-        <p>&copy; 2026 JOSHUA D (ZYNX). All rights reserved.</p>
+        <p>&copy; 2026 ZYNX (Joshua D). All rights reserved.</p>
         <p>Built with React, Vite, Three.js & Tailwind CSS.</p>
       </div>
     </footer>

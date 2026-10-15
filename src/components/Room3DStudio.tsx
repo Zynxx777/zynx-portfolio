@@ -1,25 +1,57 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { Monitor, Music, BookOpen, Layers, RotateCcw, CloudRain, Volume2, VolumeX } from "lucide-react";
+import { Monitor, Music, BookOpen, Layers, RotateCcw, CloudRain, Volume2, VolumeX, Cpu } from "lucide-react";
+import { rainAmbience } from "../utils/rainAmbience";
 
 export const Room3DStudio: React.FC = () => {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [activePreset, setActivePreset] = useState<string>("overview");
-  const [activeInspect, setActiveInspect] = useState<string | null>(null);
-  const [ambientAudioActive, setAmbientAudioActive] = useState<boolean>(false);
-  const ambientAudioCtxRef = useRef<AudioContext | null>(null);
+  const [activeInspect, setActiveInspect] = useState<{
+    title: string;
+    desc: string;
+    tags: string[];
+  } | null>(null);
+  const [ambientAudioActive, setAmbientAudioActive] = useState<boolean>(() => rainAmbience.isPlaying);
 
-  // Inspection presets for camera targets
+  useEffect(() => {
+    return rainAmbience.subscribe(setAmbientAudioActive);
+  }, []);
+
+  // ── Inspection presets ──────────────────────────────────────────────────────
   const presets = [
-    { id: "overview", label: "Studio Overview", pos: [7, 6, 8], target: [0, 1, 0], icon: Layers },
-    { id: "desk", label: "PC Workstation", pos: [2, 3, 3], target: [-1.2, 1.8, -0.5], icon: Monitor },
-    { id: "audio", label: "7YNX Audio Rig", pos: [-2, 3, 3.5], target: [1.2, 1.5, 0], icon: Music },
-    { id: "shelf", label: "Books & Hardware", pos: [0, 4, 4], target: [0, 2.5, -2], icon: BookOpen },
+    { id: "overview",  label: "Studio Overview",  pos: [7, 6, 8],    target: [0, 1.2, 0],       icon: Layers  },
+    { id: "desk",      label: "PC Workstation",   pos: [1, 3.2, 3],  target: [-0.4, 1.8, -0.5], icon: Monitor },
+    { id: "audio",     label: "7YNX Audio Rig",   pos: [-2.5, 3, 3], target: [-1.5, 1.5, -0.3], icon: Music   },
+    { id: "shelf",     label: "Books & Hardware", pos: [4, 3.5, 3],  target: [3, 2.5, -3],      icon: BookOpen},
+    { id: "pc",        label: "Server & Case",    pos: [2.5, 2.5, 2],target: [2.2, 1.5, -0.8],  icon: Cpu     },
   ];
 
-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const targetLookAt = useRef(new THREE.Vector3(0, 1, 0));
-  const targetCamPos = useRef(new THREE.Vector3(7, 6, 8));
+  const inspectData: Record<string, { title: string; desc: string; tags: string[] }> = {
+    desk: {
+      title: "PC Workstation",
+      desc: "Dual curved monitors running Arch Linux + Hyprland. Left: AAOS Cockpit Domain Controller debugger. Right: Neovim LSP session with a custom tree-sitter config.",
+      tags: ["Arch Linux", "Hyprland", "Neovim", "AAOS", "Wayland"],
+    },
+    audio: {
+      title: "7YNX Sound Station",
+      desc: "FL Studio 21 open on a melodic techno session. MIDI keyboard, studio monitor pair (angled for sweet-spot), and sidechain-heavy sub-bass patches loaded.",
+      tags: ["FL Studio 21", "MIDI", "Serum", "FabFilter", "Melodic Techno"],
+    },
+    shelf: {
+      title: "Hardware Archive & Bookshelf",
+      desc: "VLSI Digital Design textbooks, Arduino Mega prototyping boards, CAN bus transceiver modules, and a custom Raspberry Pi cluster kit.",
+      tags: ["VLSI", "Arduino", "CAN Bus", "R-Pi", "Electronics"],
+    },
+    pc: {
+      title: "Battlestation Case",
+      desc: "Custom PC tower with ARGB strip lighting synced to audio. Handles Android Automotive OS source compiles, AOSP ROM builds, and GPU accelerated shader work.",
+      tags: ["ARGB", "AOSP Build", "GLSL", "GPU", "Custom Loop"],
+    },
+  };
+
+  const cameraRef      = useRef<THREE.PerspectiveCamera | null>(null);
+  const targetLookAt   = useRef(new THREE.Vector3(0, 1.2, 0));
+  const targetCamPos   = useRef(new THREE.Vector3(7, 6, 8));
 
   const changePreset = (presetId: string) => {
     setActivePreset(presetId);
@@ -27,102 +59,27 @@ export const Room3DStudio: React.FC = () => {
     if (p) {
       targetCamPos.current.set(p.pos[0], p.pos[1], p.pos[2]);
       targetLookAt.current.set(p.target[0], p.target[1], p.target[2]);
-      if (presetId === "desk") {
-        setActiveInspect("PC Workstation: Dual Curved Monitors running Arch Linux Neovim & AAOS Cockpit Controller Debugger.");
-      } else if (presetId === "audio") {
-        setActiveInspect("7YNX Sound Station: FL Studio 21 Power Setup with MIDI Synthesizer & Studio Reference Monitors.");
-      } else if (presetId === "shelf") {
-        setActiveInspect("Hardware Archive: VLSI Digital Design notes, Arduino microcontrollers, and CAN bus transceivers.");
-      } else {
-        setActiveInspect(null);
-      }
+      setActiveInspect(presetId !== "overview" ? inspectData[presetId] ?? null : null);
     }
   };
 
+  // ── Procedural ambient lo-fi rain (persists across navigation until reload) ──
   const toggleAmbientAudio = () => {
-    if (ambientAudioActive) {
-      if (ambientAudioCtxRef.current) {
-        ambientAudioCtxRef.current.suspend();
-      }
-      setAmbientAudioActive(false);
-      return;
-    }
-
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      const ctx = ambientAudioCtxRef.current || new AudioCtx();
-      ambientAudioCtxRef.current = ctx;
-
-      if (ctx.state === "suspended") {
-        ctx.resume();
-      }
-
-      // Procedural soothing rain buffer (2 second pink noise loop)
-      const bufferSize = ctx.sampleRate * 2;
-      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const output = noiseBuffer.getChannelData(0);
-      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-      for (let i = 0; i < bufferSize; i++) {
-        const white = Math.random() * 2 - 1;
-        b0 = 0.99886 * b0 + white * 0.0555179;
-        b1 = 0.99332 * b1 + white * 0.0750759;
-        b2 = 0.96900 * b2 + white * 0.1538520;
-        b3 = 0.86650 * b3 + white * 0.3104856;
-        b4 = 0.55000 * b4 + white * 0.5329522;
-        b5 = -0.7616 * b5 - white * 0.0168980;
-        output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.035;
-        b6 = white * 0.115926;
-      }
-
-      const whiteNoiseSource = ctx.createBufferSource();
-      whiteNoiseSource.buffer = noiseBuffer;
-      whiteNoiseSource.loop = true;
-
-      // Warm lowpass filter for gentle rain acoustics
-      const filter = ctx.createBiquadFilter();
-      filter.type = "lowpass";
-      filter.frequency.value = 650;
-
-      // Soft ambient 55Hz sub drone
-      const osc = ctx.createOscillator();
-      osc.type = "sine";
-      osc.frequency.value = 55;
-      const oscGain = ctx.createGain();
-      oscGain.gain.value = 0.012;
-      osc.connect(oscGain);
-
-      const masterGain = ctx.createGain();
-      masterGain.gain.value = 0.35;
-
-      whiteNoiseSource.connect(filter);
-      filter.connect(masterGain);
-      oscGain.connect(masterGain);
-      masterGain.connect(ctx.destination);
-
-      whiteNoiseSource.start();
-      osc.start();
-      setAmbientAudioActive(true);
-    } catch (err) {
-      console.warn("Ambient audio error:", err);
-    }
+    rainAmbience.toggle();
   };
 
+  // ── Three.js Scene ─────────────────────────────────────────────────────────
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return;
 
-    // Scene Setup
+    // Scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#050509");
-    scene.fog = new THREE.FogExp2("#050509", 0.05);
+    scene.background = new THREE.Color("#040408");
+    scene.fog = new THREE.FogExp2("#040408", 0.04);
 
     // Camera
-    const camera = new THREE.PerspectiveCamera(
-      45,
-      container.clientWidth / container.clientHeight,
-      0.1,
-      100
-    );
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 120);
     camera.position.set(7, 6, 8);
     cameraRef.current = camera;
 
@@ -132,219 +89,441 @@ export const Room3DStudio: React.FC = () => {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
     container.appendChild(renderer.domElement);
 
-    // Studio Lighting (aengel.io / CGTrader style rim & key lights)
-    const ambientLight = new THREE.AmbientLight("#22223a", 1.2);
-    scene.add(ambientLight);
+    // ── Lighting ──────────────────────────────────────────────────────────────
+    const ambient = new THREE.AmbientLight("#1a1a2e", 1.4);
+    scene.add(ambient);
 
-    // Warm desk light
-    const deskLight = new THREE.PointLight("#ffaa44", 2.5, 8);
-    deskLight.position.set(0, 3, 0);
+    const deskLight = new THREE.PointLight("#ffbb66", 3.0, 9);
+    deskLight.position.set(0.2, 3.2, 0);
+    deskLight.castShadow = true;
     scene.add(deskLight);
 
-    // Cyber Cyan Rim Light
-    const cyanLight = new THREE.SpotLight("#00F2FE", 5, 20, Math.PI / 4, 0.4);
-    cyanLight.position.set(-5, 6, 4);
-    cyanLight.target.position.set(0, 1, 0);
-    scene.add(cyanLight);
-    scene.add(cyanLight.target);
+    const cyanSpot = new THREE.SpotLight("#00F2FE", 6, 22, Math.PI / 5, 0.45, 1.2);
+    cyanSpot.position.set(-6, 7, 4);
+    cyanSpot.target.position.set(0, 1, 0);
+    cyanSpot.castShadow = true;
+    scene.add(cyanSpot); scene.add(cyanSpot.target);
 
-    // Cyber Purple Back Light
-    const purpleLight = new THREE.PointLight("#9D4EDD", 4, 15);
-    purpleLight.position.set(4, 5, -3);
-    scene.add(purpleLight);
+    const purpleBack = new THREE.PointLight("#9D4EDD", 5, 18);
+    purpleBack.position.set(5, 6, -4);
+    scene.add(purpleBack);
 
-    // Room Floor Grid
-    const floorGeo = new THREE.PlaneGeometry(16, 16);
-    const floorMat = new THREE.MeshStandardMaterial({
-      color: "#0a0a14",
-      roughness: 0.8,
-      metalness: 0.2,
-    });
+    const pinkAccent = new THREE.PointLight("#F72585", 2, 10);
+    pinkAccent.position.set(-4, 2, 3);
+    scene.add(pinkAccent);
+
+    // ── Texture loader ────────────────────────────────────────────────────────
+    const tl = new THREE.TextureLoader();
+    const texCockpit  = tl.load("/images/projects/cockpit-cdc.jpg");
+    const texAudio    = tl.load("/images/projects/audio-visualizer.jpg");
+    const texLofi     = tl.load("/images/ambient/lofi-study-night.jpg");
+    const texRain     = tl.load("/images/ambient/soothing-rain.jpg");
+    const texBlackhole = tl.load("/images/blackhole.jpeg");
+
+    // ── Room shell ────────────────────────────────────────────────────────────
+    const floorGeo = new THREE.PlaneGeometry(20, 20);
+    const floorMat = new THREE.MeshStandardMaterial({ color: "#0a0a12", roughness: 0.85, metalness: 0.15 });
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
 
-    const gridHelper = new THREE.GridHelper(16, 24, "#00F2FE", "#1a1a30");
-    gridHelper.position.y = 0.01;
+    const gridHelper = new THREE.GridHelper(20, 28, "#00F2FE", "#101025");
+    gridHelper.position.y = 0.012;
     scene.add(gridHelper);
 
-    // Texture Loader for Inspiring HQ Artwork
-    const textureLoader = new THREE.TextureLoader();
-    const posterLofi = textureLoader.load("/images/ambient/lofi-study-night.jpg");
-    const posterRain = textureLoader.load("/images/ambient/soothing-rain.jpg");
-    const screenCockpit = textureLoader.load("/images/projects/cockpit-cdc.jpg");
-    const screenSynth = textureLoader.load("/images/projects/audio-visualizer.jpg");
+    // Ceiling
+    const ceilGeo = new THREE.PlaneGeometry(20, 20);
+    const ceilMat = new THREE.MeshStandardMaterial({ color: "#060610", roughness: 1 });
+    const ceil = new THREE.Mesh(ceilGeo, ceilMat);
+    ceil.rotation.x = Math.PI / 2;
+    ceil.position.y = 7;
+    scene.add(ceil);
 
-    // Back Wall
-    const wallGeo = new THREE.BoxGeometry(16, 8, 0.2);
-    const wallMat = new THREE.MeshStandardMaterial({ color: "#080811", roughness: 0.9 });
-    const backWall = new THREE.Mesh(wallGeo, wallMat);
-    backWall.position.set(0, 4, -4);
+    // Back wall
+    const bwMat = new THREE.MeshStandardMaterial({ color: "#070710", roughness: 0.95 });
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(20, 8, 0.18), bwMat);
+    backWall.position.set(0, 4, -4.5);
+    backWall.receiveShadow = true;
     scene.add(backWall);
 
-    // Wall Art Posters (Inspiring & Soothing HQ Media)
-    const posterGeo = new THREE.PlaneGeometry(2.8, 1.6);
-    const frameGeo = new THREE.BoxGeometry(2.9, 1.7, 0.05);
-    const frameMat = new THREE.MeshStandardMaterial({ color: "#111122", roughness: 0.5, metalness: 0.5 });
+    // Left wall
+    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.18, 8, 20), bwMat.clone());
+    leftWall.position.set(-7.5, 4, 0);
+    scene.add(leftWall);
 
-    // Poster 1: Left Wall (Lo-Fi Study Night)
-    const p1 = new THREE.Mesh(posterGeo, new THREE.MeshBasicMaterial({ map: posterLofi }));
-    p1.position.set(-3.2, 4.4, -3.88);
-    const f1 = new THREE.Mesh(frameGeo, frameMat);
-    f1.position.set(-3.2, 4.4, -3.92);
-    scene.add(p1);
-    scene.add(f1);
+    // Right wall
+    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.18, 8, 20), bwMat.clone());
+    rightWall.position.set(7.5, 4, 0);
+    scene.add(rightWall);
 
-    // Poster 2: Right Wall (Soothing Rain)
-    const p2 = new THREE.Mesh(posterGeo, new THREE.MeshBasicMaterial({ map: posterRain }));
-    p2.position.set(3.2, 4.4, -3.88);
-    const f2 = new THREE.Mesh(frameGeo, frameMat);
-    f2.position.set(3.2, 4.4, -3.92);
-    scene.add(p2);
-    scene.add(f2);
+    // ── LED strip along ceiling edge (emissive boxes) ─────────────────────────
+    const ledMat = new THREE.MeshStandardMaterial({ color: "#00F2FE", emissive: "#00F2FE", emissiveIntensity: 2.5 });
+    const ledStrip = (x1: number, z1: number, x2: number, z2: number) => {
+      const len = Math.hypot(x2 - x1, z2 - z1);
+      const mx = (x1 + x2) / 2, mz = (z1 + z2) / 2;
+      const angle = Math.atan2(z2 - z1, x2 - x1);
+      const geo = new THREE.BoxGeometry(len, 0.04, 0.06);
+      const mesh = new THREE.Mesh(geo, ledMat);
+      mesh.position.set(mx, 6.88, mz);
+      mesh.rotation.y = -angle;
+      scene.add(mesh);
+    };
+    ledStrip(-7, -4.4, 7, -4.4);   // back
+    ledStrip(-7.4, -4.4, -7.4, 4); // left
+    ledStrip(7.4, -4.4, 7.4, 4);   // right
 
-    // ══════════════════════════════════════════════════════════
-    // DESK SETUP (PC WORKSTATION)
-    // ══════════════════════════════════════════════════════════
-    const deskGeo = new THREE.BoxGeometry(5, 0.15, 2);
-    const deskMat = new THREE.MeshStandardMaterial({ color: "#12121e", roughness: 0.4, metalness: 0.6 });
-    const desk = new THREE.Mesh(deskGeo, deskMat);
-    desk.position.set(0, 1.4, -0.5);
-    desk.castShadow = true;
-    desk.receiveShadow = true;
+    // ── Wall art frames ───────────────────────────────────────────────────────
+    const frameMat = new THREE.MeshStandardMaterial({ color: "#111130", roughness: 0.4, metalness: 0.7 });
+    const addPoster = (tex: THREE.Texture, px: number, py: number, pw: number, ph: number, hasGlow?: string) => {
+      const f = new THREE.Mesh(new THREE.BoxGeometry(pw + 0.12, ph + 0.12, 0.06), frameMat);
+      f.position.set(px, py, -4.38);
+      scene.add(f);
+      const p = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshBasicMaterial({ map: tex }));
+      p.position.set(px, py, -4.34);
+      scene.add(p);
+      if (hasGlow) {
+        const glow = new THREE.PointLight(hasGlow, 1.5, 4);
+        glow.position.set(px, py, -3.5);
+        scene.add(glow);
+      }
+    };
+    addPoster(texLofi,     -4.2, 4.6, 3.0, 1.8, "#9D4EDD");
+    addPoster(texRain,      0.5, 4.6, 2.6, 1.6);
+    addPoster(texBlackhole, 4.5, 4.5, 2.2, 2.2, "#00F2FE");
+
+    // ── Desk surface ──────────────────────────────────────────────────────────
+    const deskMat = new THREE.MeshStandardMaterial({ color: "#10101e", roughness: 0.35, metalness: 0.65 });
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.14, 2.1), deskMat);
+    desk.position.set(0, 1.42, -0.5);
+    desk.castShadow = true; desk.receiveShadow = true;
     scene.add(desk);
 
-    // Desk Legs
-    const legGeo = new THREE.CylinderGeometry(0.06, 0.06, 1.4);
-    const legMat = new THREE.MeshStandardMaterial({ color: "#00F2FE", metalness: 0.8, roughness: 0.2 });
-    [[-2.3, 0.7, -1.3], [2.3, 0.7, -1.3], [-2.3, 0.7, 0.3], [2.3, 0.7, 0.3]].forEach(([x, y, z]) => {
-      const leg = new THREE.Mesh(legGeo, legMat);
-      leg.position.set(x, y, z);
-      scene.add(leg);
+    // Desk LED underglow strip
+    const deskGlowMat = new THREE.MeshStandardMaterial({ color: "#00F2FE", emissive: "#00F2FE", emissiveIntensity: 1.8 });
+    const deskGlow = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.03, 0.04), deskGlowMat);
+    deskGlow.position.set(0, 1.24, 0.51);
+    scene.add(deskGlow);
+
+    // Desk legs (metallic L-shape style)
+    const legMat = new THREE.MeshStandardMaterial({ color: "#00c0cc", metalness: 0.9, roughness: 0.15 });
+    const legGeo = new THREE.CylinderGeometry(0.055, 0.055, 1.42);
+    [[-2.4, 0.71, -1.35], [2.4, 0.71, -1.35], [-2.4, 0.71, 0.35], [2.4, 0.71, 0.35]].forEach(([x, y, z]) => {
+      const leg = new THREE.Mesh(legGeo, legMat); leg.position.set(x, y, z); scene.add(leg);
     });
 
-    // Dual Curved Monitors
-    const monMat = new THREE.MeshStandardMaterial({ color: "#000", roughness: 0.2 });
-    const screenMat = new THREE.MeshBasicMaterial({ map: screenCockpit });
+    // ── Dual monitors ─────────────────────────────────────────────────────────
+    const bezelMat = new THREE.MeshStandardMaterial({ color: "#080810", roughness: 0.3, metalness: 0.5 });
+    const addMonitor = (tex: THREE.Texture, x: number, ry: number) => {
+      // Bezel
+      const bezel = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.0, 0.065), bezelMat);
+      bezel.position.set(x, 2.25, -0.75); bezel.rotation.y = ry;
+      scene.add(bezel);
+      // Screen
+      const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.58, 0.88), new THREE.MeshBasicMaterial({ map: tex }));
+      screen.position.set(x + Math.sin(ry) * 0.04, 2.25, -0.75 + Math.cos(ry) * 0.04);
+      screen.rotation.y = ry;
+      scene.add(screen);
+      // Screen glow
+      const sg = new THREE.PointLight("#4FACFE", 0.8, 2.5);
+      sg.position.set(x, 2.25, -0.2); scene.add(sg);
+      // Stand
+      const standPost = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.5), bezelMat);
+      standPost.position.set(x, 1.74, -0.75); scene.add(standPost);
+      const standBase = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.25, 0.04, 16), bezelMat);
+      standBase.position.set(x, 1.49, -0.75); scene.add(standBase);
+    };
+    addMonitor(texCockpit, -0.88, 0.18);
+    addMonitor(texAudio,    0.88, -0.18);
 
-    // Center Monitor (Cockpit CDC display)
-    const mon1Geo = new THREE.BoxGeometry(1.6, 0.9, 0.06);
-    const mon1 = new THREE.Mesh(mon1Geo, monMat);
-    mon1.position.set(-0.8, 2.2, -0.7);
-    mon1.rotation.y = 0.15;
-    scene.add(mon1);
+    // ── Keyboard (low profile mech) ───────────────────────────────────────────
+    const kbMat = new THREE.MeshStandardMaterial({ color: "#14142a", roughness: 0.5, metalness: 0.3 });
+    const kb = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.038, 0.42), kbMat);
+    kb.position.set(-0.1, 1.5, -0.15); scene.add(kb);
+    // Keyboard RGB strip
+    const kbLedMat = new THREE.MeshStandardMaterial({ color: "#9D4EDD", emissive: "#9D4EDD", emissiveIntensity: 2 });
+    const kbLed = new THREE.Mesh(new THREE.BoxGeometry(1.26, 0.01, 0.02), kbLedMat);
+    kbLed.position.set(-0.1, 1.52, 0.04); scene.add(kbLed);
 
-    const screen1 = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.8), screenMat);
-    screen1.position.set(-0.8, 2.2, -0.66);
-    screen1.rotation.y = 0.15;
-    scene.add(screen1);
+    // ── Mouse + mousepad ──────────────────────────────────────────────────────
+    const padMat = new THREE.MeshStandardMaterial({ color: "#0c0c1a", roughness: 0.9 });
+    const pad = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.012, 0.55), padMat);
+    pad.position.set(1.0, 1.496, -0.15); scene.add(pad);
 
-    // Secondary Monitor (Audio Visualizer & Synth Engine)
-    const mon2 = new THREE.Mesh(mon1Geo, monMat);
-    mon2.position.set(0.8, 2.2, -0.7);
-    mon2.rotation.y = -0.15;
-    scene.add(mon2);
+    const mouseMat = new THREE.MeshStandardMaterial({ color: "#181828", roughness: 0.3, metalness: 0.5 });
+    const mouse = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 0.2), mouseMat);
+    mouse.position.set(1.0, 1.52, -0.15); scene.add(mouse);
 
-    const screen2Mat = new THREE.MeshBasicMaterial({ map: screenSynth });
-    const screen2 = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.8), screen2Mat);
-    screen2.position.set(0.8, 2.2, -0.66);
-    screen2.rotation.y = -0.15;
-    scene.add(screen2);
+    // ── PC Case (custom tower) ────────────────────────────────────────────────
+    const pcMat = new THREE.MeshStandardMaterial({ color: "#0b0b18", metalness: 0.85, roughness: 0.18 });
+    const pcCase = new THREE.Mesh(new THREE.BoxGeometry(0.58, 1.35, 0.95), pcMat);
+    pcCase.position.set(2.4, 2.17, -0.6);
+    pcCase.castShadow = true; scene.add(pcCase);
 
-    // PC Case with Internal RGB Glow
-    const pcGeo = new THREE.BoxGeometry(0.6, 1.2, 1);
-    const pcMat = new THREE.MeshStandardMaterial({ color: "#0a0a14", metalness: 0.8, roughness: 0.2 });
-    const pcCase = new THREE.Mesh(pcGeo, pcMat);
-    pcCase.position.set(2, 2.1, -0.5);
-    scene.add(pcCase);
+    // PC RGB side panel window (emissive tinted glass)
+    const pcGlassMat = new THREE.MeshStandardMaterial({
+      color: "#00F2FE", emissive: "#00F2FE", emissiveIntensity: 0.3,
+      transparent: true, opacity: 0.55, roughness: 0.1, metalness: 0.2
+    });
+    const pcGlass = new THREE.Mesh(new THREE.PlaneGeometry(0.52, 1.28), pcGlassMat);
+    pcGlass.position.set(2.12, 2.17, -0.6); pcGlass.rotation.y = Math.PI / 2;
+    scene.add(pcGlass);
 
-    const pcGlow = new THREE.PointLight("#00F2FE", 1.5, 2);
-    pcGlow.position.set(2, 2.1, -0.5);
-    scene.add(pcGlow);
+    // PC internal RGB glow light
+    const pcGlowL = new THREE.PointLight("#00F2FE", 2.0, 2.5);
+    pcGlowL.position.set(2.4, 2.2, -0.6); scene.add(pcGlowL);
 
-    // Keyboard & Mouse
-    const kbGeo = new THREE.BoxGeometry(1.2, 0.04, 0.4);
-    const kbMat = new THREE.MeshStandardMaterial({ color: "#1a1a2e" });
-    const keyboard = new THREE.Mesh(kbGeo, kbMat);
-    keyboard.position.set(0, 1.5, -0.2);
-    scene.add(keyboard);
+    // Fan circles on front panel
+    const fanMat = new THREE.MeshStandardMaterial({ color: "#1a1a35", roughness: 0.4 });
+    [2.2, 2.6].forEach((y) => {
+      const fan = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.04, 16), fanMat);
+      fan.rotation.z = Math.PI / 2;
+      fan.position.set(2.69, y, -0.6); scene.add(fan);
+    });
 
-    // ══════════════════════════════════════════════════════════
-    // AUDIO PRODUCTION RIG (7YNX STATION)
-    // ══════════════════════════════════════════════════════════
-    // MIDI Synthesizer Keyboard
-    const synthGeo = new THREE.BoxGeometry(1.8, 0.08, 0.5);
-    const synthMat = new THREE.MeshStandardMaterial({ color: "#111", roughness: 0.3 });
-    const synth = new THREE.Mesh(synthGeo, synthMat);
-    synth.position.set(-1.8, 1.55, -0.4);
-    scene.add(synth);
+    // ── Headphones on desk stand (proper upright orientation with cradle) ───────
+    const hpMat = new THREE.MeshStandardMaterial({ color: "#111124", roughness: 0.28, metalness: 0.65 });
+    const hpMetal = new THREE.MeshStandardMaterial({ color: "#697488", metalness: 0.85, roughness: 0.2 });
+    const hpX = -2.3;
+    const hpZ = -0.8;
+    const hpCradleZ = hpZ + 0.08;
 
-    // Studio Monitor Speakers
-    const speakerGeo = new THREE.BoxGeometry(0.35, 0.55, 0.35);
-    const speakerMat = new THREE.MeshStandardMaterial({ color: "#181824" });
-    const spkL = new THREE.Mesh(speakerGeo, speakerMat);
-    spkL.position.set(-1.9, 2.1, -0.8);
-    spkL.rotation.y = 0.3;
-    scene.add(spkL);
+    const hpBase = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.17, 0.03, 20), hpMat);
+    hpBase.position.set(hpX, 1.49, hpZ); scene.add(hpBase);
 
-    const spkR = new THREE.Mesh(speakerGeo, speakerMat);
-    spkR.position.set(1.9, 2.1, -0.8);
-    spkR.rotation.y = -0.3;
-    scene.add(spkR);
+    const hpStand = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.62, 16), hpMat);
+    hpStand.position.set(hpX, 1.80, hpZ); scene.add(hpStand);
 
-    // Interactive Mouse Orbit Dragging
+    const hpCradleArm = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.10, 10), hpMetal);
+    hpCradleArm.rotation.x = Math.PI / 2;
+    hpCradleArm.position.set(hpX, 2.11, hpZ + 0.04); scene.add(hpCradleArm);
+
+    const hpCradle = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.02, 0.06), new THREE.MeshStandardMaterial({ color: "#222533" }));
+    hpCradle.position.set(hpX, 2.10, hpCradleZ); scene.add(hpCradle);
+
+    // Headband arc (upright, apex at Y = 2.10)
+    const hpCurve = new THREE.TorusGeometry(0.16, 0.018, 10, 28, Math.PI);
+    const hpArc = new THREE.Mesh(hpCurve, hpMat);
+    hpArc.position.set(hpX, 1.94, hpCradleZ);
+    scene.add(hpArc);
+
+    // Ear cups hanging DOWN on the left and right, facing each other along X
+    const earcupMat = new THREE.MeshStandardMaterial({ color: "#0a0a1e", roughness: 0.35, metalness: 0.7 });
+    const earcup = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.05, 20), earcupMat);
+    const cushionMat = new THREE.MeshStandardMaterial({ color: "#181b24", roughness: 0.9 });
+    [-1, 1].forEach((side) => {
+      const cupX = hpX + side * 0.17;
+      const cupY = 1.78;
+
+      // Slider link
+      const link = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.14, 8), hpMetal);
+      link.position.set(hpX + side * 0.16, 1.86, hpCradleZ); scene.add(link);
+
+      // Cup body (facing inward/outward along X)
+      const ec = earcup.clone();
+      ec.rotation.z = Math.PI / 2;
+      ec.position.set(cupX, cupY, hpCradleZ); scene.add(ec);
+
+      // Inward ear cushion
+      const cushion = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.014, 8, 20), cushionMat);
+      cushion.rotation.y = Math.PI / 2;
+      cushion.position.set(cupX - side * 0.018, cupY, hpCradleZ); scene.add(cushion);
+    });
+
+    // ── MIDI Synthesizer keyboard ─────────────────────────────────────────────
+    const synthMat = new THREE.MeshStandardMaterial({ color: "#0e0e1e", roughness: 0.35 });
+    const synth = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.09, 0.52), synthMat);
+    synth.position.set(-1.6, 1.52, -0.38); scene.add(synth);
+
+    // Synth keys (white key bars)
+    const whiteKeyMat = new THREE.MeshStandardMaterial({ color: "#dde0f0" });
+    const blackKeyMat = new THREE.MeshStandardMaterial({ color: "#080812" });
+    for (let i = 0; i < 12; i++) {
+      const wk = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.02, 0.35), whiteKeyMat);
+      wk.position.set(-2.3 + i * 0.144, 1.57, -0.28); scene.add(wk);
+    }
+    for (const off of [0.072, 0.216, 0.504, 0.648, 0.792]) {
+      const bk = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.03, 0.22), blackKeyMat);
+      bk.position.set(-2.3 + off, 1.585, -0.2); scene.add(bk);
+    }
+
+    // Studio monitor speakers
+    const spkMat = new THREE.MeshStandardMaterial({ color: "#161624", roughness: 0.5, metalness: 0.3 });
+    const addSpeaker = (x: number, ry: number) => {
+      const cab = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.62, 0.36), spkMat);
+      cab.position.set(x, 2.15, -0.9); cab.rotation.y = ry; scene.add(cab);
+      // Woofer cone
+      const woofer = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.04, 16), new THREE.MeshStandardMaterial({ color: "#222" }));
+      woofer.rotation.x = Math.PI / 2;
+      woofer.position.set(x + Math.sin(ry) * 0.2, 2.1, -0.9 + Math.cos(ry) * 0.19); scene.add(woofer);
+      // Tweeter
+      const tweet = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), new THREE.MeshStandardMaterial({ color: "#444" }));
+      tweet.position.set(x + Math.sin(ry) * 0.2, 2.26, -0.9 + Math.cos(ry) * 0.19); scene.add(tweet);
+      // Speaker glow
+      const sg = new THREE.PointLight("#ffaa44", 0.6, 1.8);
+      sg.position.set(x, 2.15, -0.6); scene.add(sg);
+    };
+    addSpeaker(-2.1, 0.32);
+    addSpeaker( 2.1, -0.32);
+
+    // ── Bookshelf (right wall) ────────────────────────────────────────────────
+    const shelfMat = new THREE.MeshStandardMaterial({ color: "#0f0f1d", roughness: 0.6, metalness: 0.3 });
+    // Shelf unit back panel
+    const shelfUnit = new THREE.Mesh(new THREE.BoxGeometry(2.8, 3.8, 0.18), shelfMat);
+    shelfUnit.position.set(3.8, 2.8, -3.9); scene.add(shelfUnit);
+    // 4 shelf planks
+    [1.0, 1.9, 2.8, 3.7].forEach((y) => {
+      const plank = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.06, 0.5), shelfMat);
+      plank.position.set(3.8, y, -3.7); scene.add(plank);
+    });
+    // Books (colored box strips)
+    const bookColors = ["#3a0070","#00608c","#6d1c00","#005c2a","#5c005c","#1c3c00","#7c4000"];
+    let bx = 2.55;
+    bookColors.forEach((col, i) => {
+      const w = 0.1 + Math.random() * 0.09;
+      const h = 0.35 + Math.random() * 0.15;
+      const bMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.8 });
+      const book = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.36), bMat);
+      book.position.set(bx + w / 2, 1.17, -3.7);
+      scene.add(book);
+      bx += w + 0.02;
+      if (i === 3) bx = 2.55; // second shelf row
+    });
+    // Arduino on shelf
+    const aruMat = new THREE.MeshStandardMaterial({ color: "#005f77", roughness: 0.6 });
+    const aru = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.04, 0.2), aruMat);
+    aru.position.set(3.9, 2.07, -3.7); scene.add(aru);
+    // Shelf accent light
+    const shelfLight = new THREE.PointLight("#9D4EDD", 1.2, 2.5);
+    shelfLight.position.set(3.8, 4.0, -3.4); scene.add(shelfLight);
+
+    // ── Chair ─────────────────────────────────────────────────────────────────
+    const chairMat = new THREE.MeshStandardMaterial({ color: "#0c0c1e", roughness: 0.6, metalness: 0.4 });
+    // Seat
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.1, 0.9), chairMat);
+    seat.position.set(0, 0.82, 1.2); scene.add(seat);
+    // Backrest
+    const back = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.2, 0.1), chairMat);
+    back.position.set(0, 1.48, 0.78); scene.add(back);
+    // Armrests
+    [-0.42, 0.42].forEach((xOff) => {
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.55), chairMat);
+      arm.position.set(xOff, 1.05, 1.12); scene.add(arm);
+    });
+    // Chair base (5-star)
+    const baseGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.6);
+    const baseMat = new THREE.MeshStandardMaterial({ color: "#252535", metalness: 0.7, roughness: 0.2 });
+    const basePost = new THREE.Mesh(baseGeo, baseMat);
+    basePost.position.set(0, 0.38, 1.2); scene.add(basePost);
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2;
+      const spoke = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.55), baseMat);
+      spoke.rotation.z = Math.PI / 2;
+      spoke.position.set(Math.cos(angle) * 0.27, 0.09, 1.2 + Math.sin(angle) * 0.27);
+      scene.add(spoke);
+    }
+    // Casters
+    const casterMat = new THREE.MeshStandardMaterial({ color: "#111", roughness: 0.8 });
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2;
+      const caster = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), casterMat);
+      caster.position.set(Math.cos(angle) * 0.5, 0.05, 1.2 + Math.sin(angle) * 0.5);
+      scene.add(caster);
+    }
+
+    // ── Small desk props ──────────────────────────────────────────────────────
+    // Coffee mug
+    const mugMat = new THREE.MeshStandardMaterial({ color: "#1a1a30", roughness: 0.5, metalness: 0.2 });
+    const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.055, 0.15, 16), mugMat);
+    mug.position.set(-2.0, 1.575, 0.2); scene.add(mug);
+    // Mug glow (warm coffee steam feel)
+    const mugGlow = new THREE.PointLight("#ff8844", 0.5, 0.8);
+    mugGlow.position.set(-2.0, 1.75, 0.2); scene.add(mugGlow);
+
+    // Small plant / succulent
+    const potMat = new THREE.MeshStandardMaterial({ color: "#3a1800", roughness: 0.9 });
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.06, 0.1, 10), potMat);
+    pot.position.set(1.9, 1.55, 0.2); scene.add(pot);
+    const plantMat = new THREE.MeshStandardMaterial({ color: "#1a5c1a", roughness: 0.9 });
+    const plant = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), plantMat);
+    plant.scale.set(1, 0.7, 1);
+    plant.position.set(1.9, 1.67, 0.2); scene.add(plant);
+
+    // Small action figure / collectible on shelf
+    const figMat = new THREE.MeshStandardMaterial({ color: "#c0c0d0", roughness: 0.3, metalness: 0.7 });
+    const figBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.04, 0.12, 4, 8), figMat);
+    figBody.position.set(4.6, 2.17, -3.72); scene.add(figBody);
+    const figHead = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), figMat);
+    figHead.position.set(4.6, 2.38, -3.72); scene.add(figHead);
+
+    // ── Orbit drag controls (mouse + touch) ───────────────────────────────────
     let isDragging = false;
-    let prevMousePos = { x: 0, y: 0 };
+    let prevPos = { x: 0, y: 0 };
     let spherical = new THREE.Spherical().setFromVector3(camera.position);
 
-    const onMouseDown = (e: MouseEvent) => {
-      isDragging = true;
-      prevMousePos = { x: e.clientX, y: e.clientY };
-    };
-
-    const onMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      const dx = e.clientX - prevMousePos.x;
-      const dy = e.clientY - prevMousePos.y;
-      prevMousePos = { x: e.clientX, y: e.clientY };
-
+    const applyDrag = (dx: number, dy: number) => {
       spherical.theta -= dx * 0.006;
-      spherical.phi = Math.max(0.2, Math.min(Math.PI / 2 - 0.05, spherical.phi - dy * 0.006));
-
+      spherical.phi = Math.max(0.18, Math.min(Math.PI / 2 - 0.04, spherical.phi - dy * 0.006));
       targetCamPos.current.setFromSpherical(spherical);
     };
 
-    const onMouseUp = () => {
-      isDragging = false;
+    const onMouseDown = (e: MouseEvent) => { isDragging = true; prevPos = { x: e.clientX, y: e.clientY }; };
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      applyDrag(e.clientX - prevPos.x, e.clientY - prevPos.y);
+      prevPos = { x: e.clientX, y: e.clientY };
     };
+    const onMouseUp = () => { isDragging = false; };
+
+    const onTouchStart = (e: TouchEvent) => { isDragging = true; prevPos = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isDragging || !e.touches[0]) return;
+      applyDrag(e.touches[0].clientX - prevPos.x, e.touches[0].clientY - prevPos.y);
+      prevPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    };
+    const onTouchEnd = () => { isDragging = false; };
 
     container.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
+    container.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend", onTouchEnd);
 
-    // Animation Loop
+    // ── Animation loop ────────────────────────────────────────────────────────
     let animId: number;
-    let clock = new THREE.Clock();
+    const clock = new THREE.Clock();
 
     const animate = () => {
       animId = requestAnimationFrame(animate);
-      const elapsed = clock.getElapsedTime();
+      const t = clock.getElapsedTime();
 
-      // Smooth camera lerp (aengel.io style silky camera navigation)
-      camera.position.lerp(targetCamPos.current, 0.05);
-
-      const currentLookAt = new THREE.Vector3();
-      camera.getWorldDirection(currentLookAt);
-      currentLookAt.add(camera.position);
-      currentLookAt.lerp(targetLookAt.current, 0.05);
+      // Smooth camera lerp
+      camera.position.lerp(targetCamPos.current, 0.055);
       camera.lookAt(targetLookAt.current);
 
-      // Subtle breathing lights
-      deskLight.intensity = 2.2 + Math.sin(elapsed * 2) * 0.3;
-      purpleLight.intensity = 3.5 + Math.cos(elapsed * 1.5) * 0.5;
+      // Breathing lights
+      deskLight.intensity = 2.8 + Math.sin(t * 1.8) * 0.3;
+      purpleBack.intensity = 4.5 + Math.cos(t * 1.3) * 0.6;
+      pinkAccent.intensity = 1.8 + Math.sin(t * 2.4) * 0.4;
+      pcGlowL.intensity = 1.8 + Math.sin(t * 3.2) * 0.5;
+      mugGlow.intensity = 0.45 + Math.sin(t * 0.8) * 0.12;
+
+      // Slow LED strip colour cycle (cyan → purple)
+      const hue = (t * 0.04) % 1;
+      const ledColor = new THREE.Color().setHSL(hue, 1, 0.55);
+      ledMat.color.set(ledColor);
+      ledMat.emissive.set(ledColor);
+
+      // Keyboard RGB colour cycle
+      const kbHue = (t * 0.08 + 0.5) % 1;
+      const kbColor = new THREE.Color().setHSL(kbHue, 1, 0.5);
+      kbLedMat.color.set(kbColor);
+      kbLedMat.emissive.set(kbColor);
 
       renderer.render(scene, camera);
     };
@@ -360,36 +539,38 @@ export const Room3DStudio: React.FC = () => {
     window.addEventListener("resize", handleResize);
 
     return () => {
+      cancelAnimationFrame(animId);
       window.removeEventListener("resize", handleResize);
       container.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
-      cancelAnimationFrame(animId);
+      container.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
       renderer.dispose();
-      if (container.contains(renderer.domElement)) {
-        container.removeChild(renderer.domElement);
-      }
+      if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement);
     };
   }, []);
 
+  // ── JSX ───────────────────────────────────────────────────────────────────
   return (
     <section id="3d-studio" className="py-24 px-6 max-w-7xl mx-auto scroll-mt-20">
-      {/* Header */}
+      {/* Section Header */}
       <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-10">
         <div className="flex items-center gap-2 mb-2">
-          <span className="w-8 h-px bg-purple-400"></span>
+          <span className="w-8 h-px bg-purple-400" />
           <span className="text-xs font-mono tracking-widest text-purple-400 uppercase">
             02 // 3D DIGITAL ENVIRONMENT
           </span>
-          <span className="w-8 h-px bg-purple-400"></span>
+          <span className="w-8 h-px bg-purple-400" />
         </div>
-
         <h2 className="text-4xl sm:text-3xl font-display font-bold text-white tracking-tight">
           ZYNX 3D Digital Room & Workstation
         </h2>
-
         <p className="text-sm text-zinc-400 font-sans mt-3 max-w-lg">
-          An authentic interactive Three.js 3D showroom inspired by <span className="text-cyan-400">aengel.io</span> and <span className="text-purple-400">CGTrader</span>. Click and drag to orbit 360°, or select inspection presets below.
+          Interactive Three.js studio inspired by{" "}
+          <span className="text-cyan-400">aengel.io</span> and{" "}
+          <span className="text-purple-400">CGTrader</span>. Drag to orbit 360° or use the presets below to inspect each zone.
         </p>
 
         {/* Camera Preset Toolbar */}
@@ -415,17 +596,18 @@ export const Room3DStudio: React.FC = () => {
         </div>
       </div>
 
-      {/* 3D Showroom Viewport Container */}
-      <div className="relative w-full h-[580px] sm:h-[440px] rounded-3xl overflow-hidden cyber-glass border border-white/10 shadow-2xl">
-        <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
+      {/* 3D Viewport */}
+      <div className="relative w-full h-[600px] sm:h-[460px] rounded-3xl overflow-hidden cyber-glass border border-white/10 shadow-2xl">
+        <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing touch-none" />
 
-        {/* Orbit Hint Watermark */}
+        {/* Orbit hint */}
         <div className="absolute top-4 left-4 pointer-events-none px-3 py-1.5 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 text-[11px] font-mono text-zinc-400 flex items-center gap-2">
           <RotateCcw size={12} className="text-cyan-400 animate-spin" />
-          <span>DRAG MOUSE TO ORBIT 360°</span>
+          <span className="sm:hidden">DRAG TO ORBIT 360°</span>
+          <span className="hidden sm:inline">TOUCH & DRAG</span>
         </div>
 
-        {/* Soothing Lo-Fi Ambient Soundscape Toggle */}
+        {/* Lo-Fi Ambient toggle */}
         <button
           onClick={toggleAmbientAudio}
           className={`absolute top-4 right-4 z-20 px-3.5 py-1.5 rounded-full text-xs font-mono transition-all duration-300 flex items-center gap-2 border shadow-lg ${
@@ -433,38 +615,47 @@ export const Room3DStudio: React.FC = () => {
               ? "bg-emerald-500/25 border-emerald-400 text-emerald-200 shadow-emerald-500/20 animate-pulse"
               : "bg-black/70 backdrop-blur-md border-white/10 text-zinc-300 hover:text-white hover:border-cyan-400/50"
           }`}
-          title="Toggle soothing procedural rain and sub-harmonic room ambience"
+          title="Toggle soothing procedural lo-fi rain ambience"
         >
           {ambientAudioActive ? (
-            <>
-              <CloudRain size={13} className="text-emerald-400" />
-              <span>LO-FI RAIN AMBIENCE [ON]</span>
-              <Volume2 size={13} className="text-emerald-400" />
-            </>
+            <><CloudRain size={13} className="text-emerald-400" /><span>LO-FI RAIN [ON]</span><Volume2 size={13} className="text-emerald-400" /></>
           ) : (
-            <>
-              <CloudRain size={13} className="text-cyan-400" />
-              <span>PLAY LO-FI RAIN AMBIENCE</span>
-              <VolumeX size={13} className="text-zinc-500" />
-            </>
+            <><CloudRain size={13} className="text-cyan-400" /><span>LO-FI RAIN AMBIENCE</span><VolumeX size={13} className="text-zinc-500" /></>
           )}
         </button>
 
-        {/* Inspection Details Floating HUD (when focused) */}
+        {/* Inspection HUD */}
         {activeInspect && (
-          <div className="absolute bottom-6 left-6 right-6 md:left-4 md:right-4 pointer-events-auto p-4 rounded-xl cyber-glass border border-purple-500/40 shadow-2xl backdrop-blur-xl flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <span className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse"></span>
-              <p className="text-xs font-mono text-zinc-200 leading-relaxed">
-                {activeInspect}
-              </p>
+          <div className="absolute bottom-6 left-6 right-6 sm:left-3 sm:right-3 pointer-events-auto p-5 rounded-2xl cyber-glass border border-purple-500/40 shadow-2xl backdrop-blur-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse flex-shrink-0" />
+                  <span className="text-xs font-mono font-bold text-purple-300 uppercase tracking-wider">
+                    {activeInspect.title}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-300 font-sans leading-relaxed">
+                  {activeInspect.desc}
+                </p>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {activeInspect.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-950/70 border border-purple-500/30 text-purple-300"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={() => changePreset("overview")}
+                className="text-xs font-mono px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors flex-shrink-0"
+              >
+                ↩ Reset
+              </button>
             </div>
-            <button
-              onClick={() => changePreset("overview")}
-              className="text-xs font-mono px-3 py-1 rounded bg-white/10 hover:bg-white/20 text-white transition-colors"
-            >
-              Reset View
-            </button>
           </div>
         )}
       </div>

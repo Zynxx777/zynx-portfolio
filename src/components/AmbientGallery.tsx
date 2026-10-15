@@ -173,7 +173,7 @@ export const AmbientGallery: React.FC = () => {
       </div>
 
       {/* Grid of Ambient Media Cards */}
-      <div className="grid grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredItems.map((item) => (
           <div
             key={item.id}

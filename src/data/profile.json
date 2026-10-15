@@ -2,8 +2,8 @@
   "basics": {
     "name": "JOSHUA D",
     "aliases": ["ZYNX", "7YNX"],
-    "label": "Creative Technologist & Systems Engineer",
-    "sublabel": "B.E. Electronics & Communication Engineering | Audio Producer",
+    "label": "Systems & Embedded Software Engineer",
+    "sublabel": "B.E. Electronics & Communication Engineering | Automotive & Full-Stack",
     "email": "joshuajosh3055@gmail.com",
     "phone": "+91 72599 87691",
     "location": {
@@ -11,11 +11,12 @@
       "region": "Ramanagar, Karnataka",
       "country": "India"
     },
-    "summary": "Driven by intense curiosity and engineering rigor in breaking, building, and optimizing systems. Electronics and Communication Engineering background with deep hands-on expertise in full-stack web architectures, Linux/Unix kernels, Android Automotive OS (AAOS), embedded controllers (CAN / VLSI), reverse engineering, and audio signal processing.",
+    "summary": "Electronics and Communication Engineer with proven hands-on expertise across low-level systems, automotive cockpit domain controllers (CAN bus, AAOS), custom Linux kernels, and creative full-stack WebGL architectures. Recognized winner of the 7chats Messenger Bug Bounty contest for authentication security research. Passionate about building zero-latency, high-reliability embedded systems and interactive digital platforms.",
     "profiles": {
       "github": "https://github.com/Zynxx777",
       "linkedin": "https://linkedin.com/in/Zynx",
       "instagram": "https://instagram.com/zynxx777",
+      "youtube": "https://www.youtube.com/channel/UCGbYqMWOA_isZwyrhRdC1dg",
       "portfolio": "https://github.com/Zynxx777",
       "whatsapp": "https://wa.me/917259987691"
     }
@@ -30,21 +31,21 @@
         "Embedded Systems",
         "VLSI Chip Design",
         "Telecommunications",
-        "Computer Networks & Security",
-        "Digital Signal Processing",
+        "Computer Networks & Network Security",
+        "Digital Signal Processing (DSP)",
         "Electric Vehicles & Control Systems",
         "AI & Machine Learning Foundations"
       ]
     },
     {
       "institution": "Shanthiniketan PU College",
-      "degree": "Pre-University Course (Science)",
+      "degree": "Pre-University Course (PCMB Science)",
       "dates": "2019 – 2021",
       "score": "71.6%"
     },
     {
       "institution": "St. Joseph's English Medium High School",
-      "degree": "SSLC",
+      "degree": "SSLC (Secondary School Leaving Certificate)",
       "dates": "2018 – 2019",
       "score": "78.72%"
     }
@@ -55,71 +56,86 @@
       "role": "Full-Stack Developer Intern",
       "location": "JP Nagar, Bengaluru",
       "dates": "August 2024 – Present",
-      "type": "Internship",
+      "type": "Professional Internship",
       "highlights": [
-        "Architecting responsive web interfaces and reusable component systems using React, TypeScript, and modern styling libraries.",
-        "Optimized client-side rendering pipelines and asset delivery, improving page load benchmarks and user experience metrics across multiple modules.",
-        "Engineered modular table and data-filtering components with aggregation and sorting to handle dense operational data sets."
+        "Architecting performant, accessible web interfaces and modular component systems utilizing React 19, TypeScript, and modern styling libraries.",
+        "Engineered reusable data visualization and filtering grids capable of client-side multi-column sorting and low-latency aggregation.",
+        "Refactored state management workflows and asset delivery pipelines, reducing initial bundle weight and improving Core Web Vitals across production modules.",
+        "Collaborated in an Agile development environment with code reviews, strict Git rebasing, and automated CI/CD deployment checks."
       ]
     },
     {
-      "company": "Automotive & Embedded Systems R&D",
-      "role": "Systems & Embedded Engineer",
+      "company": "Automotive Systems & Embedded R&D",
+      "role": "Systems & Embedded Lead",
       "location": "Bengaluru",
       "dates": "2023 – 2024",
-      "type": "Project & Research",
+      "type": "Engineering Capstone & R&D",
       "highlights": [
-        "Developed Cockpit Domain Controller (Luxoft CDC) prototypes supporting CAN bus protocol integration for automotive EC controls.",
-        "Explored Android Automotive OS (AAOS) HAL and system services integration for connected vehicle infotainment clusters.",
-        "Conducted board-level diagnostics, bootloader unlocking, and custom kernel configurations."
+        "Engineered Cockpit Domain Controller (Luxoft CDC) prototypes integrating CAN 2.0B protocols to manage Electronic Control Units (ECUs) at 8,000+ frames/sec.",
+        "Integrated Vehicle Hardware Abstraction Layer (VHAL) property services on Android Automotive OS (AAOS) for real-time instrument cluster telemetry.",
+        "Conducted board-level diagnostics, bootloader unlocking, memory tracing via procfs, and custom Linux kernel compilation for target hardware."
       ]
     },
     {
-      "company": "Sound Lab & Audio Engineering",
-      "role": "Electronic Music Producer & Sound Designer (7YNX)",
-      "location": "Independent",
-      "dates": "Ongoing",
-      "type": "Creative Technology",
+      "company": "Independent Security & Bug Bounty",
+      "role": "Security Researcher & Reverse Engineer",
+      "location": "Remote",
+      "dates": "2021 – Present",
+      "type": "Security Research",
       "highlights": [
-        "FL Studio Power User specializing in Melodic Techno, Future Bounce, and EDM sound design.",
-        "Created custom WebGL audio-reactive visualizers (FFT spectrum analyzers, CRT oscilloscopes, fluid particle smoke shaders).",
-        "Engineered spatial sound mixing, stem separation, and audio-reactive digital interactions."
+        "Discovered and responsibly disclosed an authentication bypass vulnerability within the 7chats Messenger client; officially awarded Bug Bounty Winner title.",
+        "Conducted APK binary reverse engineering using JADX, Frida instrumentation, and Burp Suite proxy interceptors to inspect token validation flows."
       ]
     }
   ],
   "skills": {
     "systemsAndLinux": [
-      { "name": "Arch Linux", "level": "Advanced", "category": "OS & Kernel" },
-      { "name": "AOSP & Custom ROMs", "level": "Intermediate", "category": "Mobile OS" },
-      { "name": "Bootloader & Root", "level": "Advanced", "category": "Low Level" },
-      { "name": "Bash & Shell Scripting", "level": "Advanced", "category": "Scripting" },
-      { "name": "Git & DevOps", "level": "Advanced", "category": "DevOps" }
+      { "name": "Arch Linux (Daily Driver)", "level": "Expert" },
+      { "name": "Linux Kernel Diagnostics & procfs", "level": "Advanced" },
+      { "name": "AOSP & Custom ROM Compilation", "level": "Intermediate" },
+      { "name": "POSIX Shell Scripting (Bash/Zsh)", "level": "Advanced" },
+      { "name": "Systemd & Process Management", "level": "Advanced" },
+      { "name": "Docker & Container Isolation", "level": "Intermediate" },
+      { "name": "Git & CI/CD Pipelines", "level": "Advanced" },
+      { "name": "Neovim (Lua / LSP / Tree-sitter)", "level": "Advanced" }
     ],
     "embeddedAndAutomotive": [
-      { "name": "AAOS (Android Automotive)", "level": "Intermediate", "category": "Automotive" },
-      { "name": "CAN Bus Protocol", "level": "Intermediate", "category": "Protocols" },
-      { "name": "VLSI & Verilog HDL", "level": "Intermediate", "category": "Hardware Design" },
-      { "name": "Arduino & Embedded C/C++", "level": "Advanced", "category": "Microcontrollers" }
+      { "name": "Android Automotive OS (AAOS)", "level": "Intermediate" },
+      { "name": "Vehicle HAL (VHAL) & CarService", "level": "Intermediate" },
+      { "name": "CAN Bus Protocol (CAN 2.0B / OBD-II)", "level": "Intermediate" },
+      { "name": "Cockpit Domain Controller (CDC)", "level": "Intermediate" },
+      { "name": "VLSI Digital Design & Verilog HDL", "level": "Intermediate" },
+      { "name": "Arduino & Microcontrollers (Mega/Uno/ESP32)", "level": "Advanced" },
+      { "name": "MCP2515 Transceiver Hardware Interfacing", "level": "Intermediate" },
+      { "name": "Embedded C & C++ (Pointers, Memory, ISRs)", "level": "Advanced" }
     ],
     "frontendAndCreative": [
-      { "name": "React / Next.js", "level": "Advanced", "category": "Framework" },
-      { "name": "TypeScript", "level": "Advanced", "category": "Language" },
-      { "name": "Three.js / WebGL", "level": "Intermediate", "category": "3D & WebGL" },
-      { "name": "Tailwind CSS & SCSS", "level": "Advanced", "category": "Styling" },
-      { "name": "GLSL Shaders", "level": "Intermediate", "category": "Graphics" }
+      { "name": "React 19 & Next.js", "level": "Advanced" },
+      { "name": "TypeScript & ESNext", "level": "Advanced" },
+      { "name": "Three.js & WebGL", "level": "Advanced" },
+      { "name": "GLSL Shaders (Vertex & Fragment)", "level": "Intermediate" },
+      { "name": "Tailwind CSS & Modern Glassmorphism", "level": "Advanced" },
+      { "name": "Web Audio API & Sound Synthesis", "level": "Advanced" },
+      { "name": "HTML5 Canvas (2D/3D Contexts)", "level": "Advanced" },
+      { "name": "Figma & UI Prototyping", "level": "Intermediate" }
     ],
     "languagesAndBackend": [
-      { "name": "JavaScript (ESNext)", "level": "Advanced" },
+      { "name": "C & C++", "level": "Advanced" },
       { "name": "Python", "level": "Advanced" },
-      { "name": "C / C++", "level": "Intermediate" },
-      { "name": "Kotlin / Java", "level": "Intermediate" },
+      { "name": "JavaScript & TypeScript", "level": "Advanced" },
+      { "name": "Rust (Core Foundations)", "level": "Intermediate" },
+      { "name": "Go (Golang)", "level": "Intermediate" },
+      { "name": "Kotlin & Java", "level": "Intermediate" },
+      { "name": "Dart & Flutter", "level": "Intermediate" },
       { "name": "Node.js & Express", "level": "Advanced" }
     ],
     "securityAndAudio": [
-      { "name": "Penetration Testing Fundamentals", "level": "Intermediate", "category": "Security" },
-      { "name": "Cryptography & Reverse Engineering", "level": "Intermediate", "category": "Security" },
-      { "name": "FL Studio & Sound Synthesis", "level": "Expert", "category": "Audio" },
-      { "name": "Web Audio API", "level": "Advanced", "category": "Audio Engineering" }
+      { "name": "Penetration Testing & Auth Auditing", "level": "Intermediate" },
+      { "name": "Reverse Engineering (JADX / Frida)", "level": "Intermediate" },
+      { "name": "Network Security & Cryptography", "level": "Intermediate" },
+      { "name": "FL Studio 21 Signature (Power User)", "level": "Expert" },
+      { "name": "Wavetable Synthesis (Serum / Vital)", "level": "Advanced" },
+      { "name": "Mixing & Mastering (FabFilter Suite)", "level": "Advanced" }
     ]
   },
   "projects": [
@@ -128,8 +144,8 @@
       "name": "Luxoft Cockpit Domain Controller",
       "subtitle": "Automotive Embedded & CAN Support",
       "category": "Automotive & Embedded",
-      "description": "Embedded automotive system design integrating CAN bus protocol architecture to manage Electronic Control (EC) domains and instrument cluster telemetry for connected vehicle platforms.",
-      "skills": ["C", "C++", "CAN Bus", "Linux", "AAOS"],
+      "description": "Embedded automotive system design integrating CAN bus protocol architecture to manage Electronic Control (EC) domains, Vehicle HAL properties, and real-time instrument cluster telemetry for connected vehicle platforms.",
+      "skills": ["C", "C++", "CAN 2.0B", "Linux", "AAOS", "VHAL"],
       "badge": "Automotive ECE",
       "img": "/images/projects/cockpit-cdc.jpg",
       "link": "https://github.com/Zynxx777"
@@ -139,21 +155,32 @@
       "name": "MediVend Smart Vending",
       "subtitle": "Automated Medical Dispenser",
       "category": "Hardware & VLSI",
-      "description": "A modern smart medicine vending machine combining Verilog HDL hardware logic, Arduino controller interfacing, and embedded circuit design for contactless medication dispatching.",
-      "skills": ["Verilog", "Arduino", "C++", "Python", "VLSI"],
+      "description": "Intelligent automated medicine vending machine combining Verilog HDL digital logic design, Arduino microcontroller firmware, RFID patient validation, and custom PCB circuitry for automated medication dispatch.",
+      "skills": ["Verilog HDL", "Arduino Mega", "Embedded C++", "Python", "VLSI"],
       "badge": "Embedded VLSI",
       "img": "/images/projects/medivend-hardware.jpg",
       "link": "https://github.com/Zynxx777"
     },
     {
       "id": "audio-visualizer-lab",
-      "name": "Audio Visualizer Lab & Synth Engine",
-      "subtitle": "GLSL Audio Reactive System",
+      "name": "SmokeVisualizer & Audio Engine",
+      "subtitle": "1,114 Lines of Handcrafted GLSL",
       "category": "WebGL & Audio",
-      "description": "An interactive WebGL audio playground featuring CRT terminal oscilloscopes, FFT spectrum monitoring, fluid particle smoke drift, and gravitational black hole audio reactivity.",
+      "description": "Production WebGL audio playground featuring 4 real-time reactive modes: CRT terminal oscilloscopes, FFT spectrum analyzer, turbulent fluid smoke particle shaders, and gravitational starfield camera zooms.",
       "skills": ["Three.js", "WebGL", "GLSL", "Web Audio API", "TypeScript"],
       "badge": "Creative WebGL",
       "img": "/images/projects/audio-visualizer.jpg",
+      "link": "#sound-lab"
+    },
+    {
+      "id": "black-hole-universe",
+      "name": "Black Hole Gravitational Sim",
+      "subtitle": "8,000 Particle Relativistic Simulation",
+      "category": "Creative & Math",
+      "description": "GPU-accelerated gravitational starfield simulation in Three.js where 8,000 particles are pulled into an accretion disk with audio frequency modulation and cursor gravitational deflection.",
+      "skills": ["Three.js", "GLSL", "Physics", "Math", "ShaderMaterial"],
+      "badge": "Physics Sim",
+      "img": "/images/projects/cosmic-singularity.jpg",
       "link": "#sound-lab"
     },
     {
@@ -161,33 +188,11 @@
       "name": "Mini Music Player App",
       "subtitle": "Cross-Platform Mobile Audio Suite",
       "category": "Mobile & Systems",
-      "description": "A high-performance personal music player application built with clean UI architecture, custom audio service background playback, and waveform visualizations.",
-      "skills": ["Flutter", "Dart", "Kotlin", "Android"],
+      "description": "High-performance mobile music player application built with clean architecture, background audio service lifecycle handling, and audio-reactive waveform visualizations.",
+      "skills": ["Flutter", "Dart", "Kotlin", "Android Services"],
       "badge": "Mobile Audio",
       "img": "/images/projects/mobile-player.jpg",
       "link": "https://zynxx777.github.io/mini-music-player/"
-    },
-    {
-      "id": "cyberpunk-3d-space",
-      "name": "Cyberpunk 3D Room & Studio",
-      "subtitle": "Three.js Spatial Showroom",
-      "category": "3D & Creative",
-      "description": "An interactive 3D studio environment featuring real-time physics cursor smoke bursts, volumetric studio lighting, and inspectable digital setup assets.",
-      "skills": ["Three.js", "WebGL", "3D Math", "Blender"],
-      "badge": "Three.js 3D",
-      "img": "/images/projects/lofi-bedroom.jpg",
-      "link": "#3d-studio"
-    },
-    {
-      "id": "black-hole-universe",
-      "name": "Black Hole Gravitational Sim",
-      "subtitle": "8,000 Particle N-Body Simulation",
-      "category": "Creative & Math",
-      "description": "Gravitational starfield simulation in Three.js where 8,000 particles are dynamically pulled into an accretion disk with audio frequency modulation and cursor gravitational deflection.",
-      "skills": ["Three.js", "GLSL", "Physics", "Math"],
-      "badge": "Physics Sim",
-      "img": "/images/projects/cosmic-singularity.jpg",
-      "link": "#sound-lab"
     }
   ],
   "certifications": [
@@ -195,25 +200,25 @@
       "title": "Bug Bounty Contest Winner",
       "issuer": "7chats Messenger",
       "date": "September 2021",
-      "detail": "Discovered and responsibly reported security vulnerability in messaging protocol."
+      "detail": "Discovered and responsibly reported critical authentication bypass vulnerability in production messenger client."
     },
     {
       "title": "VLSI Digital Design & Chip Design",
       "issuer": "Verilog Programming Specialization",
       "date": "July 2024",
-      "detail": "Digital logic synthesis, RTL verification, and Verilog hardware modeling."
+      "detail": "Digital logic synthesis, RTL verification, logic gate minimization, and Verilog hardware modeling."
     },
     {
       "title": "Network Security & Protocols",
-      "issuer": "Professional Certificate",
+      "issuer": "Technical Specialization Certificate",
       "date": "February 2025",
-      "detail": "TCP/IP architecture, cryptographic authentication, and network defense."
+      "detail": "TCP/IP architecture, cryptographic authentication protocols, IDS/IPS, and network perimeter defense."
     },
     {
       "title": "Python Programming Foundations",
       "issuer": "Certified Python Specialist",
       "date": "July 2024",
-      "detail": "Core data structures, object-oriented software patterns, and scripting."
+      "detail": "Core data structures, object-oriented software patterns, automation, and backend logic algorithms."
     }
   ]
 }

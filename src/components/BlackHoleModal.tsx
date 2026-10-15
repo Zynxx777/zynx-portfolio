@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { X, Orbit, Flame } from "lucide-react";
 import { BlackHoleSimulation } from "./BlackHoleSimulation";
 
@@ -8,6 +8,17 @@ interface BlackHoleModalProps {
 }
 
 export const BlackHoleModal: React.FC<BlackHoleModalProps> = ({ isOpen, onClose }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" || e.code === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (

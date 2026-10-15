@@ -187,9 +187,9 @@ export const Hero: React.FC<HeroProps> = ({ openResume, scrollToSection }) => {
             {profileData.basics.label}
           </h2>
           <h1 className="text-6xl sm:text-5xl xs:text-4xl font-display font-extrabold tracking-tight text-white leading-none">
-            JOSHUA D{" "}
+            ZYNX{" "}
             <span className="gradient-text-cyan inline-block">
-              // ZYNX
+              // JOSHUA D
             </span>
           </h1>
         </div>
@@ -242,7 +242,7 @@ export const Hero: React.FC<HeroProps> = ({ openResume, scrollToSection }) => {
         </div>
 
         {/* Quick Capabilities Highlights Bar */}
-        <div className="grid grid-cols-4 sm:grid-cols-2 gap-3 w-full max-w-3xl text-left">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-3xl text-left">
           <div className="p-3.5 rounded-xl cyber-glass border border-white/5 hover:border-cyan-400/30 transition-colors">
             <Cpu size={16} className="text-cyan-400 mb-1.5" />
             <h4 className="font-display font-bold text-xs text-zinc-200">Embedded & AAOS</h4>
