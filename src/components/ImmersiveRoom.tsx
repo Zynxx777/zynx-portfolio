@@ -60,10 +60,22 @@ const transformCameraForFurniture = (coords: number[], placement: FurniturePlace
     ...transformPoint(coords[3], coords[4], coords[5]),
   ];
 };
-const ROOM_LAYOUT_KEY = "zynx-bedroom-room-layout-v1";
-const ROOM_DEFAULT_LAYOUT_KEY = "zynx-bedroom-room-default-layout-v1";
-const ROOM_DEFAULT_CAPTURE_KEY = "zynx-bedroom-room-default-capture-v2";
-const ROOM_LAYOUT_SHIFT_KEY = "zynx-bedroom-room-layout-workspace-shift-v1";
+const ROOM_LAYOUT_KEY = "zynx-bedroom-room-layout-v2";
+const ROOM_DEFAULT_LAYOUT_KEY = "zynx-bedroom-room-default-layout-v2";
+const ROOM_DEFAULT_CAPTURE_KEY = "zynx-bedroom-room-default-capture-v3";
+const ROOM_LAYOUT_SHIFT_KEY = "zynx-bedroom-room-layout-workspace-shift-v2";
+
+export const HARDCODED_DEFAULT_ROOM_LAYOUT: Record<FurnitureId, FurniturePlacement> = {
+  studio:  { x: 0, z: -2.85, rotation: 0 },
+  chair:   { x: 0, z: -2, rotation: 0 },
+  door:    { x: 6.45, z: -4.8, rotation: 0 },
+  cpu:     { x: 3.65, y: 1.49, z: -0.62, rotation: 0 },
+  phone:   { x: -1.65, y: 1.49, z: 0.32, rotation: 0 },
+  shelf:   { x: -7.95, z: -3.4, rotation: 1.5707963267948966 },
+  gallery: { x: 0, z: 0, rotation: 0 },
+  bed:     { x: 5.45, z: 1.97, rotation: 0 },
+  lamp:    { x: 3.5, z: 0, rotation: 0 },
+};
 const ZONE_FURNITURE: Partial<Record<ZoneId, FurnitureId>> = {
   monitor_left: "studio",
   monitor_right: "studio",
@@ -746,8 +758,8 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     };
     const furniture = new Map<FurnitureId, FurnitureItem>();
     let savedLayout: Partial<Record<FurnitureId, FurniturePlacement>> = {};
-    let defaultLayout: Partial<Record<FurnitureId, FurniturePlacement>> = {};
-    let hasRoomDefault = false;
+    let defaultLayout: Partial<Record<FurnitureId, FurniturePlacement>> = { ...HARDCODED_DEFAULT_ROOM_LAYOUT };
+    let hasRoomDefault = true;
     let shiftLegacyWorkspace = false;
     try {
       const rawLayout = window.localStorage.getItem(ROOM_LAYOUT_KEY);
@@ -760,12 +772,15 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     try {
       const rawDefaultLayout = window.localStorage.getItem(ROOM_DEFAULT_LAYOUT_KEY);
       if (rawDefaultLayout) {
-        defaultLayout = JSON.parse(rawDefaultLayout) as Partial<Record<FurnitureId, FurniturePlacement>>;
+        defaultLayout = {
+          ...HARDCODED_DEFAULT_ROOM_LAYOUT,
+          ...(JSON.parse(rawDefaultLayout) as Partial<Record<FurnitureId, FurniturePlacement>>),
+        };
         hasRoomDefault = true;
       }
     } catch {
-      defaultLayout = {};
-      hasRoomDefault = false;
+      defaultLayout = { ...HARDCODED_DEFAULT_ROOM_LAYOUT };
+      hasRoomDefault = true;
     }
 
     const registerFurniture = (
@@ -777,6 +792,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       bounds: FurnitureItem["bounds"],
       footprint?: FurnitureItem["footprint"],
     ) => {
+      const hardcoded = HARDCODED_DEFAULT_ROOM_LAYOUT[id];
       const saved = savedLayout[id];
       const hasSavedPlacement = saved && Number.isFinite(saved.x) && Number.isFinite(saved.z);
       const start = hasSavedPlacement
@@ -784,10 +800,12 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
             x: saved.x,
             z: shiftLegacyWorkspace && (id === "studio" || id === "chair") ? saved.z - 3 : saved.z,
           }
-        : home;
-      const homeRotation = axis === "side-wall"
-        ? (start.x < 0 ? Math.PI / 2 : -Math.PI / 2)
-        : group.rotation.y;
+        : (hardcoded ? { x: hardcoded.x, z: hardcoded.z } : home);
+      const homeRotation = (hardcoded?.rotation !== undefined && Number.isFinite(hardcoded.rotation)
+        ? hardcoded.rotation
+        : (axis === "side-wall"
+          ? (start.x < 0 ? Math.PI / 2 : -Math.PI / 2)
+          : group.rotation.y)) ?? 0;
       const startRotation = (hasSavedPlacement && Number.isFinite(saved.rotation)
         ? saved.rotation
         : id === "shelf" && start.x > 0 ? -Math.PI / 2 : homeRotation) ?? 0;
@@ -1376,7 +1394,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
 
     captureFurniture("studio", "Studio desk rig", studioChildrenStart, {
       minX: -7.9, maxX: 7.9, minZ: -4.9, maxZ: 4.9,
-    }, { halfX: 4.35, halfZ: 1.55, centerZ: -0.5 }, { x: 0, z: -3 });
+    }, { halfX: 4.35, halfZ: 1.55, centerZ: -0.5 }, { x: 0, z: -2.85 });
     registerFurniture("cpu", "PC tower", pcGroup, "table", { x: 3.65, z: -0.62 }, DESK_BOUNDS, {
       halfX: 0.49, halfZ: 0.59, centerZ: 0,
     });
@@ -1761,15 +1779,15 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         bedGroup.add(ear);
       });
 
-      bedGroup.position.set(5.0, 0, 0.5);
+      bedGroup.position.set(5.45, 0, 1.97);
       scene.add(bedGroup);
-      registerFurniture("bed", "Bed and bedside set", bedGroup, "floor", { x: 5.0, z: 0.5 }, {
+      registerFurniture("bed", "Bed and bedside set", bedGroup, "floor", { x: 5.45, z: 1.97 }, {
         minX: -7.9, maxX: 7.9, minZ: -4.9, maxZ: 4.9,
       }, { halfX: 2.45, halfZ: 2.85, centerZ: 0.08 });
 
-      bedsideLamp.position.set(2.74, 0, -0.87);
+      bedsideLamp.position.set(3.5, 0, 0);
       scene.add(bedsideLamp);
-      registerFurniture("lamp", "Bedside floor lamp", bedsideLamp, "floor", { x: 2.74, z: -0.87 }, {
+      registerFurniture("lamp", "Bedside floor lamp", bedsideLamp, "floor", { x: 3.5, z: 0 }, {
         minX: -7.9, maxX: 7.9, minZ: -4.9, maxZ: 4.9,
       }, { halfX: 0.25, halfZ: 0.25, centerZ: 0 });
     }
@@ -1789,14 +1807,14 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     let shouldCaptureCurrentDefault = !hasRoomDefault;
     try {
       shouldCaptureCurrentDefault = shouldCaptureCurrentDefault
-        || window.localStorage.getItem(ROOM_DEFAULT_CAPTURE_KEY) !== "2";
+        || window.localStorage.getItem(ROOM_DEFAULT_CAPTURE_KEY) !== "3";
     } catch {
       shouldCaptureCurrentDefault = true;
     }
     if (shouldCaptureCurrentDefault) {
       // Promote the user's most recently saved room arrangement to the new reset
       // point once, including furniture from the other theme and new desk pieces.
-      defaultLayout = { ...defaultLayout, ...savedLayout };
+      defaultLayout = { ...HARDCODED_DEFAULT_ROOM_LAYOUT, ...defaultLayout, ...savedLayout };
       furniture.forEach(item => {
         defaultLayout[item.id] = {
           x: item.group.position.x,
@@ -1808,7 +1826,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       hasRoomDefault = true;
       try {
         window.localStorage.setItem(ROOM_DEFAULT_LAYOUT_KEY, JSON.stringify(defaultLayout));
-        window.localStorage.setItem(ROOM_DEFAULT_CAPTURE_KEY, "2");
+        window.localStorage.setItem(ROOM_DEFAULT_CAPTURE_KEY, "3");
       } catch {
         // The refreshed default still works for this session if storage is disabled.
       }
@@ -1959,12 +1977,13 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
 
     const resetFurnitureLayout = () => {
       furniture.forEach(item => {
-        const savedDefault = defaultLayout[item.id];
-        const home = savedDefault && Number.isFinite(savedDefault.x) && Number.isFinite(savedDefault.z)
-          ? savedDefault
+        const hardcoded = HARDCODED_DEFAULT_ROOM_LAYOUT[item.id];
+        const target = hardcoded ?? defaultLayout[item.id] ?? item.home;
+        const home = target && Number.isFinite(target.x) && Number.isFinite(target.z)
+          ? target
           : item.home;
-        const rotation = (savedDefault && Number.isFinite(savedDefault.rotation)
-          ? savedDefault.rotation
+        const rotation = (target && Number.isFinite(target.rotation)
+          ? target.rotation
           : item.homeRotation) ?? 0;
         item.group.rotation.y = rotation;
         const placement = canPlaceFurniture(item, home.x, home.z, 0);
