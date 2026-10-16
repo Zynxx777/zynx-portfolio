@@ -329,12 +329,38 @@ export const LiquidMercuryCanvas: React.FC<LiquidMercuryCanvasProps> = ({
       scrollOffset = window.scrollY * 0.0015;
     };
 
+    const handleTouchStart = (e: TouchEvent) => {
+      if (!e.touches[0]) return;
+      const t = e.touches[0];
+      const rect = container.getBoundingClientRect();
+      mousePos.x = ((t.clientX - rect.left) / rect.width) * 2 - 1;
+      mousePos.y = -(((t.clientY - rect.top) / rect.height) * 2 - 1);
+      hoverState = 1.0;
+      rippleStrength = 1.8;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!e.touches[0]) return;
+      const t = e.touches[0];
+      const rect = container.getBoundingClientRect();
+      mousePos.x = ((t.clientX - rect.left) / rect.width) * 2 - 1;
+      mousePos.y = -(((t.clientY - rect.top) / rect.height) * 2 - 1);
+      hoverState = 1.0;
+    };
+
+    const handleTouchEnd = () => {
+      hoverState = 0.4;
+    };
+
     if (interactive) {
       window.addEventListener("mousemove", handlePointerMove, { passive: true });
       window.addEventListener("scroll", handleScroll, { passive: true });
       window.addEventListener("trigger-liquid-ripple", handleCustomRipple);
       container.addEventListener("mouseleave", handlePointerLeave);
       container.addEventListener("click", handleClick);
+      container.addEventListener("touchstart", handleTouchStart, { passive: true });
+      container.addEventListener("touchmove", handleTouchMove, { passive: true });
+      container.addEventListener("touchend", handleTouchEnd, { passive: true });
     }
 
     // ── Resize Observer ──────────────────────────────────────────────────────
@@ -412,6 +438,9 @@ export const LiquidMercuryCanvas: React.FC<LiquidMercuryCanvasProps> = ({
         window.removeEventListener("trigger-liquid-ripple", handleCustomRipple);
         container.removeEventListener("mouseleave", handlePointerLeave);
         container.removeEventListener("click", handleClick);
+        container.removeEventListener("touchstart", handleTouchStart);
+        container.removeEventListener("touchmove", handleTouchMove);
+        container.removeEventListener("touchend", handleTouchEnd);
       }
       geometry.dispose();
       material.dispose();

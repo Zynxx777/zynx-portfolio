@@ -398,7 +398,7 @@ ${certifications.map(c => `• ${c.title} - ${c.issuer} (${c.date}): ${c.detail}
       `}</style>
 
       {/* Modal Dialog Container */}
-      <div className={`print-modal-container relative w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-3xl p-8 sm:p-5 shadow-2xl transition-all duration-300 ${
+      <div className={`print-modal-container relative w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl transition-all duration-300 ${
         isPrintTheme
           ? "bg-white text-gray-900 border border-gray-300 shadow-xl"
           : "cyber-glass border border-white/20 bg-[#09090f] text-zinc-100"

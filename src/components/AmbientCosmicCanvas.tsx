@@ -24,6 +24,13 @@ export const AmbientCosmicCanvas: React.FC = () => {
       posRef.current.targetY = e.clientY;
     };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches[0]) {
+        posRef.current.targetX = e.touches[0].clientX;
+        posRef.current.targetY = e.touches[0].clientY;
+      }
+    };
+
     const handleVisibility = () => {
       isVisible = !document.hidden;
     };
@@ -39,12 +46,14 @@ export const AmbientCosmicCanvas: React.FC = () => {
     };
 
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
     document.addEventListener("visibilitychange", handleVisibility);
     animId = requestAnimationFrame(updateSpotlight);
 
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("touchmove", handleTouchMove);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, []);

@@ -346,8 +346,13 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
 
     // ── Camera ──────────────────────────────────────────────────────────────
     const W = container.clientWidth, H = container.clientHeight;
-    const camera = new THREE.PerspectiveCamera(42, W / H, 0.1, 120);
-    camera.position.set(ZONE_CAMS.overview[0], ZONE_CAMS.overview[1], ZONE_CAMS.overview[2]);
+    const isPortrait = W < H;
+    const camera = new THREE.PerspectiveCamera(isPortrait ? 56 : 42, W / H, 0.1, 120);
+    if (isPortrait) {
+      camera.position.set(ZONE_CAMS.overview[0] * 1.18, ZONE_CAMS.overview[1] * 1.12, ZONE_CAMS.overview[2] * 1.18);
+    } else {
+      camera.position.set(ZONE_CAMS.overview[0], ZONE_CAMS.overview[1], ZONE_CAMS.overview[2]);
+    }
     const roomOverviewLookAt = new THREE.Vector3(0, 1.2, 0);
 
     // ── Renderer ────────────────────────────────────────────────────────────
@@ -2026,8 +2031,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       }
     };
 
-    const onClick = (e: MouseEvent) => {
-      setMouseFromEvent(e);
+    const handleInteractAtMouse = () => {
       if (editModeRef.current) return;
       raycaster.setFromCamera(mouse2D, camera);
       const hits = raycaster.intersectObjects(getClickableMeshes(), false);
@@ -2072,6 +2076,11 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       }, 700);
     };
 
+    const onClick = (e: MouseEvent) => {
+      setMouseFromEvent(e);
+      handleInteractAtMouse();
+    };
+
     const onMouseLeave = () => {
       mouse2D.set(2, 2);
       if (hoveredZoneId) setHover(null);
@@ -2082,19 +2091,144 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       if (cursorRef.current) cursorRef.current.style.transform = "translate(-50%,-50%) scale(1)";
     };
 
-    const onTouchMove = (e: TouchEvent) => {
-      if (!e.touches[0]) return;
-      const rect = container.getBoundingClientRect();
-      const t = e.touches[0];
-      mouse2D.x = ((t.clientX - rect.left) / rect.width ) * 2 - 1;
-      mouse2D.y =-((t.clientY - rect.top ) / rect.height) * 2 + 1;
-    };
-
     // Orbit Dragging with Inertia Damping
     let isDragging = false;
     let orbitTargetSwitched = false;
     let prevDrag = { x: 0, y: 0 };
     const spherical = new THREE.Spherical();
+
+    // ── Mobile Touch Interaction (1-Finger Orbit, 2-Finger Pinch Zoom, Tap Interaction) ──
+    let touchMode: "none" | "orbit" | "pinch" | "drag-furniture" = "none";
+    let touchStartPos = { x: 0, y: 0 };
+    let prevTouch = { x: 0, y: 0 };
+    let touchStartTime = 0;
+    let touchMoved = false;
+    let initialPinchDist = 0;
+    let initialPinchRadius = 0;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        const t = e.touches[0];
+        const rect = container.getBoundingClientRect();
+        touchStartTime = performance.now();
+        touchMoved = false;
+        touchStartPos = { x: t.clientX, y: t.clientY };
+        prevTouch = { x: t.clientX, y: t.clientY };
+
+        mouse2D.x = ((t.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse2D.y = -((t.clientY - rect.top) / rect.height) * 2 + 1;
+
+        if (editModeRef.current) {
+          raycaster.setFromCamera(mouse2D, camera);
+          const hits = raycaster.intersectObjects(getFurnitureGroups(), true);
+          const item = hits.length ? findFurnitureForObject(hits[0].object) : null;
+          selectFurniture(item);
+          if (item) {
+            const dragNormal = item.axis === "wall"
+              ? new THREE.Vector3(0, 0, 1)
+              : item.axis === "side-wall"
+                ? new THREE.Vector3(1, 0, 0)
+                : new THREE.Vector3(0, 1, 0);
+            const dragPlaneOffset = item.axis === "wall"
+              ? 4.9
+              : item.axis === "side-wall"
+                ? (item.group.position.x < 0 ? 7.99 : -7.99)
+                : item.axis === "table" ? -DESK_TOP_Y : 0;
+            dragPlane.set(dragNormal, dragPlaneOffset);
+            if (raycaster.ray.intersectPlane(dragPlane, dragPoint)) {
+              const parent = item.axis === "table" ? item.group.parent : null;
+              if (parent) parent.updateMatrixWorld(true);
+              const localPoint = parent ? parent.worldToLocal(dragPoint.clone()) : dragPoint;
+              dragOffset.set(item.group.position.x - localPoint.x, item.group.position.z - localPoint.z);
+              movingFurniture = true;
+              touchMode = "drag-furniture";
+              return;
+            }
+          }
+        }
+
+        orbitTargetSwitched = false;
+        spherical.setFromVector3(camera.position.clone().sub(targetLookAt.current));
+        touchMode = "orbit";
+      } else if (e.touches.length === 2) {
+        touchMode = "pinch";
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        initialPinchDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        spherical.setFromVector3(targetCamPos.current.clone().sub(targetLookAt.current));
+        initialPinchRadius = spherical.radius;
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!e.touches.length) return;
+      const rect = container.getBoundingClientRect();
+
+      if (e.touches.length === 1 && (touchMode === "orbit" || touchMode === "drag-furniture")) {
+        const t = e.touches[0];
+        mouse2D.x = ((t.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse2D.y = -((t.clientY - rect.top) / rect.height) * 2 + 1;
+
+        const dx = t.clientX - prevTouch.x;
+        const dy = t.clientY - prevTouch.y;
+
+        if (Math.hypot(t.clientX - touchStartPos.x, t.clientY - touchStartPos.y) > 6) {
+          touchMoved = true;
+        }
+        prevTouch = { x: t.clientX, y: t.clientY };
+
+        if (touchMode === "drag-furniture" && movingFurniture && selectedItem) {
+          raycaster.setFromCamera(mouse2D, camera);
+          if (!raycaster.ray.intersectPlane(dragPlane, dragPoint)) return;
+          const parent = selectedItem.axis === "table" ? selectedItem.group.parent : null;
+          if (parent) parent.updateMatrixWorld(true);
+          const localPoint = parent ? parent.worldToLocal(dragPoint.clone()) : dragPoint;
+          moveFurniture(selectedItem, localPoint.x + dragOffset.x, localPoint.z + dragOffset.y, snapToGridRef.current ? 0.25 : 0, false);
+          return;
+        }
+
+        if (touchMode === "orbit") {
+          if (!orbitTargetSwitched) {
+            targetLookAt.current.copy(roomOverviewLookAt);
+            spherical.setFromVector3(camera.position.clone().sub(roomOverviewLookAt));
+            orbitTargetSwitched = true;
+          }
+          spherical.theta -= dx * 0.007;
+          spherical.phi = Math.max(0.18, Math.min(Math.PI / 2 - 0.04, spherical.phi - dy * 0.007));
+          targetCamPos.current.copy(targetLookAt.current).add(new THREE.Vector3().setFromSpherical(spherical));
+        }
+      } else if (e.touches.length === 2 && touchMode === "pinch") {
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        if (initialPinchDist > 0 && currentDist > 0) {
+          const factor = initialPinchDist / currentDist;
+          spherical.radius = THREE.MathUtils.clamp(initialPinchRadius * factor, 3.5, 28);
+          targetCamPos.current.copy(targetLookAt.current).add(new THREE.Vector3().setFromSpherical(spherical));
+        }
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (touchMode === "drag-furniture") {
+        if (movingFurniture) saveFurnitureLayout();
+        movingFurniture = false;
+      }
+
+      // Tap detection (quick tap with minimal movement)
+      const duration = performance.now() - touchStartTime;
+      if (!touchMoved && duration < 380 && touchMode === "orbit") {
+        handleInteractAtMouse();
+      }
+
+      if (e.touches.length === 0) {
+        touchMode = "none";
+      } else if (e.touches.length === 1) {
+        touchMode = "orbit";
+        prevTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        spherical.setFromVector3(camera.position.clone().sub(targetLookAt.current));
+      }
+    };
 
     const onMouseDown = (e: MouseEvent) => {
       if (editModeRef.current) {
@@ -2245,6 +2379,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       moveFurniture(selectedItem, selectedItem.group.position.x + delta.x, selectedItem.group.position.z + delta.z, step);
     };
 
+    container.style.touchAction = "none";
     container.addEventListener("mousedown", onMouseDown);
     container.addEventListener("wheel", onWheel, { passive: false });
     window.addEventListener("mouseup", onMouseUp);
@@ -2253,7 +2388,10 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     container.addEventListener("mousemove", onMouseMove);
     container.addEventListener("mouseleave", onMouseLeave);
     container.addEventListener("click", onClick);
+    container.addEventListener("touchstart", onTouchStart, { passive: true });
     container.addEventListener("touchmove", onTouchMove, { passive: true });
+    container.addEventListener("touchend", onTouchEnd, { passive: true });
+    container.addEventListener("touchcancel", onTouchEnd, { passive: true });
 
     // ── Animation Loop ──────────────────────────────────────────────────────
     let animId: number;
@@ -2493,9 +2631,14 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
 
     const handleResize = () => {
       if (!container) return;
-      camera.aspect = container.clientWidth / container.clientHeight;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      const isPortraitNow = width < height;
+      camera.fov = isPortraitNow ? 56 : 42;
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(width, height);
     };
     window.addEventListener("resize", handleResize);
 
@@ -2511,7 +2654,10 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       container.removeEventListener("mousemove", onMouseMove);
       container.removeEventListener("mouseleave", onMouseLeave);
       container.removeEventListener("click", onClick);
+      container.removeEventListener("touchstart", onTouchStart);
       container.removeEventListener("touchmove", onTouchMove);
+      container.removeEventListener("touchend", onTouchEnd);
+      container.removeEventListener("touchcancel", onTouchEnd);
       if (resetLayoutActionRef.current === resetFurnitureLayout) resetLayoutActionRef.current = null;
       if (saveDefaultLayoutActionRef.current === saveDefaultFurnitureLayout) saveDefaultLayoutActionRef.current = null;
       if (furnitureEditActionRef.current === applyFurnitureEditRequest) furnitureEditActionRef.current = null;
@@ -2551,11 +2697,11 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       {/* Three.js Canvas Mount */}
       <div ref={mountRef} className="w-full h-full" />
 
-      {/* Avant-Garde Custom Cursor Dot (Lusion / Emotion Agency) */}
+      {/* Avant-Garde Custom Cursor Dot (Lusion / Emotion Agency) - Desktop Only */}
       <div
         ref={cursorRef}
-        className="absolute pointer-events-none z-50 w-6 h-6 rounded-full border-2 border-cyan-400 mix-blend-screen transition-all duration-100 shadow-[0_0_15px_rgba(0,242,254,0.5)]"
-        style={{ left: 0, top: 0, transform: "translate(-50%,-50%)", willChange: "transform", display: editMode ? "none" : "block" }}
+        className="hidden md:block absolute pointer-events-none z-50 w-6 h-6 rounded-full border-2 border-cyan-400 mix-blend-screen transition-all duration-100 shadow-[0_0_15px_rgba(0,242,254,0.5)]"
+        style={{ left: 0, top: 0, transform: "translate(-50%,-50%)", willChange: "transform", display: editMode ? "none" : undefined }}
       >
         <div className="w-1.5 h-1.5 rounded-full bg-cyan-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
       </div>

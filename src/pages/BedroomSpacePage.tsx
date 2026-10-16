@@ -761,6 +761,14 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
         </div>
       </header>
 
+      {/* Mobile Gesture Helper Badge */}
+      <div className="sm:hidden absolute top-14 left-1/2 -translate-x-1/2 pointer-events-none z-20">
+        <div className="px-3 py-1 rounded-full bg-black/60 border border-white/10 backdrop-blur-md text-[9px] font-mono tracking-wider text-zinc-300 flex items-center gap-1.5 shadow-lg">
+          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+          <span>DRAG TO ROTATE • PINCH TO ZOOM • TAP TO OPEN</span>
+        </div>
+      </div>
+
       {/* ── MODE 1: FULL 3D INTERACTIVE ROOM VIEWPORT ─────────────────────── */}
       {viewMode === "3d" && (
         <div className="w-full h-full relative">
@@ -916,7 +924,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
             })}
           </nav>}
 
-          <div className="absolute bottom-4 right-4 z-30 flex items-end gap-2 pointer-events-auto">
+          <div className="absolute bottom-16 sm:bottom-4 right-3 sm:right-4 z-30 flex items-end gap-2 pointer-events-auto">
             {musicOpen && (
               <div className="max-w-[min(92vw,25rem)] animate-fadeIn">
                 <BedroomAudioPlayer />

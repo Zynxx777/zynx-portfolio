@@ -281,7 +281,8 @@ export const Projects3D: React.FC = () => {
     scene.background = new THREE.Color(0x050505);
 
     const camera = new THREE.PerspectiveCamera(46, width / height, 0.1, 100);
-    camera.position.set(0, 0, 5.2);
+    const initialCamZ = width < 480 ? 7.2 : width < 768 ? 6.2 : 5.2;
+    camera.position.set(0, 0, initialCamZ);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -431,6 +432,7 @@ export const Projects3D: React.FC = () => {
       }
     };
 
+    container.style.touchAction = "pan-y";
     container.addEventListener("wheel", handleWheel, { passive: false });
     container.addEventListener("mousedown", onPointerDown);
     window.addEventListener("mousemove", onPointerMove);
@@ -446,7 +448,9 @@ export const Projects3D: React.FC = () => {
       width = container.clientWidth || window.innerWidth;
       height = container.clientHeight || 650;
       camera.aspect = width / height;
+      camera.position.z = width < 480 ? 7.2 : width < 768 ? 6.2 : 5.2;
       camera.updateProjectionMatrix();
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(width, height);
     };
     window.addEventListener("resize", onResize);

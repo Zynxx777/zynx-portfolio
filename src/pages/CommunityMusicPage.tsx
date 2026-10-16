@@ -155,8 +155,12 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = ({
     if (!ctx) return;
 
     let animId: number;
-    let width = (canvas.width = canvas.clientWidth);
-    let height = (canvas.height = canvas.clientHeight);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let width = canvas.clientWidth;
+    let height = canvas.clientHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
 
     const particles: { x: number; y: number; vx: number; vy: number; size: number; alpha: number; col: string }[] = [];
     const colors = ["#F72585", "#9D4EDD", "#00F2FE", "#7209B7"];
@@ -210,9 +214,13 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = ({
     render();
 
     const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = canvas.clientWidth;
-      height = canvas.height = canvas.clientHeight;
+      if (!canvas || !ctx) return;
+      const newDpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = canvas.clientWidth;
+      height = canvas.clientHeight;
+      canvas.width = width * newDpr;
+      canvas.height = height * newDpr;
+      ctx.scale(newDpr, newDpr);
     };
     window.addEventListener("resize", handleResize);
 
