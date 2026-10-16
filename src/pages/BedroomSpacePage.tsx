@@ -505,17 +505,50 @@ const PosterView: React.FC<{ posterId: RoomPosterId; onClose: () => void }> = ({
       <button onClick={onClose} className="absolute inset-0 cursor-default" aria-label="Close artwork view" />
       <section className="relative z-10 flex max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0b0b13] shadow-2xl">
         <header className="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4 sm:px-7">
-          <div>
-            <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-300">Digital art sanctuary</div>
-            <h2 className="mt-1 font-display text-lg font-bold text-white sm:text-xl">{poster.title}</h2>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                onClose();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/15 bg-white/10 hover:bg-white/20 text-xs font-mono text-zinc-200 hover:text-white transition-all group"
+              aria-label="Back to gallery"
+            >
+              <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" />
+              <span>Back</span>
+            </button>
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-300">Digital art sanctuary</div>
+              <h2 className="mt-0.5 font-display text-lg font-bold text-white sm:text-xl">{poster.title}</h2>
+            </div>
           </div>
-          <button onClick={onClose} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-zinc-300 transition hover:bg-white/15 hover:text-white" aria-label="Close artwork view">
-            <X size={16} />
+          <button
+            onClick={() => {
+              soundFX.playClick();
+              onClose();
+            }}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-red-500/30 bg-red-500/10 text-red-200 hover:bg-red-500/25 hover:text-white text-xs font-mono transition-colors"
+            aria-label="Close artwork view"
+          >
+            <X size={15} />
+            <span className="hidden sm:inline font-bold">Close</span>
           </button>
         </header>
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 p-4 sm:p-7">
           <img src={poster.image} alt={poster.title} className="max-h-[min(68vh,760px)] w-full rounded-2xl object-contain" />
           <p className="max-w-2xl text-center text-sm leading-relaxed text-zinc-400">{poster.caption}</p>
+          <div className="pt-2">
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                onClose();
+              }}
+              className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-mono text-white flex items-center gap-2 transition-all shadow-md"
+            >
+              <ArrowLeft size={14} />
+              <span>Back to Art Sanctuary</span>
+            </button>
+          </div>
         </div>
       </section>
     </div>
@@ -560,7 +593,20 @@ const ZoneModal: React.FC<ZoneModalProps> = ({ zoneId, onClose, onPosterClick })
         {/* Fixed panel header stays available while the detail content scrolls. */}
         <div className="relative z-20 flex shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-[#06060e]/95 p-5 backdrop-blur-md">
           <div className="flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full animate-pulse" style={{ background: zone.color }} />
+            <button
+              type="button"
+              onClick={() => {
+                soundFX.playClick();
+                onClose();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/15 bg-white/10 hover:bg-white/20 text-xs font-mono text-zinc-200 hover:text-white transition-all group"
+              aria-label="Back to 3D room"
+              title="Return to 3D room"
+            >
+              <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" />
+              <span>Back</span>
+            </button>
+            <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: zone.color }} />
             <div>
               <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">{zone.code}</div>
               <h2 id="zone-modal-title" className="text-sm font-display font-bold text-white">{zone.label}</h2>
@@ -572,16 +618,43 @@ const ZoneModal: React.FC<ZoneModalProps> = ({ zoneId, onClose, onPosterClick })
               soundFX.playClick();
               onClose();
             }}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-red-500/30 bg-red-500/10 text-red-200 transition-colors hover:bg-red-500/25 hover:text-white text-xs font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
             aria-label="Close exhibition modal"
-            title="Close details"
+            title="Close details (ESC)"
           >
             <X size={15} />
+            <span className="hidden sm:inline font-bold">Close</span>
           </button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 pb-20">
           {zoneId === "poster_wall" ? <PosterGallery onSelect={onPosterClick} /> : ZONE_CONTENT[zoneId]}
+
+          {/* Bottom Return / Close Bar */}
+          <div className="mt-12 pt-6 border-t border-white/10 flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                soundFX.playClick();
+                onClose();
+              }}
+              className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-mono text-white flex items-center gap-2 transition-all shadow-lg"
+            >
+              <ArrowLeft size={14} />
+              <span>Return to 3D Bedroom</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                soundFX.playClick();
+                onClose();
+              }}
+              className="px-4 py-2.5 rounded-full bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-xs font-mono text-red-200 hover:text-white flex items-center gap-1.5 transition-all shadow-md"
+            >
+              <X size={14} />
+              <span>Close Exhibit</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -954,16 +1027,30 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
       {/* ── MODE 2: ARCHITECTURAL CATALOG GRID VIEW (BOC Studio Style) ────── */}
       {viewMode === "catalog" && (
         <div className="w-full h-full overflow-y-auto pt-24 pb-28 px-8 max-w-7xl mx-auto space-y-12 animate-fadeIn">
-          <div className="max-w-2xl space-y-2">
-            <div className="text-xs font-mono text-cyan-400 uppercase tracking-widest">
-              [ EXHIBITION ARCHIVE // ALL ZONES & CAPABILITIES ]
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
+            <div className="max-w-2xl space-y-2">
+              <div className="text-xs font-mono text-cyan-400 uppercase tracking-widest">
+                [ EXHIBITION ARCHIVE // ALL ZONES & CAPABILITIES ]
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-display font-extrabold text-white">
+                Spatial Artifacts & Engineering Showcase
+              </h1>
+              <p className="text-xs text-zinc-400 font-sans leading-relaxed">
+                Direct access index to all architectural workstations, electronics capstones, GLSL shaders, audio gear, and curated digital artwork.
+              </p>
             </div>
-            <h1 className="text-4xl font-display font-extrabold text-white">
-              Spatial Artifacts & Engineering Showcase
-            </h1>
-            <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-              Direct access index to all architectural workstations, electronics capstones, GLSL shaders, audio gear, and curated digital artwork.
-            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  setViewMode("3d");
+                }}
+                className="px-4 py-2 rounded-full bg-cyan-400 hover:bg-cyan-300 text-black text-xs font-mono font-bold flex items-center gap-2 transition-all shadow-lg shadow-cyan-400/20"
+              >
+                <ArrowLeft size={13} />
+                <span>Return to 3D Room</span>
+              </button>
+            </div>
           </div>
 
           {/* Exhibition Grid */}
@@ -994,6 +1081,30 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
                 </MotoCard>
               );
             })}
+          </div>
+
+          {/* Bottom Catalog Navigation */}
+          <div className="pt-8 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                setViewMode("3d");
+              }}
+              className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-mono text-white flex items-center gap-2 transition-all shadow-md"
+            >
+              <ArrowLeft size={14} />
+              <span>Return to 3D Room</span>
+            </button>
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                onNavigatePortfolio();
+              }}
+              className="px-5 py-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-zinc-300 hover:text-white flex items-center gap-2 transition-all"
+            >
+              <ArrowLeft size={14} />
+              <span>Developer Portfolio</span>
+            </button>
           </div>
         </div>
       )}

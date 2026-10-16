@@ -10,6 +10,7 @@ import {
   ArrowUpRight,
   Sparkles,
   Award,
+  ArrowLeft,
 } from "lucide-react";
 import profileData from "../data/profile.json";
 import { soundFX } from "../utils/audioFX";
@@ -57,11 +58,22 @@ export const ProfileDossierDrawer: React.FC<ProfileDossierDrawerProps> = ({
         className="w-full max-w-xl h-full bg-[#080b14] border-l border-white/15 p-6 sm:p-10 overflow-y-auto space-y-8 text-left shadow-2xl relative select-none animate-slideLeft"
       >
         {/* Top Bar HUD */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-6">
+        <div className="flex items-center justify-between border-b border-white/10 pb-6 gap-3">
           <div className="flex items-center gap-3">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                onClose();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/15 bg-white/5 hover:bg-white/15 text-xs font-mono text-zinc-300 hover:text-white transition-all group shadow-sm"
+              aria-label="Back to page"
+            >
+              <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" />
+              <span>Back</span>
+            </button>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse hidden sm:inline-block" />
             <span className="font-mono text-xs uppercase tracking-[0.24em] text-cyan-300">
-              PROFILE DOSSIER // 01
+              PROFILE DOSSIER
             </span>
           </div>
 
@@ -70,10 +82,11 @@ export const ProfileDossierDrawer: React.FC<ProfileDossierDrawerProps> = ({
               soundFX.playClick();
               onClose();
             }}
-            className="w-10 h-10 rounded-full border border-white/15 bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/25 text-red-200 hover:text-white text-xs font-mono transition-all"
             aria-label="Close dossier"
           >
-            <X size={18} />
+            <X size={15} />
+            <span className="hidden sm:inline font-bold">Close</span>
           </button>
         </div>
 
@@ -272,10 +285,22 @@ export const ProfileDossierDrawer: React.FC<ProfileDossierDrawerProps> = ({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="pt-4 border-t border-white/10 text-[10px] font-mono text-zinc-600 flex items-center justify-between">
-          <span>SYSTEM TIME: 2026 // BENGALURU</span>
-          <span>ZYNX ENGINE VER 2.4.0</span>
+        {/* Bottom Close Button & Footer */}
+        <div className="pt-4 border-t border-white/10 space-y-4">
+          <button
+            onClick={() => {
+              soundFX.playClick();
+              onClose();
+            }}
+            className="w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-mono font-bold text-white flex items-center justify-center gap-2 transition-all shadow-lg"
+          >
+            <ArrowLeft size={14} />
+            <span>Close Dossier & Return</span>
+          </button>
+          <div className="text-[10px] font-mono text-zinc-600 flex items-center justify-between">
+            <span>SYSTEM TIME: 2026 // BENGALURU</span>
+            <span>ZYNX ENGINE VER 2.4.0</span>
+          </div>
         </div>
       </aside>
     </div>

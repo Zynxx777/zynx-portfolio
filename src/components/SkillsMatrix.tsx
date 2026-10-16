@@ -7,6 +7,7 @@ import {
   Copy,
   Zap,
   Eye,
+  ArrowLeft,
 } from "lucide-react";
 import { ALL_SKILLS, SKILL_CATEGORIES, type DetailedSkill } from "../data/skillsData";
 import { soundFX } from "../utils/audioFX";
@@ -237,13 +238,30 @@ const DiagnosticSpecModal: React.FC<SpecModalProps> = ({ skill, onClose }) => {
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="w-9 h-9 rounded-full border border-white/20 bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all"
-            aria-label="Close specification"
-          >
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                onClose();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/15 bg-white/5 hover:bg-white/15 text-xs font-mono text-zinc-300 hover:text-white transition-all group"
+              aria-label="Back to skills matrix"
+            >
+              <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" />
+              <span>Back</span>
+            </button>
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                onClose();
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-red-500/30 bg-red-500/10 hover:bg-red-500/25 text-red-200 hover:text-white text-xs font-mono transition-all"
+              aria-label="Close specification"
+            >
+              <X size={14} />
+              <span className="hidden sm:inline font-bold">Close</span>
+            </button>
+          </div>
         </div>
 
         {/* Detailed Explanation */}
@@ -330,14 +348,30 @@ const DiagnosticSpecModal: React.FC<SpecModalProps> = ({ skill, onClose }) => {
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[10px] font-mono text-zinc-500">
-          <span>IDENTIFIER: 0x{skill.id.replace(/-/g, "").slice(0, 8).toUpperCase()}</span>
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/10 text-[10px] font-mono text-zinc-500">
           <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-full bg-white text-black font-bold tracking-wider hover:bg-zinc-200 transition-colors"
+            onClick={() => {
+              soundFX.playClick();
+              onClose();
+            }}
+            className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-zinc-300 hover:text-white flex items-center gap-1.5 transition-all"
           >
-            DISMISS
+            <ArrowLeft size={13} />
+            <span>Back to Skills Matrix</span>
           </button>
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline">IDENTIFIER: 0x{skill.id.replace(/-/g, "").slice(0, 8).toUpperCase()}</span>
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                onClose();
+              }}
+              className="px-4 py-1.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-mono text-xs font-bold tracking-wider transition-colors flex items-center gap-1.5 shadow-md"
+            >
+              <X size={13} />
+              <span>Close Spec</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

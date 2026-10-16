@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Printer, ShieldCheck, Copy, Check, Eye, Moon, Download, Loader2 } from "lucide-react";
+import { X, Printer, ShieldCheck, Copy, Check, Eye, Moon, Download, Loader2, ArrowLeft, ArrowUp } from "lucide-react";
 import profileData from "../data/profile.json";
 import { soundFX } from "../utils/audioFX";
 
@@ -406,11 +406,25 @@ ${certifications.map(c => `• ${c.title} - ${c.issuer} (${c.date}): ${c.detail}
         
         {/* ── Top Control Bar (Hidden on print) ──────────────────────────── */}
         <div className="no-print flex flex-wrap items-center justify-between pb-6 mb-6 border-b border-white/10 gap-4">
-          <div className="flex items-center gap-2">
-            <ShieldCheck size={16} className="text-emerald-400" />
-            <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">
-              ATS-Standard Verification
-            </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                onClose();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-mono text-zinc-200 hover:text-white transition-all shadow-sm"
+              aria-label="Back to portfolio"
+              title="Close resume (ESC)"
+            >
+              <ArrowLeft size={14} />
+              <span>Back</span>
+            </button>
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={16} className="text-emerald-400" />
+              <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">
+                ATS Verification
+              </span>
+            </div>
             <span className="text-[10px] font-mono text-zinc-500 bg-white/5 px-2 py-0.5 rounded border border-white/10 hidden sm:inline-block">
               ESC to close
             </span>
@@ -515,11 +529,12 @@ ${certifications.map(c => `• ${c.title} - ${c.issuer} (${c.date}): ${c.detail}
                 soundFX.playClick();
                 onClose();
               }}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white transition-colors ml-1"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/15 hover:bg-red-500/30 border border-red-500/30 text-red-200 hover:text-white text-xs font-mono transition-colors ml-1 shadow-sm"
               aria-label="Close resume (or press ESC)"
               title="Close (ESC)"
             >
-              <X size={16} />
+              <X size={15} />
+              <span className="hidden sm:inline font-bold">Close</span>
             </button>
           </div>
         </div>
@@ -747,6 +762,43 @@ ${certifications.map(c => `• ${c.title} - ${c.issuer} (${c.date}): ${c.detail}
                 </li>
               ))}
             </ul>
+          </div>
+        </div>
+
+        {/* ── Modal Bottom Action Bar (Hidden on print) ── */}
+        <div className="no-print mt-8 pt-6 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+          <button
+            onClick={() => {
+              soundFX.playClick();
+              onClose();
+            }}
+            className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-mono text-white flex items-center gap-2 transition-all shadow-md"
+          >
+            <ArrowLeft size={14} />
+            <span>Return to Portfolio</span>
+          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                document.querySelector(".print-modal-container")?.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-zinc-400 hover:text-white flex items-center gap-1.5 transition-all"
+            >
+              <ArrowUp size={13} />
+              <span>Back to Top</span>
+            </button>
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                onClose();
+              }}
+              className="px-4 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-xs font-mono text-red-200 hover:text-white flex items-center gap-1.5 transition-all shadow-md"
+            >
+              <X size={14} />
+              <span>Close Resume</span>
+            </button>
           </div>
         </div>
       </div>

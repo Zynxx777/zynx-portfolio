@@ -111,6 +111,43 @@ export const SkillsUniversePage: React.FC<SkillsUniversePageProps> = ({
 
       {/* ── THE INTERACTIVE ZERO UNIVERSITY SKILLS MATRIX ── */}
       <SkillsMatrix />
+
+      {/* ── BOTTOM RETURN NAVIGATION ── */}
+      <div className="max-w-[1700px] mx-auto mt-12 pt-8 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
+        <button
+          onClick={() => {
+            soundFX.playClick();
+            onNavigatePortfolio();
+          }}
+          className="px-5 py-2.5 rounded-full border border-white/20 bg-white/5 hover:bg-white/15 text-zinc-300 hover:text-white text-xs font-mono flex items-center gap-2 transition-all shadow-lg"
+        >
+          <ArrowLeft size={14} />
+          <span>Back to Developer Portfolio</span>
+        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              soundFX.playClick();
+              onNavigateSpace();
+            }}
+            className="px-4 py-2 rounded-full border border-purple-500/30 bg-purple-950/20 hover:bg-purple-900/30 text-purple-300 text-xs font-mono flex items-center gap-2 transition-all"
+          >
+            <Monitor size={13} />
+            <span>3D Bedroom Space</span>
+          </button>
+          <button
+            onClick={() => {
+              soundFX.playClick();
+              onNavigateCommunity();
+            }}
+            className="px-4 py-2 rounded-full border border-pink-500/30 bg-pink-950/20 hover:bg-pink-900/30 text-pink-300 text-xs font-mono flex items-center gap-2 transition-all"
+          >
+            <Disc3 size={13} />
+            <span>7YNX Music</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

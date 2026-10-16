@@ -13,6 +13,8 @@ import {
   Sliders,
   CheckCircle2,
   Radio,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import { BlackHoleSimulation } from "./BlackHoleSimulation";
 import { soundFX } from "../utils/audioFX";
@@ -105,35 +107,50 @@ export const PageInsidePageModal: React.FC<PageInsidePageModalProps> = ({
       >
         {/* ── WINDOW TITLE BAR (macOS / Cyber Browser Frame) ── */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 bg-[#0e1220] border-b border-white/10 flex-shrink-0">
-          {/* Traffic Lights */}
-          <div className="flex items-center gap-2">
+          {/* Traffic Lights & Back Navigation */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  onClose();
+                }}
+                className="w-3.5 h-3.5 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center group transition-colors"
+                title="Close window"
+                aria-label="Close window"
+              >
+                <X size={8} className="opacity-0 group-hover:opacity-100 text-black" />
+              </button>
+              <button
+                onClick={() => soundFX.playHover()}
+                className="w-3.5 h-3.5 rounded-full bg-amber-500/80 hover:bg-amber-500 transition-colors"
+                title="Minimize window"
+                aria-label="Minimize window"
+              />
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  setIsFullscreen(!isFullscreen);
+                }}
+                className="w-3.5 h-3.5 rounded-full bg-emerald-500/80 hover:bg-emerald-500 flex items-center justify-center group transition-colors"
+                title="Toggle fullscreen"
+                aria-label="Toggle fullscreen"
+              >
+                <Maximize2 size={8} className="opacity-0 group-hover:opacity-100 text-black" />
+              </button>
+            </div>
+
             <button
               onClick={() => {
                 soundFX.playClick();
                 onClose();
               }}
-              className="w-3.5 h-3.5 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center group transition-colors"
-              title="Close window"
-              aria-label="Close window"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-mono text-zinc-300 hover:text-white transition-all group shadow-sm"
+              title="Return to Projects (Close Viewport)"
+              aria-label="Return to Projects"
             >
-              <X size={8} className="opacity-0 group-hover:opacity-100 text-black" />
-            </button>
-            <button
-              onClick={() => soundFX.playHover()}
-              className="w-3.5 h-3.5 rounded-full bg-amber-500/80 hover:bg-amber-500 transition-colors"
-              title="Minimize window"
-              aria-label="Minimize window"
-            />
-            <button
-              onClick={() => {
-                soundFX.playClick();
-                setIsFullscreen(!isFullscreen);
-              }}
-              className="w-3.5 h-3.5 rounded-full bg-emerald-500/80 hover:bg-emerald-500 flex items-center justify-center group transition-colors"
-              title="Toggle fullscreen"
-              aria-label="Toggle fullscreen"
-            >
-              <Maximize2 size={8} className="opacity-0 group-hover:opacity-100 text-black" />
+              <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" />
+              <span className="font-medium text-[11px] sm:text-xs">Back</span>
             </button>
           </div>
 
@@ -149,7 +166,7 @@ export const PageInsidePageModal: React.FC<PageInsidePageModalProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2 text-zinc-400">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-zinc-400">
             <button
               onClick={() => {
                 soundFX.playClick();
@@ -162,11 +179,16 @@ export const PageInsidePageModal: React.FC<PageInsidePageModalProps> = ({
               {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
             </button>
             <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg hover:bg-white/10 hover:text-white transition-colors"
-              aria-label="Close"
+              onClick={() => {
+                soundFX.playClick();
+                onClose();
+              }}
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500/30 border border-red-500/30 text-red-200 hover:text-white text-xs font-mono transition-colors shadow-sm"
+              aria-label="Close viewport"
+              title="Close (ESC)"
             >
-              <X size={16} />
+              <X size={14} />
+              <span className="hidden sm:inline font-bold">Close</span>
             </button>
           </div>
         </div>
@@ -351,6 +373,42 @@ export const PageInsidePageModal: React.FC<PageInsidePageModalProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Tab 1 Navigation Footer */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-white/10">
+                <button
+                  onClick={() => {
+                    soundFX.playClick();
+                    onClose();
+                  }}
+                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-mono text-zinc-300 hover:text-white flex items-center gap-2 transition-all shadow-sm"
+                >
+                  <ArrowLeft size={14} />
+                  <span>Back to Projects</span>
+                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      soundFX.playClick();
+                      setActiveTab("spec");
+                    }}
+                    className="px-4 py-2 rounded-xl bg-cyan-400/10 hover:bg-cyan-400/20 border border-cyan-400/30 text-cyan-300 text-xs font-mono flex items-center gap-2 transition-all font-bold"
+                  >
+                    <span>System Specs</span>
+                    <ArrowRight size={14} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      soundFX.playClick();
+                      onClose();
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-rose-500/20 border border-white/10 hover:border-rose-500/30 text-xs font-mono text-zinc-400 hover:text-rose-200 flex items-center gap-1.5 transition-all"
+                  >
+                    <X size={13} />
+                    <span>Close</span>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -381,6 +439,54 @@ export const PageInsidePageModal: React.FC<PageInsidePageModalProps> = ({
                       {sk}
                     </span>
                   ))}
+                </div>
+              </div>
+
+              {/* Tab 2 Navigation Footer */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-white/10">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      soundFX.playClick();
+                      onClose();
+                    }}
+                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-mono text-zinc-300 hover:text-white flex items-center gap-2 transition-all shadow-sm"
+                  >
+                    <ArrowLeft size={14} />
+                    <span>Back to Projects</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      soundFX.playClick();
+                      setActiveTab("runtime");
+                    }}
+                    className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-zinc-400 hover:text-white flex items-center gap-1.5 transition-all"
+                  >
+                    <ArrowLeft size={12} />
+                    <span>Runtime</span>
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      soundFX.playClick();
+                      setActiveTab("telemetry");
+                    }}
+                    className="px-4 py-2 rounded-xl bg-cyan-400/10 hover:bg-cyan-400/20 border border-cyan-400/30 text-cyan-300 text-xs font-mono flex items-center gap-2 transition-all font-bold"
+                  >
+                    <span>Telemetry</span>
+                    <ArrowRight size={14} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      soundFX.playClick();
+                      onClose();
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-rose-500/20 border border-white/10 hover:border-rose-500/30 text-xs font-mono text-zinc-400 hover:text-rose-200 flex items-center gap-1.5 transition-all"
+                  >
+                    <X size={13} />
+                    <span>Close</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -416,6 +522,54 @@ export const PageInsidePageModal: React.FC<PageInsidePageModalProps> = ({
                 <div className="text-zinc-500">Bus = "spi"</div>
                 <div className="text-emerald-400">Status = "OPERATIONAL // BUFFER HEALTHY"</div>
               </div>
+
+              {/* Tab 3 Navigation Footer */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-white/10">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      soundFX.playClick();
+                      onClose();
+                    }}
+                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-mono text-zinc-300 hover:text-white flex items-center gap-2 transition-all shadow-sm"
+                  >
+                    <ArrowLeft size={14} />
+                    <span>Back to Projects</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      soundFX.playClick();
+                      setActiveTab("spec");
+                    }}
+                    className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-zinc-400 hover:text-white flex items-center gap-1.5 transition-all"
+                  >
+                    <ArrowLeft size={12} />
+                    <span>Specs</span>
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      soundFX.playClick();
+                      setActiveTab("code");
+                    }}
+                    className="px-4 py-2 rounded-xl bg-cyan-400/10 hover:bg-cyan-400/20 border border-cyan-400/30 text-cyan-300 text-xs font-mono flex items-center gap-2 transition-all font-bold"
+                  >
+                    <span>Source & Tools</span>
+                    <ArrowRight size={14} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      soundFX.playClick();
+                      onClose();
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-rose-500/20 border border-white/10 hover:border-rose-500/30 text-xs font-mono text-zinc-400 hover:text-rose-200 flex items-center gap-1.5 transition-all"
+                  >
+                    <X size={13} />
+                    <span>Close</span>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -445,6 +599,42 @@ export const PageInsidePageModal: React.FC<PageInsidePageModalProps> = ({
                   </a>
                 </div>
               </div>
+
+              {/* Tab 4 Navigation Footer */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-white/10">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      soundFX.playClick();
+                      onClose();
+                    }}
+                    className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-mono text-zinc-300 hover:text-white flex items-center gap-2 transition-all shadow-sm"
+                  >
+                    <ArrowLeft size={14} />
+                    <span>Back to Projects</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      soundFX.playClick();
+                      setActiveTab("telemetry");
+                    }}
+                    className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-zinc-400 hover:text-white flex items-center gap-1.5 transition-all"
+                  >
+                    <ArrowLeft size={12} />
+                    <span>Telemetry</span>
+                  </button>
+                </div>
+                <button
+                  onClick={() => {
+                    soundFX.playClick();
+                    onClose();
+                  }}
+                  className="px-4 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black text-xs font-mono font-bold flex items-center gap-2 transition-all shadow-md shadow-cyan-400/20"
+                >
+                  <X size={14} />
+                  <span>Close Viewport</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -460,13 +650,17 @@ export const PageInsidePageModal: React.FC<PageInsidePageModalProps> = ({
             <span className="hidden sm:inline">SECURE SSL 256-BIT</span>
           </div>
 
-          <div className="flex items-center gap-4">
-            <span className="text-zinc-400">PRESS [ESC] TO CLOSE</span>
+          <div className="flex items-center gap-3">
+            <span className="text-zinc-400 hidden sm:inline">PRESS [ESC] TO CLOSE</span>
             <button
-              onClick={onClose}
-              className="text-white hover:text-cyan-300 underline font-bold"
+              onClick={() => {
+                soundFX.playClick();
+                onClose();
+              }}
+              className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white hover:text-cyan-300 text-xs font-mono font-bold flex items-center gap-1.5 transition-all"
             >
-              DISMISS
+              <X size={12} />
+              <span>Close</span>
             </button>
           </div>
         </div>
