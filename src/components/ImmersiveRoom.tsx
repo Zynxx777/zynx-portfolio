@@ -29,7 +29,7 @@ interface ImmersiveRoomProps {
   editMode: boolean;
   onEditModeChange: (enabled: boolean) => void;
   onEscape: () => void;
-  onFurnitureSelect: (label: string | null) => void;
+  onFurnitureSelect: (label: string | null, id?: FurnitureId | null) => void;
   resetLayoutSignal: number;
   saveDefaultLayoutSignal: number;
   snapToGrid: boolean;
@@ -40,11 +40,60 @@ interface ImmersiveRoomProps {
   onLightingToggle: () => void;
 }
 
-type FurnitureId = "studio" | "cpu" | "phone" | "shelf" | "gallery" | "chair" | "bed" | "door" | "lamp";
-type FurniturePlacement = { x: number; z: number; y?: number; rotation?: number };
+export type FurnitureId = "studio" | "cpu" | "phone" | "shelf" | "gallery" | "chair" | "bed" | "door" | "lamp";
+export type FurniturePlacement = { x: number; z: number; y?: number; rotation?: number };
 export type FurnitureEditRequest =
   | { sequence: number; action: "rotate"; degrees: number }
-  | { sequence: number; action: "dock"; side: "left" | "right" };
+  | { sequence: number; action: "dock"; side: "left" | "right" }
+  | { sequence: number; action: "nudge"; dx: number; dz: number }
+  | { sequence: number; action: "select"; id: FurnitureId | null }
+  | { sequence: number; action: "cycle"; direction: 1 | -1 };
+
+export function getResponsiveOverview(width?: number, height?: number): { fov: number; cam: [number, number, number]; lookAt: [number, number, number] } {
+  const w = width ?? (typeof window !== "undefined" ? window.innerWidth : 1280);
+  const h = height ?? (typeof window !== "undefined" ? window.innerHeight : 720);
+  const aspect = w / Math.max(h, 1);
+  if (aspect >= 1.25) {
+    return {
+      fov: 42,
+      cam: [7, 6, 8],
+      lookAt: [0, 1.2, 0],
+    };
+  }
+  if (aspect >= 0.85) {
+    const t = (1.25 - aspect) / (1.25 - 0.85);
+    return {
+      fov: 42 + t * 16,
+      cam: [7 + t * 4.8, 6 + t * 6.0, 8 + t * 5.2],
+      lookAt: [0, 1.2, 0],
+    };
+  }
+  // Mobile phones & narrow portrait screens (aspect < 0.85 down to ~0.40)
+  const t = Math.max(0, Math.min(1, (0.85 - aspect) / (0.85 - 0.40)));
+  return {
+    fov: 58 + t * 13,
+    cam: [11.8 + t * 6.2, 12.0 + t * 11.0, 13.2 + t * 8.3],
+    lookAt: [0.25 * t, 1.2 + t * 0.3, 0],
+  };
+}
+
+export const ROOM_FURNITURE_CATALOG: Array<{
+  id: FurnitureId;
+  label: string;
+  shortLabel: string;
+  icon: string;
+  themes: Array<"cyberpunk" | "anime-bedroom">;
+}> = [
+  { id: "studio", label: "Studio desk rig", shortLabel: "Desk Rig", icon: "🖥️", themes: ["cyberpunk", "anime-bedroom"] },
+  { id: "chair", label: "Studio chair", shortLabel: "Chair", icon: "🪑", themes: ["cyberpunk", "anime-bedroom"] },
+  { id: "bed", label: "Bed and bedside set", shortLabel: "Bed Set", icon: "🛏️", themes: ["anime-bedroom"] },
+  { id: "lamp", label: "Bedside floor lamp", shortLabel: "Floor Lamp", icon: "💡", themes: ["anime-bedroom"] },
+  { id: "cpu", label: "PC tower", shortLabel: "PC Tower", icon: "💻", themes: ["cyberpunk", "anime-bedroom"] },
+  { id: "phone", label: "Desk phone", shortLabel: "Desk Phone", icon: "📱", themes: ["cyberpunk", "anime-bedroom"] },
+  { id: "shelf", label: "Bookshelf", shortLabel: "Bookshelf", icon: "📚", themes: ["cyberpunk", "anime-bedroom"] },
+  { id: "door", label: "Bedroom door", shortLabel: "Door", icon: "🚪", themes: ["anime-bedroom"] },
+  { id: "gallery", label: "Anime art wall", shortLabel: "Art Wall", icon: "🖼️", themes: ["cyberpunk", "anime-bedroom"] },
+];
 
 const transformCameraForFurniture = (coords: number[], placement: FurniturePlacement) => {
   const rotation = placement.rotation ?? 0;
@@ -316,8 +365,9 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
   }, [furnitureEditRequest]);
 
   // References to smoothly command camera from props
-  const targetCamPos = useRef(new THREE.Vector3(...(ZONE_CAMS.overview.slice(0, 3) as [number, number, number])));
-  const targetLookAt = useRef(new THREE.Vector3(...(ZONE_CAMS.overview.slice(3, 6) as [number, number, number])));
+  const initialOverview = getResponsiveOverview();
+  const targetCamPos = useRef(new THREE.Vector3(...initialOverview.cam));
+  const targetLookAt = useRef(new THREE.Vector3(...initialOverview.lookAt));
 
   const setLabelRef = useCallback((id: ZoneId) => (el: HTMLDivElement | null) => {
     if (el) labelRefs.current.set(id, el); else labelRefs.current.delete(id);
@@ -326,6 +376,14 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
   // Sync external zone jump
   useEffect(() => {
     if (!activeZoneId) return;
+    if (activeZoneId === "overview") {
+      const container = mountRef.current;
+      const overview = getResponsiveOverview(container?.clientWidth, container?.clientHeight);
+      targetCamPos.current.set(...overview.cam);
+      targetLookAt.current.set(...overview.lookAt);
+      soundFX.playZoom();
+      return;
+    }
     const baseCoords = ZONE_CAMS[activeZoneId] || ZONE_CAMS.overview;
     const coords = transformCameraForZone(activeZoneId, baseCoords, furnitureOffsetsRef.current);
     targetCamPos.current.set(coords[0], coords[1], coords[2]);
@@ -334,8 +392,10 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
   }, [activeZoneId]);
 
   useEffect(() => {
-    targetCamPos.current.set(...(ZONE_CAMS.overview.slice(0, 3) as [number, number, number]));
-    targetLookAt.current.set(...(ZONE_CAMS.overview.slice(3, 6) as [number, number, number]));
+    const container = mountRef.current;
+    const overview = getResponsiveOverview(container?.clientWidth, container?.clientHeight);
+    targetCamPos.current.set(...overview.cam);
+    targetLookAt.current.set(...overview.lookAt);
   }, [theme]);
 
   useEffect(() => {
@@ -358,14 +418,12 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
 
     // ── Camera ──────────────────────────────────────────────────────────────
     const W = container.clientWidth, H = container.clientHeight;
-    const isPortrait = W < H;
-    const camera = new THREE.PerspectiveCamera(isPortrait ? 56 : 42, W / H, 0.1, 120);
-    if (isPortrait) {
-      camera.position.set(ZONE_CAMS.overview[0] * 1.18, ZONE_CAMS.overview[1] * 1.12, ZONE_CAMS.overview[2] * 1.18);
-    } else {
-      camera.position.set(ZONE_CAMS.overview[0], ZONE_CAMS.overview[1], ZONE_CAMS.overview[2]);
-    }
-    const roomOverviewLookAt = new THREE.Vector3(0, 1.2, 0);
+    const initialCam = getResponsiveOverview(W, H);
+    const camera = new THREE.PerspectiveCamera(initialCam.fov, W / H, 0.1, 150);
+    camera.position.set(...initialCam.cam);
+    const roomOverviewLookAt = new THREE.Vector3(...initialCam.lookAt);
+    targetCamPos.current.set(...initialCam.cam);
+    targetLookAt.current.set(...initialCam.lookAt);
 
     // ── Renderer ────────────────────────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance", alpha: false });
@@ -1962,17 +2020,78 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       saveFurnitureLayout();
     };
 
+    const selectionHelper = new THREE.BoxHelper(new THREE.Mesh(), new THREE.Color(accentColor));
+    selectionHelper.visible = false;
+    const boxMat = selectionHelper.material as THREE.LineBasicMaterial;
+    boxMat.depthTest = false;
+    boxMat.transparent = true;
+    boxMat.opacity = 0.85;
+    selectionHelper.renderOrder = 999;
+    scene.add(selectionHelper);
+
     const applyFurnitureEditRequest = (request: FurnitureEditRequest) => {
+      if (request.action === "select") {
+        if (!request.id) {
+          selectFurniture(null);
+        } else {
+          const item = furniture.get(request.id);
+          if (item) selectFurniture(item);
+        }
+        return;
+      }
+      if (request.action === "cycle") {
+        const items = [...furniture.values()];
+        if (!items.length) return;
+        const index = selectedItem ? items.findIndex(item => item.id === selectedItem?.id) : -1;
+        const nextIndex = index < 0
+          ? (request.direction > 0 ? 0 : items.length - 1)
+          : (index + request.direction + items.length) % items.length;
+        selectFurniture(items[nextIndex] ?? null);
+        return;
+      }
       if (!selectedItem) return;
-      if (request.action === "rotate") rotateFurniture(selectedItem, request.degrees);
-      else dockFurniture(selectedItem, request.side);
+      if (request.action === "rotate") {
+        rotateFurniture(selectedItem, request.degrees);
+      } else if (request.action === "dock") {
+        dockFurniture(selectedItem, request.side);
+      } else if (request.action === "nudge") {
+        const step = snapToGridRef.current ? 0.25 : 0.1;
+        if (selectedItem.axis === "side-wall") {
+          if (request.dx !== 0) {
+            const switchToRight = request.dx > 0;
+            moveFurniture(selectedItem, switchToRight ? 7.99 : -7.99, selectedItem.group.position.z, step, true);
+          } else if (request.dz !== 0) {
+            moveFurniture(selectedItem, selectedItem.group.position.x, selectedItem.group.position.z + request.dz * step, step, true);
+          }
+          return;
+        }
+        if (selectedItem.axis === "wall") {
+          if (request.dx !== 0) {
+            moveFurniture(selectedItem, selectedItem.group.position.x + request.dx * step, selectedItem.group.position.z, step, true);
+          }
+          return;
+        }
+        moveFurniture(
+          selectedItem,
+          selectedItem.group.position.x + request.dx * step,
+          selectedItem.group.position.z + request.dz * step,
+          step,
+          true,
+        );
+      }
     };
     furnitureEditActionRef.current = applyFurnitureEditRequest;
 
     const selectFurniture = (item: FurnitureItem | null) => {
       selectedItem = item;
       selectedFurnitureIdRef.current = item?.id ?? null;
-      onFurnitureSelectRef.current(item?.label ?? null);
+      onFurnitureSelectRef.current(item?.label ?? null, item?.id ?? null);
+      if (item) {
+        selectionHelper.setFromObject(item.group);
+        selectionHelper.visible = true;
+      } else {
+        selectionHelper.visible = false;
+      }
     };
 
     const resetFurnitureLayout = () => {
@@ -1997,8 +2116,9 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       saveFurnitureLayout();
       movingFurniture = false;
       selectFurniture(null);
-      targetCamPos.current.set(...(ZONE_CAMS.overview.slice(0, 3) as [number, number, number]));
-      targetLookAt.current.set(...(ZONE_CAMS.overview.slice(3, 6) as [number, number, number]));
+      const overview = getResponsiveOverview(container.clientWidth, container.clientHeight);
+      targetCamPos.current.set(...overview.cam);
+      targetLookAt.current.set(...overview.lookAt);
     };
     resetLayoutActionRef.current = resetFurnitureLayout;
 
@@ -2140,30 +2260,39 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         if (editModeRef.current) {
           raycaster.setFromCamera(mouse2D, camera);
           const hits = raycaster.intersectObjects(getFurnitureGroups(), true);
-          const item = hits.length ? findFurnitureForObject(hits[0].object) : null;
-          selectFurniture(item);
-          if (item) {
-            const dragNormal = item.axis === "wall"
+          const hitItem = hits.length ? findFurnitureForObject(hits[0].object) : null;
+          if (hitItem) {
+            selectFurniture(hitItem);
+          }
+
+          const activeItem = selectedItem;
+          if (activeItem) {
+            const dragNormal = activeItem.axis === "wall"
               ? new THREE.Vector3(0, 0, 1)
-              : item.axis === "side-wall"
+              : activeItem.axis === "side-wall"
                 ? new THREE.Vector3(1, 0, 0)
                 : new THREE.Vector3(0, 1, 0);
-            const dragPlaneOffset = item.axis === "wall"
+            const dragPlaneOffset = activeItem.axis === "wall"
               ? 4.9
-              : item.axis === "side-wall"
-                ? (item.group.position.x < 0 ? 7.99 : -7.99)
-                : item.axis === "table" ? -DESK_TOP_Y : 0;
+              : activeItem.axis === "side-wall"
+                ? (activeItem.group.position.x < 0 ? 7.99 : -7.99)
+                : activeItem.axis === "table" ? -DESK_TOP_Y : 0;
             dragPlane.set(dragNormal, dragPlaneOffset);
             if (raycaster.ray.intersectPlane(dragPlane, dragPoint)) {
-              const parent = item.axis === "table" ? item.group.parent : null;
+              const parent = activeItem.axis === "table" ? activeItem.group.parent : null;
               if (parent) parent.updateMatrixWorld(true);
               const localPoint = parent ? parent.worldToLocal(dragPoint.clone()) : dragPoint;
-              dragOffset.set(item.group.position.x - localPoint.x, item.group.position.z - localPoint.z);
+              dragOffset.set(activeItem.group.position.x - localPoint.x, activeItem.group.position.z - localPoint.z);
               movingFurniture = true;
               touchMode = "drag-furniture";
               return;
             }
           }
+
+          orbitTargetSwitched = false;
+          spherical.setFromVector3(camera.position.clone().sub(targetLookAt.current));
+          touchMode = "orbit";
+          return;
         }
 
         orbitTargetSwitched = false;
@@ -2222,21 +2351,29 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
         if (initialPinchDist > 0 && currentDist > 0) {
           const factor = initialPinchDist / currentDist;
-          spherical.radius = THREE.MathUtils.clamp(initialPinchRadius * factor, 3.5, 28);
+          spherical.radius = THREE.MathUtils.clamp(initialPinchRadius * factor, 3.5, 48);
           targetCamPos.current.copy(targetLookAt.current).add(new THREE.Vector3().setFromSpherical(spherical));
         }
       }
     };
 
     const onTouchEnd = (e: TouchEvent) => {
+      const duration = performance.now() - touchStartTime;
+
       if (touchMode === "drag-furniture") {
         if (movingFurniture) saveFurnitureLayout();
         movingFurniture = false;
+        if (!touchMoved && duration < 250) {
+          raycaster.setFromCamera(mouse2D, camera);
+          const hits = raycaster.intersectObjects(getFurnitureGroups(), true);
+          if (!hits.length) {
+            selectFurniture(null);
+          }
+        }
       }
 
       // Tap detection (quick tap with minimal movement)
-      const duration = performance.now() - touchStartTime;
-      if (!touchMoved && duration < 380 && touchMode === "orbit") {
+      if (!editModeRef.current && !touchMoved && duration < 380 && touchMode === "orbit") {
         handleInteractAtMouse();
       }
 
@@ -2302,7 +2439,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       if (editModeRef.current) return;
       e.preventDefault();
       spherical.setFromVector3(targetCamPos.current.clone().sub(targetLookAt.current));
-      spherical.radius = THREE.MathUtils.clamp(spherical.radius * Math.exp(e.deltaY * 0.001), 3.5, 28);
+      spherical.radius = THREE.MathUtils.clamp(spherical.radius * Math.exp(e.deltaY * 0.001), 3.5, 48);
       targetCamPos.current.copy(targetLookAt.current).add(new THREE.Vector3().setFromSpherical(spherical));
     };
 
@@ -2346,8 +2483,9 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
           selectFurniture(null);
           onEditModeChange(false);
         } else {
-          targetCamPos.current.set(...(ZONE_CAMS.overview.slice(0, 3) as [number, number, number]));
-          targetLookAt.current.set(...(ZONE_CAMS.overview.slice(3, 6) as [number, number, number]));
+          const overview = getResponsiveOverview(container.clientWidth, container.clientHeight);
+          targetCamPos.current.set(...overview.cam);
+          targetLookAt.current.set(...overview.lookAt);
           onEscape();
         }
         return;
@@ -2644,6 +2782,10 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         el.style.opacity = vis ? "1" : "0";
       });
 
+      if (selectionHelper.visible && selectedItem) {
+        selectionHelper.setFromObject(selectedItem.group);
+      }
+
       renderer.render(scene, camera);
     };
     animate();
@@ -2652,12 +2794,18 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       if (!container) return;
       const width = container.clientWidth;
       const height = container.clientHeight;
-      const isPortraitNow = width < height;
-      camera.fov = isPortraitNow ? 56 : 42;
+      const overview = getResponsiveOverview(width, height);
       camera.aspect = width / height;
+      camera.fov = overview.fov;
       camera.updateProjectionMatrix();
+      roomOverviewLookAt.set(...overview.lookAt);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(width, height);
+
+      if (!activeZoneIdRef.current || activeZoneIdRef.current === "overview" || editModeRef.current) {
+        targetCamPos.current.set(...overview.cam);
+        targetLookAt.current.set(...overview.lookAt);
+      }
     };
     window.addEventListener("resize", handleResize);
 
@@ -2677,6 +2825,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       container.removeEventListener("touchmove", onTouchMove);
       container.removeEventListener("touchend", onTouchEnd);
       container.removeEventListener("touchcancel", onTouchEnd);
+      selectionHelper.dispose();
       if (resetLayoutActionRef.current === resetFurnitureLayout) resetLayoutActionRef.current = null;
       if (saveDefaultLayoutActionRef.current === saveDefaultFurnitureLayout) saveDefaultLayoutActionRef.current = null;
       if (furnitureEditActionRef.current === applyFurnitureEditRequest) furnitureEditActionRef.current = null;

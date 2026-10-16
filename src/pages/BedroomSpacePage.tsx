@@ -1,5 +1,14 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { ImmersiveRoom, ROOM_POSTERS, ROOM_ZONES, type FurnitureEditRequest, type RoomPosterId, type ZoneId } from "../components/ImmersiveRoom";
+import {
+  ImmersiveRoom,
+  ROOM_POSTERS,
+  ROOM_ZONES,
+  ROOM_FURNITURE_CATALOG,
+  type FurnitureId,
+  type FurnitureEditRequest,
+  type RoomPosterId,
+  type ZoneId,
+} from "../components/ImmersiveRoom";
 import { SoundLab } from "../components/SoundLab";
 import { BedroomAudioPlayer } from "../components/BedroomAudioPlayer";
 import PhoneExperience from "../components/PhoneExperience";
@@ -8,7 +17,7 @@ import {
   X, ArrowLeft, Disc3, Award, GraduationCap,
   Terminal, Cpu, Music, Layers, Shield, ChevronRight,
   Monitor, Zap, BookOpen, Headphones, Save,
-  Grid, Eye, BedDouble, Sparkles, Move, RotateCcw,
+  Grid, Eye, BedDouble, Sparkles, Move, RotateCcw, Check,
 } from "lucide-react";
 
 interface BedroomSpacePageProps {
@@ -688,6 +697,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
   });
   const [editMode, setEditMode] = useState(false);
   const [selectedFurniture, setSelectedFurniture] = useState<string | null>(null);
+  const [selectedFurnitureId, setSelectedFurnitureId] = useState<FurnitureId | null>(null);
   const [resetLayoutSignal, setResetLayoutSignal] = useState(0);
   const [saveDefaultLayoutSignal, setSaveDefaultLayoutSignal] = useState(0);
   const [snapToGrid, setSnapToGrid] = useState(true);
@@ -708,7 +718,6 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
     });
   }, []);
 
-
   const handleZoneClick = useCallback((zoneId: ZoneId) => {
     soundFX.playClick();
     setActiveZone(zoneId);
@@ -721,6 +730,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
     setTargetZone("overview");
     setEditMode(false);
     setSelectedFurniture(null);
+    setSelectedFurnitureId(null);
     setPhoneOpen(true);
   }, []);
 
@@ -734,6 +744,8 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
     setTargetZone("overview");
     setActiveZone(null);
     setActivePoster(null);
+    setSelectedFurniture(null);
+    setSelectedFurnitureId(null);
   }, []);
 
   const closePoster = useCallback(() => setActivePoster(null), []);
@@ -744,6 +756,17 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
   const requestFurnitureDock = (side: "left" | "right") => {
     setFurnitureEditRequest(request => ({ sequence: request.sequence + 1, action: "dock", side }));
   };
+  const requestFurnitureNudge = (dx: number, dz: number) => {
+    setFurnitureEditRequest(request => ({ sequence: request.sequence + 1, action: "nudge", dx, dz }));
+  };
+  const requestFurnitureSelect = (id: FurnitureId | null) => {
+    setFurnitureEditRequest(request => ({ sequence: request.sequence + 1, action: "select", id }));
+  };
+
+  const handleFurnitureSelect = useCallback((label: string | null, id?: FurnitureId | null) => {
+    setSelectedFurniture(label);
+    setSelectedFurnitureId(id ?? null);
+  }, []);
 
   const handleDockSelect = (zoneId: ZoneId | "overview") => {
     soundFX.playClick();
@@ -854,7 +877,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
             editMode={editMode}
             onEditModeChange={setEditMode}
             onEscape={handleRoomEscape}
-            onFurnitureSelect={setSelectedFurniture}
+            onFurnitureSelect={handleFurnitureSelect}
             resetLayoutSignal={resetLayoutSignal}
             saveDefaultLayoutSignal={saveDefaultLayoutSignal}
             snapToGrid={snapToGrid}
@@ -863,12 +886,193 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
             onPhoneClick={handlePhoneClick}
           />
 
-          <div className="absolute left-4 top-[4.25rem] z-20 flex max-w-[calc(100%-2rem)] flex-col gap-2 pointer-events-auto">
+          {/* Mobile Non-Edit Mode: Arrange Room Button */}
+          {!editMode && (
+            <div className="flex md:hidden absolute left-3 top-[4.25rem] z-20 items-center gap-2 pointer-events-auto">
+              <button
+                onClick={() => { soundFX.playClick(); setEditMode(true); setSelectedFurniture(null); setSelectedFurnitureId(null); }}
+                className="flex h-8 items-center gap-1.5 rounded-full border border-white/15 bg-black/55 px-3 text-[10px] font-mono text-zinc-200 shadow-lg backdrop-blur-xl transition hover:border-cyan-300/50 hover:text-white active:scale-95"
+              >
+                <Move size={12} className="text-cyan-400" />
+                <span>Arrange Room</span>
+              </button>
+            </div>
+          )}
+
+          {/* Mobile Edit Mode: Compact Top Action Bar */}
+          {editMode && (
+            <div className="flex md:hidden absolute left-3 right-3 top-[4.25rem] z-20 items-center justify-between pointer-events-auto">
+              <div className="flex items-center gap-1.5">
+                <span className="rounded-full border border-rose-400/40 bg-rose-950/70 px-2.5 py-1 text-[10px] font-mono font-semibold text-rose-200 backdrop-blur-md flex items-center gap-1 shadow-lg">
+                  <Move size={11} className="text-rose-400" /> ARRANGE
+                </span>
+                <button
+                  onClick={() => { soundFX.playClick(); setSnapToGrid(!snapToGrid); }}
+                  className={`h-7 px-2.5 rounded-full border text-[10px] font-mono shadow backdrop-blur-md transition ${snapToGrid ? "border-cyan-400/40 bg-cyan-950/70 text-cyan-200" : "border-amber-400/40 bg-amber-950/70 text-amber-200"}`}
+                >
+                  {snapToGrid ? "Grid ¼m" : "Free"}
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => { soundFX.playClick(); setResetLayoutSignal(s => s + 1); }}
+                  className="h-7 w-7 rounded-full border border-rose-300/30 bg-rose-950/60 text-rose-200 flex items-center justify-center shadow backdrop-blur-md active:scale-95"
+                  title="Revert to default"
+                  aria-label="Revert to default"
+                >
+                  <RotateCcw size={12} />
+                </button>
+                <button
+                  onClick={() => { soundFX.playClick(); setSaveDefaultLayoutSignal(s => s + 1); }}
+                  className="h-7 w-7 rounded-full border border-cyan-300/30 bg-cyan-950/60 text-cyan-200 flex items-center justify-center shadow backdrop-blur-md active:scale-95"
+                  title="Save default"
+                  aria-label="Save default"
+                >
+                  <Save size={12} />
+                </button>
+                <button
+                  onClick={() => { soundFX.playClick(); setEditMode(false); setSelectedFurniture(null); setSelectedFurnitureId(null); }}
+                  className="h-7 px-3 rounded-full border border-white/20 bg-rose-500/30 text-white font-mono text-[11px] font-semibold flex items-center gap-1 shadow backdrop-blur-md active:scale-95 transition"
+                >
+                  <Check size={12} /> Done
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Mobile Edit Mode: Floating Bottom Carousel & Touch Precision Controls */}
+          {editMode && (
+            <div className="flex md:hidden absolute bottom-3 left-2 right-2 z-30 pointer-events-auto flex-col gap-2 max-w-full">
+              <div className="rounded-2xl border border-white/15 bg-black/85 backdrop-blur-2xl p-2.5 shadow-2xl space-y-2">
+                {/* Piece Selector Chips */}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5">
+                  {ROOM_FURNITURE_CATALOG
+                    .filter(item => item.themes.includes(roomTheme))
+                    .map(item => {
+                      const isSelected = selectedFurnitureId === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            soundFX.playClick();
+                            requestFurnitureSelect(isSelected ? null : item.id);
+                          }}
+                          className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-mono transition-all border ${
+                            isSelected
+                              ? "border-cyan-400 bg-cyan-500/25 text-white font-bold shadow-[0_0_12px_rgba(0,242,254,0.35)] scale-105"
+                              : "border-white/10 bg-white/5 text-zinc-300 hover:border-white/20 hover:text-white"
+                          }`}
+                        >
+                          <span>{item.icon}</span>
+                          <span>{item.shortLabel}</span>
+                        </button>
+                      );
+                    })}
+                  {selectedFurnitureId && (
+                    <button
+                      onClick={() => { soundFX.playClick(); requestFurnitureSelect(null); }}
+                      className="flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[10px] font-mono border border-white/10 bg-white/5 text-zinc-400 hover:text-white"
+                      title="Clear selection"
+                    >
+                      <X size={11} /> Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Touch Precision Cluster (when selected) */}
+                {selectedFurniture ? (
+                  <div className="flex items-center justify-between gap-3 pt-1.5 border-t border-white/10">
+                    {/* D-Pad */}
+                    <div className="flex items-center gap-1">
+                      <div className="grid grid-cols-3 grid-rows-2 gap-1 w-24 h-14">
+                        <div />
+                        <button
+                          onClick={() => { soundFX.playSynthNote(520); requestFurnitureNudge(0, -1); }}
+                          className="rounded-lg border border-white/15 bg-white/10 active:bg-cyan-500/40 text-white flex items-center justify-center font-bold text-xs shadow"
+                          aria-label="Nudge back"
+                        >
+                          ▲
+                        </button>
+                        <div />
+                        <button
+                          onClick={() => { soundFX.playSynthNote(480); requestFurnitureNudge(-1, 0); }}
+                          className="rounded-lg border border-white/15 bg-white/10 active:bg-cyan-500/40 text-white flex items-center justify-center font-bold text-xs shadow"
+                          aria-label="Nudge left"
+                        >
+                          ◄
+                        </button>
+                        <button
+                          onClick={() => { soundFX.playSynthNote(520); requestFurnitureNudge(0, 1); }}
+                          className="rounded-lg border border-white/15 bg-white/10 active:bg-cyan-500/40 text-white flex items-center justify-center font-bold text-xs shadow"
+                          aria-label="Nudge forward"
+                        >
+                          ▼
+                        </button>
+                        <button
+                          onClick={() => { soundFX.playSynthNote(480); requestFurnitureNudge(1, 0); }}
+                          className="rounded-lg border border-white/15 bg-white/10 active:bg-cyan-500/40 text-white flex items-center justify-center font-bold text-xs shadow"
+                          aria-label="Nudge right"
+                        >
+                          ►
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Rotate & Dock Controls */}
+                    <div className="flex flex-col gap-1.5 flex-1 items-end">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => { soundFX.playClick(); requestFurnitureRotation(-15); }}
+                          className="h-7 px-2.5 rounded-lg border border-white/15 bg-white/10 active:bg-cyan-500/30 text-white text-[10px] font-mono flex items-center gap-1 shadow"
+                          title="Rotate -15°"
+                        >
+                          <RotateCcw size={11} /> -15°
+                        </button>
+                        <button
+                          onClick={() => { soundFX.playClick(); requestFurnitureRotation(15); }}
+                          className="h-7 px-2.5 rounded-lg border border-white/15 bg-white/10 active:bg-cyan-500/30 text-white text-[10px] font-mono flex items-center gap-1 shadow"
+                          title="Rotate +15°"
+                        >
+                          <RotateCcw className="-scale-x-100" size={11} /> +15°
+                        </button>
+                      </div>
+                      {!(["Anime art wall", "PC tower", "Desk phone"] as string[]).includes(selectedFurniture) && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => { soundFX.playClick(); requestFurnitureDock("left"); }}
+                            className="h-6 px-2 rounded-md border border-white/10 bg-white/5 active:bg-cyan-500/30 text-zinc-300 text-[9px] font-mono"
+                            title="Stick Left Wall"
+                          >
+                            Stick Left
+                          </button>
+                          <button
+                            onClick={() => { soundFX.playClick(); requestFurnitureDock("right"); }}
+                            className="h-6 px-2 rounded-md border border-white/10 bg-white/5 active:bg-cyan-500/30 text-zinc-300 text-[9px] font-mono"
+                            title="Stick Right Wall"
+                          >
+                            Stick Right
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-[10px] font-mono text-zinc-400 text-center py-1">
+                    Tap a piece chip above or in 3D · Drag anywhere to slide · 2 fingers orbit/zoom
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Desktop HUD Panel */}
+          <div className="hidden md:flex absolute left-4 top-[4.25rem] z-20 max-w-[calc(100%-2rem)] flex-col gap-2 pointer-events-auto">
             <div className="rounded-full border border-white/10 bg-black/35 px-3 py-1.5 text-[10px] font-mono uppercase tracking-[0.16em] text-white/65 backdrop-blur-md">
               {roomTheme === "cyberpunk" ? "Cyberpunk Space" : "Anime Bedroom Studio"}
             </div>
             <button
-              onClick={() => { soundFX.playClick(); setEditMode(!editMode); setSelectedFurniture(null); }}
+              onClick={() => { soundFX.playClick(); setEditMode(!editMode); setSelectedFurniture(null); setSelectedFurnitureId(null); }}
               className={`flex h-9 items-center gap-2 self-start rounded-full border px-3 text-[11px] font-mono shadow-lg backdrop-blur-xl transition ${editMode ? "border-rose-200/50 bg-rose-100 text-[#281c2b]" : "border-white/10 bg-black/45 text-zinc-200 hover:border-cyan-200/50 hover:text-white"}`}
               aria-pressed={editMode}
             >
