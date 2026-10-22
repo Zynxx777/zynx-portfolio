@@ -35,7 +35,8 @@ export const LiquidMercuryCanvas: React.FC<LiquidMercuryCanvasProps> = ({
       powerPreference: "high-performance",
     });
     renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const pixelRatio = () => Math.min(window.devicePixelRatio, window.innerWidth < 768 ? 1.25 : 1.75);
+    renderer.setPixelRatio(pixelRatio());
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.25;
     container.appendChild(renderer.domElement);
@@ -371,19 +372,22 @@ export const LiquidMercuryCanvas: React.FC<LiquidMercuryCanvasProps> = ({
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setPixelRatio(pixelRatio());
     };
 
     window.addEventListener("resize", handleResize);
 
     // ── Animation Loop ───────────────────────────────────────────────────────
     let animationFrameId: number;
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
+    timer.connect(document);
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let isPageVisible = !document.hidden;
 
     const animate = () => {
-      animationFrameId = requestAnimationFrame(animate);
-
-      const elapsed = clock.getElapsedTime();
+      if (!isPageVisible) return;
+      timer.update();
+      const elapsed = prefersReducedMotion ? 0 : timer.getElapsed();
 
       // Smooth mouse interpolation (lerp)
       currentMouse.x += (mousePos.x - currentMouse.x) * 0.05;
@@ -423,14 +427,24 @@ export const LiquidMercuryCanvas: React.FC<LiquidMercuryCanvasProps> = ({
       dropletPoints.rotation.y = elapsed * 0.04;
 
       renderer.render(scene, camera);
+      if (!prefersReducedMotion) animationFrameId = requestAnimationFrame(animate);
     };
 
-    animate();
+    const handleVisibilityChange = () => {
+      isPageVisible = !document.hidden;
+      if (isPageVisible) animate();
+      else cancelAnimationFrame(animationFrameId);
+    };
+
+    if (isPageVisible) animate();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     setIsLoaded(true);
 
     // ── Teardown & Resource Disposal ─────────────────────────────────────────
     return () => {
       cancelAnimationFrame(animationFrameId);
+      timer.dispose();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("resize", handleResize);
       if (interactive) {
         window.removeEventListener("mousemove", handlePointerMove);

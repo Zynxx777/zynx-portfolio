@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import { ImmersiveRoom } from "../components/ImmersiveRoom";
 import {
-  ImmersiveRoom,
   ROOM_POSTERS,
   ROOM_ZONES,
   ROOM_FURNITURE_CATALOG,
@@ -8,7 +8,7 @@ import {
   type FurnitureEditRequest,
   type RoomPosterId,
   type ZoneId,
-} from "../components/ImmersiveRoom";
+} from "../data/roomData";
 import { SoundLab } from "../components/SoundLab";
 import { BedroomAudioPlayer } from "../components/BedroomAudioPlayer";
 import PhoneExperience from "../components/PhoneExperience";
@@ -83,7 +83,7 @@ const MotoCard: React.FC<MotoCardProps> = ({ children, className = "", glowColor
 // ── Modal Deep-Dive Content for All 7 Interactive 3D Zones ─────────────────
 const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
 
-  // 1. Cockpit Domain Controller & AAOS Engineering
+  // 1. Academic automotive cockpit concepts
   monitor_left: (
     <div className="space-y-8 animate-fadeIn">
       {/* Editorial Header */}
@@ -93,24 +93,24 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
           <div className="flex items-center gap-2">
             <Cpu size={15} className="text-cyan-400" />
             <span className="text-[11px] font-mono text-cyan-400 uppercase tracking-widest">
-              [ 01 // AUTOMOTIVE SYSTEMS & AAOS ]
+              [ 01 // ACADEMIC ECE PROJECT EXPOSURE ]
             </span>
           </div>
           <h2 className="text-3xl sm:text-2xl font-display font-extrabold text-white">
-            Cockpit Domain Controller
+            Automotive Cockpit Concepts
           </h2>
           <p className="text-xs sm:text-[11px] text-zinc-300 font-sans leading-relaxed">
-            Architected and engineered for the <span className="text-cyan-400 font-bold">Luxoft CDC Project</span>. High-performance automotive Cockpit Domain Controller built on <span className="text-cyan-300">Android Automotive OS (AAOS)</span>. Integrates high-throughput CAN bus transceivers, Vehicle Hardware Abstraction Layer (VHAL) mapping, and low-latency digital instrument cluster telemetry.
+            Academic project exposure to automotive cockpit concepts, including <span className="text-cyan-300">Android Automotive OS (AAOS)</span> and CAN bus topics. This is coursework and project study, not professional work for an automotive company.
           </p>
         </div>
       </div>
 
-      {/* Engineering Telemetry Metrics */}
+      {/* Academic project scope */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
-          { label: "CAN 2.0B Throughput", value: "~8,120 / s", sub: "Zero frame drops at peak load", col: "text-cyan-400" },
-          { label: "VHAL Services", value: "14 Services", sub: "CarService & Sensor daemons", col: "text-blue-400" },
-          { label: "ECU Nodes Interfaced", value: "6 ECUs", sub: "Powertrain, Body, Telematics", col: "text-purple-400" },
+          { label: "Experience", value: "Academic", sub: "ECE project exposure", col: "text-cyan-400" },
+          { label: "Topics", value: "AAOS", sub: "Automotive systems concepts", col: "text-blue-400" },
+          { label: "Related study", value: "CAN bus", sub: "Communication concepts", col: "text-purple-400" },
         ].map((stat, i) => (
           <div key={i} className="p-4 rounded-xl bg-black/60 border border-white/5 space-y-1">
             <div className={`text-xl font-display font-bold ${stat.col}`}>{stat.value}</div>
@@ -120,27 +120,27 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
         ))}
       </div>
 
-      {/* Architecture Decomposition */}
+      {/* Coursework topics */}
       <div className="space-y-3">
         <h3 className="text-xs font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-2">
-          <Layers size={13} className="text-cyan-400" /> Layered Automotive Architecture
+          <Layers size={13} className="text-cyan-400" /> Topics covered in coursework
         </h3>
 
         {[
           {
-            layer: "01 // Instrument Cluster & HMI Layer",
-            tech: ["AAOS Cockpit UI", "CarService API", "ClusterRendererService", "Jetpack Automotive"],
-            desc: "Custom Android Automotive system apps rendering digital speed, RPM, ADAS alerts, and EV state of charge.",
+            layer: "01 // Automotive interfaces",
+            tech: ["Android Automotive OS", "Cockpit UI", "In-vehicle systems"],
+            desc: "Academic exposure to software and interface concepts used in vehicle cockpit systems.",
           },
           {
-            layer: "02 // Vehicle HAL (VHAL) Interface",
-            tech: ["VehiclePropertyIds", "HAL C++ Daemon", "SELinux Automotive Policies", "HIDL / AIDL"],
-            desc: "Bridging Android CarService to hardware peripherals through strict AIDL vehicle property mapping.",
+            layer: "02 // Vehicle software concepts",
+            tech: ["Vehicle HAL concepts", "System interfaces", "Automotive software"],
+            desc: "Introductory study of how vehicle data and software interfaces fit into an automotive system.",
           },
           {
-            layer: "03 // Bus & Microcontroller Hardware",
-            tech: ["MCP2515 CAN Controller", "TJA1050 Transceiver", "CAN 2.0B Standard", "OBD-II Telemetry"],
-            desc: "Hardware transceiver boards interfacing directly with vehicle powertrain and chassis bus segments.",
+            layer: "03 // Networks and embedded systems",
+            tech: ["CAN concepts", "Embedded systems", "Microcontrollers"],
+            desc: "Engineering coursework that connects communication networks with embedded hardware.",
           },
         ].map((item, idx) => (
           <div key={idx} className="p-4 rounded-xl bg-black/40 border border-white/5 hover:border-cyan-500/30 transition-all space-y-2">
@@ -157,22 +157,22 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
         ))}
       </div>
 
-      {/* MediVend Capstone Hardware Showcase */}
+      {/* MediVend academic concept */}
       <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-950/40 via-black/80 to-purple-950/40 border border-blue-500/30 space-y-3">
         <div className="flex items-center gap-2">
           <Zap size={14} className="text-blue-400" />
           <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-wider">
-            CAPSTONE HARDWARE // MEDIVEND
+            ACADEMIC PROJECT // MEDIVEND
           </span>
         </div>
         <h4 className="text-xl font-display font-bold text-white">
-          Intelligent Medicine Vending Machine
+          Smart Dispenser Concept
         </h4>
         <p className="text-xs text-zinc-300 font-sans leading-relaxed">
-          B.E. final-year capstone engineering project combining <span className="text-blue-400">VLSI Digital Logic Design</span>, custom Arduino Mega microcontroller firmware, RFID authentication, and servo-driven pill dispensing mechanisms.
+          An academic smart-dispenser concept related to embedded systems and digital logic. The project is presented as student work, not as a deployed product.
         </p>
         <div className="flex flex-wrap gap-2 pt-1">
-          {["Verilog HDL", "Arduino Mega", "RFID Reader", "Servo PWM", "Custom PCB", "I2C LCD", "EEPROM Storage"].map((tag) => (
+          {["Embedded systems", "Arduino exposure", "Digital logic", "ECE coursework"].map((tag) => (
             <span key={tag} className="text-[10px] font-mono px-2.5 py-1 rounded bg-blue-950/70 border border-blue-500/30 text-blue-200">
               {tag}
             </span>
@@ -191,14 +191,14 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
           <div className="flex items-center gap-2">
             <Layers size={15} className="text-purple-400" />
             <span className="text-[11px] font-mono text-purple-400 uppercase tracking-widest">
-              [ 02 // WEBGL & GLSL SHADERS ]
+              [ 02 // INTERACTIVE WEB PROJECTS ]
             </span>
           </div>
           <h2 className="text-3xl sm:text-2xl font-display font-extrabold text-white">
-            WebGL & Audio Shaders Lab
+            Interactive Web Projects
           </h2>
           <p className="text-xs sm:text-[11px] text-zinc-300 font-sans leading-relaxed">
-            High-performance graphics pipelines built with <span className="text-purple-300 font-bold">Three.js</span>, custom GLSL vertex/fragment shaders, and procedural Web Audio API fast-Fourier-transform (FFT) frequency analysis.
+            The portfolio uses <span className="text-purple-300 font-bold">Three.js</span> for an interactive room and includes small audio visual experiments. This work is AI-assisted and iterated as a personal web project.
           </p>
         </div>
       </div>
@@ -207,24 +207,24 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
       <div className="space-y-4">
         {[
           {
-            title: "SmokeVisualizer (1,114 Lines GLSL)",
-            badge: "CORE MASTERPIECE",
-            desc: "Full-screen audio visualizer engine with 4 switchable modes: RetroTerminal oscilloscope, ClassicSmoke particle drift, EnhancedSmoke fluid turbulence, and BlackHoleSpace 3D gravitational starfield.",
-            tags: ["GLSL", "Web Audio API", "Three.js", "Fluid Simulation", "FFT Spectrum"],
+            title: "ZYNX interactive portfolio",
+            badge: "PERSONAL PROJECT",
+            desc: "A React and TypeScript portfolio with an interactive project ribbon, responsive sections, and a Three.js room experience. Built through AI-assisted code review and manual iteration.",
+            tags: ["React", "TypeScript", "Vite", "Three.js"],
             color: "purple",
           },
           {
-            title: "BlackHoleUniverse (8,000 Particles)",
-            badge: "RELATIVISTIC SIMULATION",
-            desc: "Gravitationally bound 8,000-particle starfield simulation featuring orbital physics, accretion disc geometry, and audio-reactive camera gravitational zoom pulses.",
-            tags: ["Three.Points", "Custom ShaderMaterial", "Orbital Physics", "Bloom"],
+            title: "S.M. English School website",
+            badge: "RECENT PROJECT",
+            desc: "A multi-page school website MVP built with Astro and Tailwind CSS, with a Supabase sign-in prototype for the admin area.",
+            tags: ["Astro", "Tailwind CSS", "Supabase"],
             color: "cyan",
           },
           {
-            title: "CyberpunkRoom (523 Lines Three.js)",
-            badge: "SPATIAL SHOWROOM",
-            desc: "Interactive 3D bedroom studio featuring cursor smoke particle trails, dramatic rim lighting rigs, and smooth orbit camera controls.",
-            tags: ["Three.js", "Particle Buffers", "ACES Filmic Tone Mapping"],
+            title: "Audio and visual experiments",
+            badge: "CREATIVE PRACTICE",
+            desc: "Personal music and audio experiments presented alongside the technical projects. The site includes a browser-based audio visualizer.",
+            tags: ["Web Audio API", "Creative coding", "Music"],
             color: "pink",
           },
         ].map((proj, idx) => (
@@ -264,7 +264,7 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
             Daily Driver Battlestation
           </h2>
           <p className="text-xs text-zinc-300 font-sans leading-relaxed">
-            Operating system engineered for high-throughput development, kernel diagnostics, and custom AOSP Android ROM builds.
+            Arch Linux is my personal desktop system. I use it to maintain my environment, review package updates, and investigate dependencies as practical Linux support exercises.
           </p>
         </div>
       </div>
@@ -272,14 +272,12 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
       {/* System Telemetry Specs */}
       <div className="p-5 rounded-2xl bg-black/60 border border-cyan-500/20 font-mono text-xs text-zinc-300 space-y-2">
         <div className="text-cyan-400 font-bold border-b border-cyan-500/20 pb-2">
-          $ neofetch --stdout
+          Personal Linux practice
         </div>
-        <div><span className="text-zinc-500">OS:</span> Arch Linux x86_64 (Rolling Release)</div>
-        <div><span className="text-zinc-500">Compositor:</span> Hyprland (Wayland)</div>
-        <div><span className="text-zinc-500">Kernel:</span> 6.12.x-zen-lowlatency</div>
-        <div><span className="text-zinc-500">Editor:</span> Neovim (Lua LSP + Tree-sitter)</div>
-        <div><span className="text-zinc-500">Shell:</span> ZSH + Starship prompt</div>
-        <div><span className="text-zinc-500">Terminal:</span> Alacritty (GPU accelerated)</div>
+        <div><span className="text-zinc-500">Environment:</span> Arch Linux / Omarchy desktop</div>
+        <div><span className="text-zinc-500">Package tool:</span> pacman configuration and update review</div>
+        <div><span className="text-zinc-500">Dependency check:</span> pactree</div>
+        <div><span className="text-zinc-500">Practice:</span> investigate package changes before cleanup</div>
       </div>
 
       {/* Bug Bounty Verification Banner */}
@@ -289,13 +287,13 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
         </div>
         <div className="space-y-1">
           <div className="text-xs font-mono text-emerald-400 font-bold uppercase">
-            VERIFIED BUG BOUNTY WINNER // SEPT 2021
+            BUG BOUNTY RECOGNITION // SEPT 2021
           </div>
           <h4 className="text-base font-display font-bold text-white">
             7chats Messenger Security Contest
           </h4>
           <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-            Discovered and responsibly disclosed an authentication bypass vulnerability within the 7chats Messenger client. Awarded winner and official bounty recognition.
+            Existing résumé materials record recognition from the 7chats Messenger contest for reporting an authentication issue.
           </p>
         </div>
       </div>
@@ -317,7 +315,7 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
             Electronic Music Producer
           </h2>
           <p className="text-xs text-zinc-300 font-sans leading-relaxed">
-            Crafting heavy sidechain future bounce, modular synthesizer riffs, and atmospheric melodic techno under the artist alias <span className="text-pink-400 font-bold">7YNX</span>.
+            Personal electronic music practice under the artist alias <span className="text-pink-400 font-bold">7YNX</span>, alongside current part-time music teaching.
           </p>
         </div>
       </div>
@@ -330,10 +328,10 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
       {/* Production Toolkit */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {[
-          { name: "FL Studio 21 Power User", role: "Primary DAW", desc: "Routing, automation clips, advanced mixer routing" },
-          { name: "Xfer Serum", role: "Wavetable Synth", desc: "Custom supersaw leads, bass pluck design, vocal chops" },
-          { name: "FabFilter Total Bundle", role: "Mixing & Mastering", desc: "Pro-Q3 dynamic EQ, Pro-C2 sidechain compression, Pro-L2 limiter" },
-          { name: "Near-Field Studio Monitors", role: "Acoustic Reference", desc: "Flat frequency response, accurate stereo imaging" },
+          { name: "FL Studio", role: "Personal use", desc: "Arranging, editing, and experimenting with sound" },
+          { name: "Software synthesizers", role: "Personal interest", desc: "Exploring electronic music tones and textures" },
+          { name: "Audio effects", role: "Personal practice", desc: "Learning basic mixing and creative effects" },
+          { name: "Browser audio", role: "Portfolio project", desc: "SoundLab player and visualizer built with Web Audio API" },
         ].map((tool, idx) => (
           <div key={idx} className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-1">
             <div className="text-xs font-mono font-bold text-pink-300">{tool.name}</div>
@@ -360,7 +358,7 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
             Engineering Credentials
           </h2>
           <p className="text-xs text-zinc-300 font-sans leading-relaxed">
-            Verified academic degrees, professional software internships, and certified technical training.
+            Engineering education, selected training records, and recognition listed in existing résumé materials.
           </p>
         </div>
       </div>
@@ -368,7 +366,7 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
       {/* Education Timeline */}
       <div className="space-y-4">
         <h3 className="text-xs font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-2">
-          <GraduationCap size={13} className="text-emerald-400" /> Academic Degree
+          <GraduationCap size={13} className="text-emerald-400" /> Education
         </h3>
 
         <div className="p-5 rounded-2xl bg-black/50 border border-emerald-500/20 space-y-2">
@@ -390,7 +388,7 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
       {/* Certifications List */}
       <div className="space-y-3">
         <h3 className="text-xs font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-2">
-          <Award size={13} className="text-emerald-400" /> Verified Certifications
+          <Award size={13} className="text-emerald-400" /> Training &amp; recognition
         </h3>
 
         {[
@@ -511,21 +509,14 @@ const PosterView: React.FC<{ posterId: RoomPosterId; onClose: () => void }> = ({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#05050a]/95 p-4 backdrop-blur-xl sm:p-8" role="dialog" aria-modal="true" aria-label={poster.title}>
-      <button onClick={onClose} className="absolute inset-0 cursor-default" aria-label="Close artwork view" />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 cursor-default"
+        onClick={onClose}
+      />
       <section className="relative z-10 flex max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0b0b13] shadow-2xl">
         <header className="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4 sm:px-7">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                soundFX.playClick();
-                onClose();
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/15 bg-white/10 hover:bg-white/20 text-xs font-mono text-zinc-200 hover:text-white transition-all group"
-              aria-label="Back to gallery"
-            >
-              <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" />
-              <span>Back</span>
-            </button>
             <div>
               <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-300">Digital art sanctuary</div>
               <h2 className="mt-0.5 font-display text-lg font-bold text-white sm:text-xl">{poster.title}</h2>
@@ -546,18 +537,6 @@ const PosterView: React.FC<{ posterId: RoomPosterId; onClose: () => void }> = ({
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 p-4 sm:p-7">
           <img src={poster.image} alt={poster.title} className="max-h-[min(68vh,760px)] w-full rounded-2xl object-contain" />
           <p className="max-w-2xl text-center text-sm leading-relaxed text-zinc-400">{poster.caption}</p>
-          <div className="pt-2">
-            <button
-              onClick={() => {
-                soundFX.playClick();
-                onClose();
-              }}
-              className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-mono text-white flex items-center gap-2 transition-all shadow-md"
-            >
-              <ArrowLeft size={14} />
-              <span>Back to Art Sanctuary</span>
-            </button>
-          </div>
         </div>
       </section>
     </div>
@@ -580,14 +559,13 @@ const ZoneModal: React.FC<ZoneModalProps> = ({ zoneId, onClose, onPosterClick })
 
   return (
     <div className="fixed inset-0 z-[100] flex items-stretch" role="presentation">
-      <button
-        type="button"
+      <div
         className="absolute inset-0 bg-black/75 backdrop-blur-md transition-opacity"
         onClick={() => {
           soundFX.playClick();
           onClose();
         }}
-        aria-label="Close exhibition panel"
+        aria-hidden="true"
       />
 
       {/* Slide-In Side Exhibition Panel */}
@@ -602,19 +580,6 @@ const ZoneModal: React.FC<ZoneModalProps> = ({ zoneId, onClose, onPosterClick })
         {/* Fixed panel header stays available while the detail content scrolls. */}
         <div className="relative z-20 flex shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-[#06060e]/95 p-5 backdrop-blur-md">
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                soundFX.playClick();
-                onClose();
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/15 bg-white/10 hover:bg-white/20 text-xs font-mono text-zinc-200 hover:text-white transition-all group"
-              aria-label="Back to 3D room"
-              title="Return to 3D room"
-            >
-              <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" />
-              <span>Back</span>
-            </button>
             <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: zone.color }} />
             <div>
               <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">{zone.code}</div>
@@ -638,32 +603,6 @@ const ZoneModal: React.FC<ZoneModalProps> = ({ zoneId, onClose, onPosterClick })
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 pb-20">
           {zoneId === "poster_wall" ? <PosterGallery onSelect={onPosterClick} /> : ZONE_CONTENT[zoneId]}
-
-          {/* Bottom Return / Close Bar */}
-          <div className="mt-12 pt-6 border-t border-white/10 flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                soundFX.playClick();
-                onClose();
-              }}
-              className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-mono text-white flex items-center gap-2 transition-all shadow-lg"
-            >
-              <ArrowLeft size={14} />
-              <span>Return to 3D Bedroom</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                soundFX.playClick();
-                onClose();
-              }}
-              className="px-4 py-2.5 rounded-full bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-xs font-mono text-red-200 hover:text-white flex items-center gap-1.5 transition-all shadow-md"
-            >
-              <X size={14} />
-              <span>Close Exhibit</span>
-            </button>
-          </div>
         </div>
       </div>
     </div>
@@ -690,9 +629,10 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
   });
   const [nightMode, setNightMode] = useState(() => {
     try {
-      return window.localStorage.getItem("zynx-bedroom-lighting-v1") === "night";
+      const saved = window.localStorage.getItem("zynx-bedroom-lighting-v1");
+      return saved === null ? true : saved === "night";
     } catch {
-      return false;
+      return true;
     }
   });
   const [editMode, setEditMode] = useState(false);
@@ -858,12 +798,14 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
       </header>
 
       {/* Mobile Gesture Helper Badge */}
-      <div className="sm:hidden absolute top-14 left-1/2 -translate-x-1/2 pointer-events-none z-20">
-        <div className="px-3 py-1 rounded-full bg-black/60 border border-white/10 backdrop-blur-md text-[9px] font-mono tracking-wider text-zinc-300 flex items-center gap-1.5 shadow-lg">
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-          <span>DRAG TO ROTATE • PINCH TO ZOOM • TAP TO OPEN</span>
+      {!editMode && (
+        <div className="pointer-events-none absolute left-1/2 top-28 z-20 -translate-x-1/2 sm:hidden">
+          <div className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[9px] font-mono tracking-wider text-zinc-300 shadow-lg backdrop-blur-md">
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            <span>DRAG TO ROTATE • PINCH TO ZOOM • TAP TO OPEN</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── MODE 1: FULL 3D INTERACTIVE ROOM VIEWPORT ─────────────────────── */}
       {viewMode === "3d" && (
@@ -1288,26 +1230,16 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
           </div>
 
           {/* Bottom Catalog Navigation */}
-          <div className="pt-8 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
+          <div className="pt-8 border-t border-white/10 flex items-center justify-center">
             <button
               onClick={() => {
                 soundFX.playClick();
                 setViewMode("3d");
               }}
-              className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-mono text-white flex items-center gap-2 transition-all shadow-md"
+              className="px-6 py-2.5 rounded-full bg-cyan-400 hover:bg-cyan-300 text-black text-xs font-mono font-bold flex items-center gap-2 transition-all shadow-lg shadow-cyan-400/20"
             >
-              <ArrowLeft size={14} />
-              <span>Return to 3D Room</span>
-            </button>
-            <button
-              onClick={() => {
-                soundFX.playClick();
-                onNavigatePortfolio();
-              }}
-              className="px-5 py-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-zinc-300 hover:text-white flex items-center gap-2 transition-all"
-            >
-              <ArrowLeft size={14} />
-              <span>Developer Portfolio</span>
+              <Eye size={14} />
+              <span>Return to 3D Bedroom</span>
             </button>
           </div>
         </div>

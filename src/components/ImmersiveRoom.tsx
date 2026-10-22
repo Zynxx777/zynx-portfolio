@@ -1,26 +1,20 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import * as THREE from "three";
 import { soundFX } from "../utils/audioFX";
-
-// ── Zone definitions ────────────────────────────────────────────────────────
-export const ROOM_ZONES = {
-  monitor_left:  { label: "AAOS Cockpit Lab",     color: "#00F2FE", dot: "⚡", code: "01 // AUTOMOTIVE" },
-  monitor_right: { label: "WebGL Creative Studio", color: "#9D4EDD", dot: "✦", code: "02 // SHADERS" },
-  pc_case:       { label: "Linux Battlestation",   color: "#4FACFE", dot: "⬡", code: "03 // KERNEL" },
-  audio_rig:     { label: "7YNX Sound Station",    color: "#F72585", dot: "♪", code: "04 // SYNTH" },
-  bookshelf:     { label: "Achievements & Creds",  color: "#10B981", dot: "◈", code: "05 // AWARDS" },
-  poster_wall:   { label: "Digital Art Sanctuary", color: "#FFB347", dot: "◉", code: "06 // GALLERY" },
-  headphones:    { label: "Acoustic Library",      color: "#F72585", dot: "◎", code: "07 // AUDIO" },
-} as const;
-
-export type ZoneId = keyof typeof ROOM_ZONES;
-export const ROOM_POSTERS = [
-  { id: "lofi-study", title: "Lofi Study Night", image: "/images/ambient/lofi-study-night.jpg", caption: "A quiet desk, a warm lamp, and a loop for long creative nights." },
-  { id: "rain-window", title: "Rain at the Window", image: "/images/ambient/soothing-rain.jpg", caption: "A soft rainy-day scene from the bedroom studio wall." },
-  { id: "black-hole", title: "Black Hole", image: "/images/blackhole.jpeg", caption: "A space study that carries the original Cyberpunk Space theme into the gallery." },
-  { id: "anime-moon", title: "Anime Moonlight", image: "/images/ambient/anime-moon.jpg", caption: "A moonlit anime-inspired print for the bedroom corner." },
-] as const;
-export type RoomPosterId = typeof ROOM_POSTERS[number]["id"];
+import { Sun, Moon } from "lucide-react";
+import {
+  HARDCODED_DEFAULT_ROOM_LAYOUT,
+  ROOM_ZONES,
+  ZONE_FURNITURE,
+  ZONE_CAMS,
+  getResponsiveOverview,
+  transformCameraForZone,
+  type FurnitureEditRequest,
+  type FurnitureId,
+  type FurniturePlacement,
+  type RoomPosterId,
+  type ZoneId,
+} from "../data/roomData";
 
 interface ImmersiveRoomProps {
   onZoneClick: (zoneId: ZoneId) => void;
@@ -40,131 +34,10 @@ interface ImmersiveRoomProps {
   onLightingToggle: () => void;
 }
 
-export type FurnitureId = "studio" | "cpu" | "phone" | "shelf" | "gallery" | "chair" | "bed" | "door" | "lamp";
-export type FurniturePlacement = { x: number; z: number; y?: number; rotation?: number };
-export type FurnitureEditRequest =
-  | { sequence: number; action: "rotate"; degrees: number }
-  | { sequence: number; action: "dock"; side: "left" | "right" }
-  | { sequence: number; action: "nudge"; dx: number; dz: number }
-  | { sequence: number; action: "select"; id: FurnitureId | null }
-  | { sequence: number; action: "cycle"; direction: 1 | -1 };
-
-export function getResponsiveOverview(width?: number, height?: number): { fov: number; cam: [number, number, number]; lookAt: [number, number, number] } {
-  const w = width ?? (typeof window !== "undefined" ? window.innerWidth : 1280);
-  const h = height ?? (typeof window !== "undefined" ? window.innerHeight : 720);
-  const aspect = w / Math.max(h, 1);
-  if (aspect >= 1.25) {
-    return {
-      fov: 42,
-      cam: [7, 6, 8],
-      lookAt: [0, 1.2, 0],
-    };
-  }
-  if (aspect >= 0.85) {
-    const t = (1.25 - aspect) / (1.25 - 0.85);
-    return {
-      fov: 42 + t * 16,
-      cam: [7 + t * 4.8, 6 + t * 6.0, 8 + t * 5.2],
-      lookAt: [0, 1.2, 0],
-    };
-  }
-  // Mobile phones & narrow portrait screens (aspect < 0.85 down to ~0.40)
-  const t = Math.max(0, Math.min(1, (0.85 - aspect) / (0.85 - 0.40)));
-  return {
-    fov: 58 + t * 13,
-    cam: [11.8 + t * 6.2, 12.0 + t * 11.0, 13.2 + t * 8.3],
-    lookAt: [0.25 * t, 1.2 + t * 0.3, 0],
-  };
-}
-
-export const ROOM_FURNITURE_CATALOG: Array<{
-  id: FurnitureId;
-  label: string;
-  shortLabel: string;
-  icon: string;
-  themes: Array<"cyberpunk" | "anime-bedroom">;
-}> = [
-  { id: "studio", label: "Studio desk rig", shortLabel: "Desk Rig", icon: "🖥️", themes: ["cyberpunk", "anime-bedroom"] },
-  { id: "chair", label: "Studio chair", shortLabel: "Chair", icon: "🪑", themes: ["cyberpunk", "anime-bedroom"] },
-  { id: "bed", label: "Bed and bedside set", shortLabel: "Bed Set", icon: "🛏️", themes: ["anime-bedroom"] },
-  { id: "lamp", label: "Bedside floor lamp", shortLabel: "Floor Lamp", icon: "💡", themes: ["anime-bedroom"] },
-  { id: "cpu", label: "PC tower", shortLabel: "PC Tower", icon: "💻", themes: ["cyberpunk", "anime-bedroom"] },
-  { id: "phone", label: "Desk phone", shortLabel: "Desk Phone", icon: "📱", themes: ["cyberpunk", "anime-bedroom"] },
-  { id: "shelf", label: "Bookshelf", shortLabel: "Bookshelf", icon: "📚", themes: ["cyberpunk", "anime-bedroom"] },
-  { id: "door", label: "Bedroom door", shortLabel: "Door", icon: "🚪", themes: ["anime-bedroom"] },
-  { id: "gallery", label: "Anime art wall", shortLabel: "Art Wall", icon: "🖼️", themes: ["cyberpunk", "anime-bedroom"] },
-];
-
-const transformCameraForFurniture = (coords: number[], placement: FurniturePlacement) => {
-  const rotation = placement.rotation ?? 0;
-  const cos = Math.cos(rotation);
-  const sin = Math.sin(rotation);
-  const transformPoint = (x: number, y: number, z: number) => [
-    placement.x + x * cos + z * sin,
-    (placement.y ?? 0) + y,
-    placement.z - x * sin + z * cos,
-  ];
-  return [
-    ...transformPoint(coords[0], coords[1], coords[2]),
-    ...transformPoint(coords[3], coords[4], coords[5]),
-  ];
-};
 const ROOM_LAYOUT_KEY = "zynx-bedroom-room-layout-v2";
 const ROOM_DEFAULT_LAYOUT_KEY = "zynx-bedroom-room-default-layout-v2";
 const ROOM_DEFAULT_CAPTURE_KEY = "zynx-bedroom-room-default-capture-v3";
 const ROOM_LAYOUT_SHIFT_KEY = "zynx-bedroom-room-layout-workspace-shift-v2";
-
-export const HARDCODED_DEFAULT_ROOM_LAYOUT: Record<FurnitureId, FurniturePlacement> = {
-  studio:  { x: 0, z: -2.85, rotation: 0 },
-  chair:   { x: 0, z: -2, rotation: 0 },
-  door:    { x: 6.45, z: -4.8, rotation: 0 },
-  cpu:     { x: 3.65, y: 1.49, z: -0.62, rotation: 0 },
-  phone:   { x: -1.65, y: 1.49, z: 0.32, rotation: 0 },
-  shelf:   { x: -7.95, z: -3.4, rotation: 1.5707963267948966 },
-  gallery: { x: 0, z: 0, rotation: 0 },
-  bed:     { x: 5.45, z: 1.97, rotation: 0 },
-  lamp:    { x: 3.5, z: 0, rotation: 0 },
-};
-const ZONE_FURNITURE: Partial<Record<ZoneId, FurnitureId>> = {
-  monitor_left: "studio",
-  monitor_right: "studio",
-  pc_case: "cpu",
-  audio_rig: "studio",
-  headphones: "studio",
-  bookshelf: "shelf",
-  poster_wall: "gallery",
-};
-
-const transformCameraForZone = (
-  zone: ZoneId | "overview",
-  coords: number[],
-  placements: Partial<Record<FurnitureId, FurniturePlacement>>,
-) => {
-  if (zone === "overview") return coords;
-  const furnitureId = ZONE_FURNITURE[zone];
-  if (!furnitureId) return coords;
-  const placement = placements[furnitureId];
-  if (furnitureId === "cpu") {
-    const cpuCoords = placement ? transformCameraForFurniture(coords, placement) : coords;
-    const deskPlacement = placements.studio;
-    return deskPlacement ? transformCameraForFurniture(cpuCoords, deskPlacement) : cpuCoords;
-  }
-  return placement ? transformCameraForFurniture(coords, placement) : coords;
-};
-
-// Camera coordinates: [camX, camY, camZ, lookX, lookY, lookZ]
-export const ZONE_CAMS: Record<ZoneId | "overview", number[]> = {
-  overview:      [7, 6, 8, 0, 1.2, 0],
-  monitor_left:  [-0.2, 2.6, 2.8, -0.88, 2.25, -0.75],
-  monitor_right: [ 1.4, 2.6, 2.8,  0.88, 2.25, -0.75],
-  pc_case:       [ 1.2, 1.0, 2.8,  0,    0.7,   0   ],
-  audio_rig:     [-3.0, 2.6, 2.8, -1.6,  1.8,  -0.5 ],
-  // Furniture cameras are stored in the object's local space so they follow
-  // the object when it is moved or turned to another wall.
-  bookshelf:     [ 0, 3.2,  3.2,  0,  2.4,  0.45],
-  poster_wall:   [-2.5, 4.5, 1.5, -4.2,  4.6,  -4.3 ],
-  headphones:    [-3.72, 2.5, 2.04, -3.52, 2.1, -0.96],
-};
 
 // Helper: neon sign text canvas
 function makeTextTex(text: string, color: string): THREE.CanvasTexture {
@@ -324,6 +197,8 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
   const mountRef  = useRef<HTMLDivElement | null>(null);
   const cursorRef = useRef<HTMLDivElement | null>(null);
   const labelRefs = useRef<Map<ZoneId, HTMLDivElement>>(new Map());
+  const lampLabelRef = useRef<HTMLDivElement | null>(null);
+  const isLampTooltipHoveredRef = useRef(false);
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editModeRef = useRef(editMode);
   const activeZoneIdRef = useRef(activeZoneId);
@@ -412,9 +287,9 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
 
     // ── Scene ───────────────────────────────────────────────────────────────
     const scene = new THREE.Scene();
-    const roomBackground = nightMode ? "#050b1d" : isBedroomTheme ? "#dce8f1" : "#0c1020";
+    const roomBackground = nightMode ? "#0a1022" : isBedroomTheme ? "#dce8f1" : "#0c1020";
     scene.background = new THREE.Color(roomBackground);
-    scene.fog = new THREE.FogExp2(roomBackground, nightMode ? 0.02 : isBedroomTheme ? 0.012 : 0.026);
+    scene.fog = new THREE.FogExp2(roomBackground, nightMode ? 0.016 : isBedroomTheme ? 0.012 : 0.026);
 
     // ── Camera ──────────────────────────────────────────────────────────────
     const W = container.clientWidth, H = container.clientHeight;
@@ -428,9 +303,10 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     // ── Renderer ────────────────────────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance", alpha: false });
     renderer.setSize(W, H);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const pixelRatio = () => Math.min(window.devicePixelRatio || 1, window.innerWidth < 768 ? 1.25 : 1.75);
+    renderer.setPixelRatio(pixelRatio());
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
     container.appendChild(renderer.domElement);
@@ -442,6 +318,42 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     const cdcCtx = cdcCanvas.getContext("2d")!;
     const cdcTexture = new THREE.CanvasTexture(cdcCanvas);
 
+    // An illustrated coursework concept panel, not a live vehicle connection.
+    cdcCtx.fillStyle = "#040810";
+    cdcCtx.fillRect(0, 0, 512, 288);
+    cdcCtx.strokeStyle = "rgba(0, 242, 254, 0.3)";
+    cdcCtx.lineWidth = 1;
+    cdcCtx.strokeRect(8, 8, 496, 272);
+    cdcCtx.fillStyle = "#00F2FE";
+    cdcCtx.font = "bold 13px 'Courier New', monospace";
+    cdcCtx.fillText("ECE SYSTEMS STUDY // SAMPLE VIEW", 20, 32);
+    cdcCtx.fillStyle = "#F3F4F6";
+    cdcCtx.font = "bold 23px 'Space Grotesk', sans-serif";
+    cdcCtx.fillText("Automotive cockpit concepts", 20, 73);
+    cdcCtx.fillStyle = "#94A3B8";
+    cdcCtx.font = "12px 'Courier New', monospace";
+    cdcCtx.fillText("ACADEMIC EXPOSURE • NO VEHICLE DATA", 20, 98);
+    const studyRows = [
+      ["01", "Cockpit interface", "STUDY"],
+      ["02", "Vehicle networks", "CAN TOPIC"],
+      ["03", "Embedded systems", "COURSEWORK"],
+    ];
+    studyRows.forEach(([number, label, tag], index) => {
+      const y = 126 + index * 42;
+      cdcCtx.fillStyle = "rgba(255,255,255,0.04)";
+      cdcCtx.fillRect(18, y, 476, 32);
+      cdcCtx.fillStyle = "#00F2FE";
+      cdcCtx.font = "bold 11px 'Courier New', monospace";
+      cdcCtx.fillText(number, 28, y + 20);
+      cdcCtx.fillStyle = "#E2E8F0";
+      cdcCtx.font = "13px 'Courier New', monospace";
+      cdcCtx.fillText(label, 66, y + 20);
+      cdcCtx.fillStyle = "#94A3B8";
+      cdcCtx.font = "10px 'Courier New', monospace";
+      cdcCtx.fillText(tag, 390, y + 20);
+    });
+    cdcTexture.needsUpdate = true;
+
     // 2. WebGL Audio Visualizer Screen Canvas
     const audioCanvas = document.createElement("canvas");
     audioCanvas.width = 512; audioCanvas.height = 288;
@@ -449,7 +361,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     const audioTexture = new THREE.CanvasTexture(audioCanvas);
 
     // ── Lights ──────────────────────────────────────────────────────────────
-    scene.add(new THREE.AmbientLight(nightMode ? "#8293c5" : isBedroomTheme ? "#fff0df" : "#727b9a", nightMode ? 0.72 : isBedroomTheme ? 1.9 : 2.0));
+    scene.add(new THREE.AmbientLight(nightMode ? (isBedroomTheme ? "#9aaedb" : "#8293c5") : isBedroomTheme ? "#fff0df" : "#727b9a", nightMode ? (isBedroomTheme ? 0.92 : 0.72) : isBedroomTheme ? 1.9 : 2.0));
 
     const deskLight = new THREE.PointLight(nightMode ? "#f2bd9c" : isBedroomTheme ? "#ffd9a8" : "#ffbb66", nightMode ? 1.5 : isBedroomTheme ? 2.5 : 3.2, 10);
     deskLight.position.set(0, 3.5, 0);
@@ -531,8 +443,8 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     };
 
     // ── Room Shell Architecture ─────────────────────────────────────────────
-    const bwMat = new THREE.MeshStandardMaterial({ color: nightMode ? (isBedroomTheme ? "#24263b" : "#0a1023") : isBedroomTheme ? "#e8e1e7" : "#101426", roughness: 0.95 });
-    const floorMat = new THREE.MeshStandardMaterial({ color: nightMode ? (isBedroomTheme ? "#3a3042" : "#11162a") : isBedroomTheme ? "#b9957a" : "#171a30", roughness: isBedroomTheme ? 0.9 : 0.8, metalness: isBedroomTheme ? 0.02 : 0.2 });
+    const bwMat = new THREE.MeshStandardMaterial({ color: nightMode ? (isBedroomTheme ? "#30334a" : "#0a1023") : isBedroomTheme ? "#e8e1e7" : "#101426", roughness: 0.95 });
+    const floorMat = new THREE.MeshStandardMaterial({ color: nightMode ? (isBedroomTheme ? "#40374b" : "#11162a") : isBedroomTheme ? "#b9957a" : "#171a30", roughness: isBedroomTheme ? 0.9 : 0.8, metalness: isBedroomTheme ? 0.02 : 0.2 });
 
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(16, 10), floorMat);
     floor.rotation.x = -Math.PI / 2;
@@ -646,6 +558,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
 
     let bedroomDoor: THREE.Group | null = null;
     let bedsideLamp: THREE.Group | null = null;
+    let deskLamp: THREE.Group | null = null;
     if (isBedroomTheme) {
       const ceilingLight = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.58, 0.11, 32), new THREE.MeshStandardMaterial({ color: nightMode ? "#4c5274" : "#fff3dc", emissive: "#ffe1b6", emissiveIntensity: nightMode ? 0.06 : 0.5, roughness: 0.45 }));
       ceilingLight.position.set(0, 7.36, 0.2);
@@ -1365,7 +1278,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     scene.add(hpCable);
 
     // A small warm task lamp is lit only in night mode and moves with the desk.
-    const deskLamp = new THREE.Group();
+    deskLamp = new THREE.Group();
     deskLamp.position.set(-3.72, 0, 0.45);
     const deskLampMetal = new THREE.MeshStandardMaterial({ color: "#5c667c", metalness: 0.76, roughness: 0.24 });
     const deskLampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.19, 0.055, 20), deskLampMetal);
@@ -1896,6 +1809,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     let hoveredZoneId: ZoneId | null = null;
     let hoveredPhone = false;
     let hoveredLamp = false;
+    let hoveredLampTarget: "bedside" | "desk" | null = null;
     const setPhoneGlow = (enabled: boolean) => {
       phoneBodyMat.emissive.set(enabled ? "#092f3a" : "#000000");
       phoneBodyMat.emissiveIntensity = enabled ? 1.25 : 0.7;
@@ -2175,10 +2089,13 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       raycaster.setFromCamera(mouse2D, camera);
       const hits = raycaster.intersectObjects(getClickableMeshes(), false);
       const phoneHits = raycaster.intersectObject(phoneGroup, true);
-      const lampHits = bedsideLamp ? raycaster.intersectObject(bedsideLamp, true) : [];
+      const bedsideHits = bedsideLamp ? raycaster.intersectObject(bedsideLamp, true) : [];
+      const deskHits = deskLamp ? raycaster.intersectObject(deskLamp, true) : [];
+      const lampHits = bedsideHits.length ? bedsideHits : deskHits;
       const nearestHitDistance = Math.min(hits[0]?.distance ?? Infinity, phoneHits[0]?.distance ?? Infinity);
       if (lampHits.length && lampHits[0].distance <= nearestHitDistance) {
-        onLightingToggle();
+        soundFX.playClick();
+        onLightingToggle?.();
         return;
       }
       if (phoneHits.length && (!hits.length || phoneHits[0].distance <= hits[0].distance)) {
@@ -2226,6 +2143,8 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       hoveredZoneId = null;
       hoveredPhone = false;
       hoveredLamp = false;
+      hoveredLampTarget = null;
+      isLampTooltipHoveredRef.current = false;
       renderer.domElement.style.cursor = "none";
       if (cursorRef.current) cursorRef.current.style.transform = "translate(-50%,-50%) scale(1)";
     };
@@ -2551,10 +2470,14 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     container.addEventListener("touchcancel", onTouchEnd, { passive: true });
 
     // ── Animation Loop ──────────────────────────────────────────────────────
-    let animId: number;
+    let animId = 0;
     const startTime = performance.now();
 
     const animate = () => {
+      if (document.hidden) {
+        animId = 0;
+        return;
+      }
       animId = requestAnimationFrame(animate);
       const t = (performance.now() - startTime) / 1000;
 
@@ -2563,51 +2486,12 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         pivot.rotation.z = Math.sin(t * 0.34 + phase) * 0.012;
       });
 
-      // 1. Live Render AAOS Cockpit Screen (CAN bus packet telemetry)
-      cdcCtx.fillStyle = "#040810";
-      cdcCtx.fillRect(0, 0, 512, 288);
-      cdcCtx.strokeStyle = "rgba(0, 242, 254, 0.25)";
-      cdcCtx.lineWidth = 1;
-      cdcCtx.strokeRect(8, 8, 496, 272);
-
-      // Header telemetry bar
-      cdcCtx.fillStyle = "#00F2FE";
-      cdcCtx.font = "bold 14px 'Courier New', monospace";
-      cdcCtx.fillText("AAOS VEHICLE HAL // COCKPIT CDC [CAN 2.0B]", 20, 32);
-
-      cdcCtx.fillStyle = "#10B981";
-      cdcCtx.font = "12px 'Courier New', monospace";
-      cdcCtx.fillText("STATUS: ACTIVE // 8,120 frames/sec // LOSS: 0.00%", 20, 52);
-
-      // Speedometer simulated gauge
-      const speed = Math.floor(108 + Math.sin(t * 1.5) * 14);
-      const rpm = Math.floor(3200 + Math.sin(t * 2) * 450);
-      cdcCtx.fillStyle = "#ffffff";
-      cdcCtx.font = "bold 32px 'Space Grotesk', sans-serif";
-      cdcCtx.fillText(`${speed} KM/H`, 20, 95);
-
-      cdcCtx.fillStyle = "#00F2FE";
-      cdcCtx.font = "14px 'Courier New', monospace";
-      cdcCtx.fillText(`${rpm} RPM  |  GEAR: D4  |  BATT: 94%`, 20, 120);
-
-      // Live scrolling CAN bus hex packets
-      cdcCtx.fillStyle = "rgba(0, 242, 254, 0.75)";
-      cdcCtx.font = "11px 'Courier New', monospace";
-      const packetOffset = Math.floor(t * 12) % 6;
-      for (let p = 0; p < 7; p++) {
-        const canId = (0x1A0 + ((p + packetOffset) % 16)).toString(16).toUpperCase();
-        const b1 = Math.floor((Math.sin(t + p) * 128 + 128)).toString(16).padStart(2, "0").toUpperCase();
-        const b2 = Math.floor((Math.cos(t * 1.5 + p) * 128 + 128)).toString(16).padStart(2, "0").toUpperCase();
-        cdcCtx.fillText(`[RX] ID:0x${canId} [8] ${b1} 4F A2 ${b2} 10 00 C4 FE`, 20, 150 + p * 16);
-      }
-      cdcTexture.needsUpdate = true;
-
-      // 2. Live Render WebGL Audio Spectrum Screen (Lusion-style moving audio FFT)
+      // 1. Decorative audio spectrum animation for the music workstation.
       audioCtx.fillStyle = "#080410";
       audioCtx.fillRect(0, 0, 512, 288);
       audioCtx.fillStyle = "#9D4EDD";
       audioCtx.font = "bold 13px 'Courier New', monospace";
-      audioCtx.fillText("7YNX GLSL AUDIO LAB // REAL-TIME FFT SPECTRUM", 20, 30);
+      audioCtx.fillText("7YNX AUDIO STUDY // VISUAL DEMO", 20, 30);
 
       const numBars = 32;
       const barW = 12;
@@ -2703,12 +2587,26 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         hoveredZoneId = null;
         hoveredPhone = false;
         hoveredLamp = false;
+        hoveredLampTarget = null;
+        isLampTooltipHoveredRef.current = false;
         setPhoneGlow(false);
         renderer.domElement.style.cursor = movingFurniture || isDragging ? "grabbing" : "grab";
       } else {
         raycaster.setFromCamera(mouse2D, camera);
         const isPhoneHovered = raycaster.intersectObject(phoneGroup, true).length > 0;
-        const isLampHovered = Boolean(bedsideLamp && raycaster.intersectObject(bedsideLamp, true).length > 0);
+        const isBedsideHovered = Boolean(bedsideLamp && raycaster.intersectObject(bedsideLamp, true).length > 0);
+        const isDeskHovered = Boolean(deskLamp && raycaster.intersectObject(deskLamp, true).length > 0);
+        const isLampDirectlyHovered = isBedsideHovered || isDeskHovered;
+        const isLampHovered = isLampDirectlyHovered || isLampTooltipHoveredRef.current;
+
+        if (isBedsideHovered) {
+          hoveredLampTarget = "bedside";
+        } else if (isDeskHovered) {
+          hoveredLampTarget = "desk";
+        } else if (!isLampHovered) {
+          hoveredLampTarget = null;
+        }
+
         if (isPhoneHovered) {
           if (!hoveredPhone) soundFX.playHover();
           if (hoveredZoneId) setHover(null);
@@ -2733,7 +2631,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
           renderer.domElement.style.cursor = "pointer";
           if (cursorRef.current) {
             cursorRef.current.style.transform = "translate(-50%,-50%) scale(2.2)";
-            cursorRef.current.style.borderColor = "#ffd3a0";
+            cursorRef.current.style.borderColor = nightMode ? "#38bdf8" : "#fbbf24";
           }
         } else {
           if (hoveredPhone || hoveredLamp) {
@@ -2782,12 +2680,45 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         el.style.opacity = vis ? "1" : "0";
       });
 
+      // Update Floating Lampstand HUD Tooltip
+      if (lampLabelRef.current) {
+        const targetObj = hoveredLampTarget === "desk" ? deskLamp : bedsideLamp;
+        if (targetObj && (hoveredLamp || isLampTooltipHoveredRef.current) && !editModeRef.current) {
+          targetObj.updateMatrixWorld(true);
+          const localAnchor = hoveredLampTarget === "desk"
+            ? new THREE.Vector3(0.26, 2.38, 0)
+            : new THREE.Vector3(0, 1.88, 0);
+          const worldAnchor = localAnchor.clone().applyMatrix4(targetObj.matrixWorld);
+          const wp = worldAnchor.project(camera);
+          const sx = (wp.x * 0.5 + 0.5) * size.x;
+          const sy = (-wp.y * 0.5 + 0.5) * size.y;
+          const inFront = wp.z < 1;
+          const dist = camera.position.distanceTo(worldAnchor);
+          const vis = inFront && dist < 16 && sy > 30 && sy < size.y - 10 && sx > 30 && sx < size.x - 30;
+          lampLabelRef.current.style.transform = `translate(${sx}px,${sy}px) translate(-50%,-100%)`;
+          lampLabelRef.current.style.opacity = vis ? "1" : "0";
+          lampLabelRef.current.style.pointerEvents = vis ? "auto" : "none";
+        } else {
+          lampLabelRef.current.style.opacity = "0";
+          lampLabelRef.current.style.pointerEvents = "none";
+        }
+      }
+
       if (selectionHelper.visible && selectedItem) {
         selectionHelper.setFromObject(selectedItem.group);
       }
 
       renderer.render(scene, camera);
     };
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(animId);
+        animId = 0;
+      } else if (!animId) {
+        animate();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     animate();
 
     const handleResize = () => {
@@ -2799,7 +2730,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       camera.fov = overview.fov;
       camera.updateProjectionMatrix();
       roomOverviewLookAt.set(...overview.lookAt);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setPixelRatio(pixelRatio());
       renderer.setSize(width, height);
 
       if (!activeZoneIdRef.current || activeZoneIdRef.current === "overview" || editModeRef.current) {
@@ -2812,6 +2743,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     return () => {
       if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
       cancelAnimationFrame(animId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("resize", handleResize);
       container.removeEventListener("wheel", onWheel);
       window.removeEventListener("mouseup", onMouseUp);
@@ -2898,6 +2830,121 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
             </div>
           );
         })}
+
+        {/* 3D Floating Lampstand Lighting Switch Tooltip HUD */}
+        <div
+          ref={lampLabelRef}
+          onMouseEnter={() => { isLampTooltipHoveredRef.current = true; }}
+          onMouseLeave={() => { isLampTooltipHoveredRef.current = false; }}
+          onClick={(e) => {
+            e.stopPropagation();
+            soundFX.playClick();
+            onLightingToggle?.();
+          }}
+          className="absolute flex flex-col items-center group cursor-pointer select-none transition-opacity duration-200 pointer-events-none z-40"
+          style={{ opacity: 0, left: 0, top: 0, willChange: "transform, opacity" }}
+          title={nightMode ? "Click to switch to Day / Light Mode" : "Click to switch to Night / Dark Mode"}
+        >
+          {/* Glassmorphic Cyber HUD Card */}
+          <div
+            className="relative px-3.5 py-2.5 rounded-2xl backdrop-blur-xl border shadow-[0_10px_35px_rgba(0,0,0,0.65)] flex items-center gap-3 transition-transform duration-200 group-hover:scale-105"
+            style={{
+              background: nightMode ? "rgba(9, 14, 28, 0.92)" : "rgba(22, 24, 38, 0.92)",
+              borderColor: nightMode ? "rgba(56, 189, 248, 0.4)" : "rgba(251, 191, 36, 0.45)",
+            }}
+          >
+            {/* Ambient Glow behind card */}
+            <div
+              className="absolute inset-0 rounded-2xl blur-md -z-10 opacity-50 transition-opacity duration-300 group-hover:opacity-85"
+              style={{
+                background: nightMode
+                  ? "radial-gradient(circle, rgba(56,189,248,0.35) 0%, rgba(99,102,241,0.12) 100%)"
+                  : "radial-gradient(circle, rgba(251,191,36,0.35) 0%, rgba(245,158,11,0.12) 100%)",
+              }}
+            />
+
+            {/* Icon Badge */}
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-inner transition-all duration-300 group-hover:scale-110"
+              style={{
+                backgroundColor: nightMode ? "rgba(30, 41, 59, 0.85)" : "rgba(254, 243, 199, 0.15)",
+                borderColor: nightMode ? "rgba(56, 189, 248, 0.5)" : "rgba(251, 191, 36, 0.5)",
+                color: nightMode ? "#38bdf8" : "#fbbf24",
+              }}
+            >
+              {nightMode ? (
+                <Sun size={17} className="text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
+              ) : (
+                <Moon size={17} className="text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+              )}
+            </div>
+
+            {/* Text Details */}
+            <div className="flex flex-col text-left">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-mono font-bold tracking-wider uppercase text-zinc-300">
+                  Lampstand • Lighting Control
+                </span>
+                <span
+                  className="w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{ backgroundColor: nightMode ? "#38bdf8" : "#fbbf24" }}
+                />
+              </div>
+              <div className="text-[11px] font-bold tracking-tight text-white flex items-center gap-1.5">
+                <span>Click to switch to</span>
+                <span
+                  className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase font-extrabold tracking-wide"
+                  style={{
+                    backgroundColor: nightMode ? "rgba(251, 191, 36, 0.18)" : "rgba(56, 189, 248, 0.18)",
+                    color: nightMode ? "#fbbf24" : "#38bdf8",
+                    border: `1px solid ${nightMode ? "rgba(251, 191, 36, 0.4)" : "rgba(56, 189, 248, 0.4)"}`,
+                  }}
+                >
+                  {nightMode ? "Day / Light Mode ☀️" : "Night / Dark Mode 🌙"}
+                </span>
+              </div>
+              <span className="text-[9px] font-mono text-zinc-400">
+                {nightMode ? "Current: Cozy Nighttime Ambiance" : "Current: Natural Daylight Glow"}
+              </span>
+            </div>
+
+            {/* Interactive Toggle Switch Pill */}
+            <div
+              className="relative w-11 h-6 rounded-full p-0.5 transition-colors duration-300 flex items-center border shrink-0"
+              style={{
+                backgroundColor: nightMode ? "#0f172a" : "#fef3c7",
+                borderColor: nightMode ? "rgba(56, 189, 248, 0.5)" : "rgba(251, 191, 36, 0.6)",
+              }}
+            >
+              <div
+                className="w-5 h-5 rounded-full shadow-md flex items-center justify-center text-[10px] transition-transform duration-300 font-bold"
+                style={{
+                  backgroundColor: nightMode ? "#38bdf8" : "#f59e0b",
+                  color: nightMode ? "#020617" : "#ffffff",
+                  transform: nightMode ? "translateX(20px)" : "translateX(0px)",
+                }}
+              >
+                {nightMode ? "🌙" : "☀️"}
+              </div>
+            </div>
+          </div>
+
+          {/* Downward Indicator Stem pointing straight to the lampstand */}
+          <div className="flex flex-col items-center">
+            <div
+              className="w-0.5 h-4 opacity-80"
+              style={{
+                background: nightMode
+                  ? "linear-gradient(to bottom, #38bdf8, transparent)"
+                  : "linear-gradient(to bottom, #fbbf24, transparent)",
+              }}
+            />
+            <div
+              className="w-1.5 h-1.5 rounded-full -mt-0.5 shadow-sm"
+              style={{ backgroundColor: nightMode ? "#38bdf8" : "#fbbf24" }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -159,7 +159,7 @@ export const SoundLab: React.FC = () => {
         </h2>
 
         <p className="text-sm text-zinc-400 font-sans mt-3 max-w-lg">
-          Recognized as an FL Studio Power User specializing in Melodic Techno, Future Bounce, and EDM sound synthesis. Experience real-time audio FFT visualizers below.
+          A personal music and browser audio project. The visualizer responds to the selected track while it plays.
         </p>
       </div>
 
@@ -167,7 +167,7 @@ export const SoundLab: React.FC = () => {
       <div className="grid grid-cols-12 gap-8 items-stretch">
         
         {/* Left: Interactive Player Deck */}
-        <div className="col-span-7 lg:col-span-12 cyber-glass border border-purple-500/30 rounded-3xl p-8 flex flex-col justify-between shadow-2xl relative overflow-hidden">
+        <div className="col-span-12 cyber-glass border border-purple-500/30 rounded-3xl p-5 sm:p-8 flex flex-col justify-between shadow-2xl relative overflow-hidden lg:col-span-7">
           {/* Glowing ambient light */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -217,23 +217,25 @@ export const SoundLab: React.FC = () => {
         </div>
 
         {/* Right: Discography & Gear Arsenal */}
-        <div className="col-span-5 lg:col-span-12 flex flex-col gap-4">
+        <div className="col-span-12 flex flex-col gap-4 lg:col-span-5">
           <div className="text-xs font-mono text-zinc-400 tracking-wider uppercase mb-1">
             Track Catalog
           </div>
 
           {tracks.map((track, idx) => (
-            <div
+            <button
+              type="button"
+              aria-pressed={activeTrackIndex === idx}
               key={idx}
               onClick={() => selectTrack(idx)}
-              className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 ${
+              className={`w-full p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 text-left ${
                 activeTrackIndex === idx
                   ? "bg-purple-950/40 border-purple-500/50 shadow-lg shadow-purple-900/20"
                   : "cyber-glass border-white/5 hover:border-white/20"
               }`}
             >
               <div className="w-14 h-14 rounded-xl overflow-hidden relative flex-shrink-0 bg-zinc-900 border border-white/10">
-                <img src={track.artwork} alt={track.title} className="w-full h-full object-cover" />
+                <img src={track.artwork} alt="" loading="lazy" className="w-full h-full object-cover" />
                 {activeTrackIndex === idx && isPlaying && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                     <Radio size={16} className="text-purple-400 animate-pulse" />
@@ -249,18 +251,18 @@ export const SoundLab: React.FC = () => {
                 <p className="text-[11px] font-mono text-cyan-400 mt-0.5">{track.genre}</p>
                 <p className="text-[11px] text-zinc-400 mt-1 line-clamp-1">{track.description}</p>
               </div>
-            </div>
+            </button>
           ))}
 
           {/* Sound Production Credentials Badge */}
           <div className="mt-4 p-5 rounded-2xl cyber-glass border border-white/10">
             <h4 className="font-display font-bold text-xs text-zinc-200 mb-2 uppercase tracking-wider">
-              Sound Production Workflow
+              Personal Audio Workflow
             </h4>
             <div className="space-y-1.5 text-xs text-zinc-400 font-sans">
-              <p>• <strong>Primary DAW:</strong> FL Studio 21 Power User</p>
-              <p>• <strong>Synthesis:</strong> Xfer Serum, Vital Wavetable, Moog Emulations</p>
-              <p>• <strong>Signal Processing:</strong> FabFilter Pro-Q3, Valhalla Reverbs, OTT</p>
+              <p>• <strong>DAW:</strong> FL Studio (personal use)</p>
+              <p>• <strong>Interests:</strong> electronic music and synthesizers</p>
+              <p>• <strong>Web audio:</strong> browser player and visualization</p>
             </div>
           </div>
         </div>

@@ -1,25 +1,25 @@
 {
   "basics": {
-    "name": "JOSHUA D",
+    "name": "Joshua D",
     "handle": "ZYNX",
     "musicProducerAlias": "7YNX",
     "aliases": ["ZYNX"],
-    "label": "Systems & Embedded Software Engineer",
-    "sublabel": "B.E. Electronics & Communication Engineering | Automotive & Full-Stack",
+    "label": "IT Support & Linux Systems | ECE Graduate",
+    "sublabel": "Entry-level IT support · Junior Linux administration · Software development foundations",
     "email": "joshuajosh3055@gmail.com",
     "phone": "+91 72599 87691",
     "location": {
       "city": "Channapatna",
-      "region": "Ramanagar, Karnataka",
+      "region": "Karnataka",
       "country": "India"
     },
-    "summary": "Electronics and Communication Engineer with proven hands-on expertise across low-level systems, automotive cockpit domain controllers (CAN bus, AAOS), custom Linux kernels, and creative full-stack WebGL architectures. Recognized winner of the 7chats Messenger Bug Bounty contest for authentication security research. Passionate about building zero-latency, high-reliability embedded systems and interactive digital platforms.",
+    "summary": "Electronics and Communication Engineering graduate with hands-on personal experience using Arch Linux, maintaining a customized desktop environment, and investigating package updates and dependencies. Builds web projects through an AI-assisted workflow, reviewing generated code and making manual design and UI changes. Seeking entry-level IT support or junior Linux administration work, with an ongoing interest in software development.",
     "profiles": {
       "github": "https://github.com/Zynxx777",
       "linkedin": "https://linkedin.com/in/Zynx",
       "instagram": "https://instagram.com/zynxx777",
       "youtube": "https://www.youtube.com/channel/UCGbYqMWOA_isZwyrhRdC1dg",
-      "portfolio": "https://github.com/Zynxx777",
+      "portfolio": "https://zynx-portfolio.vercel.app/",
       "whatsapp": "https://wa.me/917259987691"
     }
   },
@@ -27,200 +27,156 @@
     {
       "institution": "Don Bosco Institute of Technology (DBIT)",
       "degree": "Bachelor of Engineering (B.E.) in Electronics & Communication Engineering",
-      "dates": "2021 – 2025",
+      "dates": "2021–2025",
       "cgpa": "7.16",
       "courses": [
         "Embedded Systems",
-        "VLSI Chip Design",
+        "VLSI and Digital Design",
+        "Computer Networks",
+        "Digital Signal Processing",
         "Telecommunications",
-        "Computer Networks & Network Security",
-        "Digital Signal Processing (DSP)",
-        "Electric Vehicles & Control Systems",
-        "AI & Machine Learning Foundations"
+        "Control Systems"
       ]
     },
     {
       "institution": "Shanthiniketan PU College",
       "degree": "Pre-University Course (PCMB Science)",
-      "dates": "2019 – 2021",
+      "dates": "2019–2021",
       "score": "71.6%"
     },
     {
       "institution": "St. Joseph's English Medium High School",
-      "degree": "SSLC (Secondary School Leaving Certificate)",
-      "dates": "2018 – 2019",
+      "degree": "SSLC",
+      "dates": "2018–2019",
       "score": "78.72%"
     }
   ],
   "experience": [
     {
-      "company": "eTech Prowess",
-      "role": "Full-Stack Developer Intern",
-      "location": "JP Nagar, Bengaluru",
-      "dates": "August 2024 – Present",
-      "type": "Professional Internship",
+      "company": "St Sophia Convent High School",
+      "role": "Music Teacher (Part-time)",
+      "location": "Karnataka, India",
+      "dates": "August 2026–Present",
+      "type": "Current Employment",
       "highlights": [
-        "Architecting performant, accessible web interfaces and modular component systems utilizing React 19, TypeScript, and modern styling libraries.",
-        "Engineered reusable data visualization and filtering grids capable of client-side multi-column sorting and low-latency aggregation.",
-        "Refactored state management workflows and asset delivery pipelines, reducing initial bundle weight and improving Core Web Vitals across production modules.",
-        "Collaborated in an Agile development environment with code reviews, strict Git rebasing, and automated CI/CD deployment checks."
-      ]
-    },
-    {
-      "company": "Automotive Systems & Embedded R&D",
-      "role": "Systems & Embedded Lead",
-      "location": "Bengaluru",
-      "dates": "2023 – 2024",
-      "type": "Engineering Capstone & R&D",
-      "highlights": [
-        "Engineered Cockpit Domain Controller (Luxoft CDC) prototypes integrating CAN 2.0B protocols to manage Electronic Control Units (ECUs) at 8,000+ frames/sec.",
-        "Integrated Vehicle Hardware Abstraction Layer (VHAL) property services on Android Automotive OS (AAOS) for real-time instrument cluster telemetry.",
-        "Conducted board-level diagnostics, bootloader unlocking, memory tracing via procfs, and custom Linux kernel compilation for target hardware."
-      ]
-    },
-    {
-      "company": "Independent Security & Bug Bounty",
-      "role": "Security Researcher & Reverse Engineer",
-      "location": "Remote",
-      "dates": "2021 – Present",
-      "type": "Security Research",
-      "highlights": [
-        "Discovered and responsibly disclosed an authentication bypass vulnerability within the 7chats Messenger client; officially awarded Bug Bounty Winner title.",
-        "Conducted APK binary reverse engineering using JADX, Frida instrumentation, and Burp Suite proxy interceptors to inspect token validation flows."
+        "Teach music to school students on a part-time schedule."
       ]
     }
   ],
   "skills": {
     "systemsAndLinux": [
-      { "name": "Arch Linux (Daily Driver)", "level": "Expert" },
-      { "name": "Linux Kernel Diagnostics & procfs", "level": "Advanced" },
-      { "name": "AOSP & Custom ROM Compilation", "level": "Intermediate" },
-      { "name": "POSIX Shell Scripting (Bash/Zsh)", "level": "Advanced" },
-      { "name": "Systemd & Process Management", "level": "Advanced" },
-      { "name": "Docker & Container Isolation", "level": "Intermediate" },
-      { "name": "Git & CI/CD Pipelines", "level": "Advanced" },
-      { "name": "Neovim (Lua / LSP / Tree-sitter)", "level": "Advanced" }
+      { "name": "Arch Linux desktop use and configuration", "level": "Daily use" },
+      { "name": "Pacman update and package configuration", "level": "Hands-on practice" },
+      { "name": "Dependency checks with pactree", "level": "Hands-on practice" },
+      { "name": "Desktop application update troubleshooting", "level": "Hands-on practice" },
+      { "name": "Command-line system maintenance", "level": "Foundational" }
     ],
     "embeddedAndAutomotive": [
-      { "name": "Android Automotive OS (AAOS)", "level": "Intermediate" },
-      { "name": "Vehicle HAL (VHAL) & CarService", "level": "Intermediate" },
-      { "name": "CAN Bus Protocol (CAN 2.0B / OBD-II)", "level": "Intermediate" },
-      { "name": "Cockpit Domain Controller (CDC)", "level": "Intermediate" },
-      { "name": "VLSI Digital Design & Verilog HDL", "level": "Intermediate" },
-      { "name": "Arduino & Microcontrollers (Mega/Uno/ESP32)", "level": "Advanced" },
-      { "name": "MCP2515 Transceiver Hardware Interfacing", "level": "Intermediate" },
-      { "name": "Embedded C & C++ (Pointers, Memory, ISRs)", "level": "Advanced" }
+      { "name": "Electronics and communication engineering", "level": "Academic foundation" },
+      { "name": "Embedded systems and microcontrollers", "level": "Academic exposure" },
+      { "name": "Arduino and digital logic", "level": "Academic exposure" },
+      { "name": "CAN bus and Android Automotive concepts", "level": "Project exposure" }
     ],
     "frontendAndCreative": [
-      { "name": "React 19 & Next.js", "level": "Advanced" },
-      { "name": "TypeScript & ESNext", "level": "Advanced" },
-      { "name": "Three.js & WebGL", "level": "Advanced" },
-      { "name": "GLSL Shaders (Vertex & Fragment)", "level": "Intermediate" },
-      { "name": "Tailwind CSS & Modern Glassmorphism", "level": "Advanced" },
-      { "name": "Web Audio API & Sound Synthesis", "level": "Advanced" },
-      { "name": "HTML5 Canvas (2D/3D Contexts)", "level": "Advanced" },
-      { "name": "Figma & UI Prototyping", "level": "Intermediate" }
+      { "name": "Responsive web interface iteration", "level": "Portfolio work" },
+      { "name": "React and TypeScript codebase maintenance", "level": "AI-assisted portfolio work" },
+      { "name": "Astro and Tailwind CSS", "level": "School website project" },
+      { "name": "Three.js interactive web experiences", "level": "Portfolio project exposure" }
     ],
     "languagesAndBackend": [
-      { "name": "C & C++", "level": "Advanced" },
-      { "name": "Python", "level": "Advanced" },
-      { "name": "JavaScript & TypeScript", "level": "Advanced" },
-      { "name": "Rust (Core Foundations)", "level": "Intermediate" },
-      { "name": "Go (Golang)", "level": "Intermediate" },
-      { "name": "Kotlin & Java", "level": "Intermediate" },
-      { "name": "Dart & Flutter", "level": "Intermediate" },
-      { "name": "Node.js & Express", "level": "Advanced" }
+      { "name": "HTML and CSS", "level": "Project use" },
+      { "name": "JavaScript", "level": "Foundational" },
+      { "name": "TypeScript", "level": "Foundational project use" },
+      { "name": "Python programming", "level": "Foundational" },
+      { "name": "C/C++ and Verilog", "level": "Academic exposure" }
     ],
     "securityAndAudio": [
-      { "name": "Penetration Testing & Auth Auditing", "level": "Intermediate" },
-      { "name": "Reverse Engineering (JADX / Frida)", "level": "Intermediate" },
-      { "name": "Network Security & Cryptography", "level": "Intermediate" },
-      { "name": "FL Studio 21 Signature (Power User)", "level": "Expert" },
-      { "name": "Wavetable Synthesis (Serum / Vital)", "level": "Advanced" },
-      { "name": "Mixing & Mastering (FabFilter Suite)", "level": "Advanced" }
+      { "name": "7chats Messenger bug bounty recognition", "level": "Award" },
+      { "name": "Network security fundamentals", "level": "Coursework and certificate" },
+      { "name": "Music instruction and audio production", "level": "Work and personal practice" }
     ]
   },
   "projects": [
     {
-      "id": "luxoft-cdc",
-      "name": "Luxoft Cockpit Domain Controller",
-      "subtitle": "Automotive Embedded & CAN Support",
+      "id": "sm-english-school",
+      "name": "S.M. English School Website",
+      "subtitle": "Responsive school website MVP",
+      "category": "Web Development",
+      "description": "AI-assisted personal project for S.M. English School with responsive home, academics, admissions, and updates pages. Uses Astro and Tailwind CSS, with a Supabase authentication prototype for the admin area.",
+      "skills": ["Astro", "Tailwind CSS", "Supabase", "Responsive UI"],
+      "badge": "Recent Project",
+      "img": "/images/projects/sm-school-logo.jpg",
+      "link": "https://github.com/Zynxx777/sm-english-school-web"
+    },
+    {
+      "id": "zynx-portfolio",
+      "name": "ZYNX Portfolio Ecosystem",
+      "subtitle": "Responsive portfolio and interactive 3D room",
+      "category": "Web Development",
+      "description": "Personal multi-page portfolio built with React, TypeScript, Vite, and Three.js. Iterates on AI-generated code through review, manual edits, UI redesign, and responsive adjustments across devices.",
+      "skills": ["React", "TypeScript", "Vite", "Three.js", "Responsive UI"],
+      "badge": "Current Project",
+      "img": "/og-preview.png",
+      "link": "https://zynx-portfolio.vercel.app/"
+    },
+    {
+      "id": "arch-linux-workstation",
+      "name": "Arch Linux Workstation Maintenance",
+      "subtitle": "Personal Linux support practice",
+      "category": "Linux & IT Support",
+      "description": "Personal Arch Linux desktop maintenance, including pacman update configuration, checking package dependency trees with pactree, and reviewing package changes before cleanup.",
+      "skills": ["Arch Linux", "Pacman", "pactree", "Package troubleshooting"],
+      "badge": "Home Lab",
+      "img": "/images/space/gaming-cyber-room.jpg",
+      "link": "https://github.com/Zynxx777"
+    },
+    {
+      "id": "automotive-cockpit-academic",
+      "name": "Luxoft AAOS Cockpit Project",
+      "subtitle": "Android Automotive OS · academic ECE project exposure",
       "category": "Automotive & Embedded",
-      "description": "Embedded automotive system design integrating CAN bus protocol architecture to manage Electronic Control (EC) domains, Vehicle HAL properties, and real-time instrument cluster telemetry for connected vehicle platforms.",
-      "skills": ["C", "C++", "CAN 2.0B", "Linux", "AAOS", "VHAL"],
-      "badge": "Automotive ECE",
+      "description": "Project work associated with the Luxoft AAOS project: exposure to Android Automotive OS, CAN bus concepts, and embedded cockpit systems through ECE project work. This is listed as project exposure, not employment at Luxoft.",
+      "skills": ["Electronics", "Embedded Systems", "AAOS concepts", "CAN concepts"],
+      "badge": "Academic Project",
       "img": "/images/projects/cockpit-cdc.jpg",
       "link": "https://github.com/Zynxx777"
     },
     {
-      "id": "medivend",
-      "name": "MediVend Smart Vending",
-      "subtitle": "Automated Medical Dispenser",
+      "id": "medivend-academic",
+      "name": "MediVend Smart Dispenser Concept",
+      "subtitle": "Embedded systems and digital logic coursework",
       "category": "Hardware & VLSI",
-      "description": "Intelligent automated medicine vending machine combining Verilog HDL digital logic design, Arduino microcontroller firmware, RFID patient validation, and custom PCB circuitry for automated medication dispatch.",
-      "skills": ["Verilog HDL", "Arduino Mega", "Embedded C++", "Python", "VLSI"],
-      "badge": "Embedded VLSI",
+      "description": "Academic smart-dispenser concept combining introductory microcontroller work, digital logic, and electronics engineering coursework.",
+      "skills": ["Arduino", "Embedded systems", "Digital logic", "Verilog exposure"],
+      "badge": "Academic Project",
       "img": "/images/projects/medivend-hardware.jpg",
       "link": "https://github.com/Zynxx777"
-    },
-    {
-      "id": "audio-visualizer-lab",
-      "name": "SmokeVisualizer & Audio Engine",
-      "subtitle": "1,114 Lines of Handcrafted GLSL",
-      "category": "WebGL & Audio",
-      "description": "Production WebGL audio playground featuring 4 real-time reactive modes: CRT terminal oscilloscopes, FFT spectrum analyzer, turbulent fluid smoke particle shaders, and gravitational starfield camera zooms.",
-      "skills": ["Three.js", "WebGL", "GLSL", "Web Audio API", "TypeScript"],
-      "badge": "Creative WebGL",
-      "img": "/images/projects/audio-visualizer.jpg",
-      "link": "#sound-lab"
-    },
-    {
-      "id": "black-hole-universe",
-      "name": "Black Hole Gravitational Sim",
-      "subtitle": "8,000 Particle Relativistic Simulation",
-      "category": "Creative & Math",
-      "description": "GPU-accelerated gravitational starfield simulation in Three.js where 8,000 particles are pulled into an accretion disk with audio frequency modulation and cursor gravitational deflection.",
-      "skills": ["Three.js", "GLSL", "Physics", "Math", "ShaderMaterial"],
-      "badge": "Physics Sim",
-      "img": "/images/projects/cosmic-singularity.jpg",
-      "link": "#sound-lab"
-    },
-    {
-      "id": "mini-music-player",
-      "name": "Mini Music Player App",
-      "subtitle": "Cross-Platform Mobile Audio Suite",
-      "category": "Mobile & Systems",
-      "description": "High-performance mobile music player application built with clean architecture, background audio service lifecycle handling, and audio-reactive waveform visualizations.",
-      "skills": ["Flutter", "Dart", "Kotlin", "Android Services"],
-      "badge": "Mobile Audio",
-      "img": "/images/projects/mobile-player.jpg",
-      "link": "https://zynxx777.github.io/mini-music-player/"
     }
   ],
   "certifications": [
     {
-      "title": "Bug Bounty Contest Winner",
+      "title": "7chats Messenger Bug Bounty Contest Winner",
       "issuer": "7chats Messenger",
       "date": "September 2021",
-      "detail": "Discovered and responsibly reported critical authentication bypass vulnerability in production messenger client."
+      "detail": "Recognition recorded in the existing resume materials for reporting an authentication issue."
     },
     {
-      "title": "VLSI Digital Design & Chip Design",
-      "issuer": "Verilog Programming Specialization",
+      "title": "VLSI Digital Design and Verilog Programming",
+      "issuer": "Technical Certificate",
       "date": "July 2024",
-      "detail": "Digital logic synthesis, RTL verification, logic gate minimization, and Verilog hardware modeling."
+      "detail": "Digital design and Verilog programming coursework."
     },
     {
-      "title": "Network Security & Protocols",
-      "issuer": "Technical Specialization Certificate",
+      "title": "Python Programming Basics",
+      "issuer": "Technical Certificate",
+      "date": "July 2024",
+      "detail": "Foundational Python programming coursework."
+    },
+    {
+      "title": "Network Security",
+      "issuer": "Technical Certificate",
       "date": "February 2025",
-      "detail": "TCP/IP architecture, cryptographic authentication protocols, IDS/IPS, and network perimeter defense."
-    },
-    {
-      "title": "Python Programming Foundations",
-      "issuer": "Certified Python Specialist",
-      "date": "July 2024",
-      "detail": "Core data structures, object-oriented software patterns, automation, and backend logic algorithms."
+      "detail": "Introductory network security coursework."
     }
   ]
 }

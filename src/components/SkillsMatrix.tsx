@@ -1,586 +1,198 @@
-import React, { useState, useRef, useMemo, useEffect } from "react";
-import {
-  Terminal,
-  Search,
-  CheckCircle2,
-  X,
-  Copy,
-  Zap,
-  Eye,
-  ArrowLeft,
-} from "lucide-react";
-import { ALL_SKILLS, SKILL_CATEGORIES, type DetailedSkill } from "../data/skillsData";
+import React, { useEffect, useMemo, useState } from "react";
+import { Search, X, ArrowUpRight } from "lucide-react";
+import { ALL_SKILLS, SKILL_CATEGORIES, SKILL_LEVELS, type DetailedSkill } from "../data/skillsData";
 import { soundFX } from "../utils/audioFX";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Interactive Zero University Card with Specular Mouse Sheen & Tech Corner Crosshairs
-// ─────────────────────────────────────────────────────────────────────────────
-interface SkillCardProps {
-  skill: DetailedSkill;
-  onInspect: (skill: DetailedSkill) => void;
-}
-
-const ZeroUniversityCard: React.FC<SkillCardProps> = ({ skill, onInspect }) => {
-  const cardRef = useRef<HTMLDivElement | null>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0, active: false });
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    setMousePos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-      active: true,
-    });
-  };
-
-  const handleMouseLeave = () => {
-    setMousePos((prev) => ({ ...prev, active: false }));
-  };
-
-  const getLevelBadge = (level: string) => {
-    switch (level) {
-      case "Expert":
-        return {
-          bg: "bg-emerald-950/60 border-emerald-400/40 text-emerald-300",
-          dot: "bg-emerald-400",
-        };
-      case "Advanced":
-        return {
-          bg: "bg-cyan-950/60 border-cyan-400/40 text-cyan-300",
-          dot: "bg-cyan-400",
-        };
-      default:
-        return {
-          bg: "bg-purple-950/60 border-purple-400/40 text-purple-300",
-          dot: "bg-purple-400",
-        };
-    }
-  };
-
-  const badgeStyle = getLevelBadge(skill.level);
-
-  return (
-    <div
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      onClick={() => {
-        soundFX.playZoom();
-        onInspect(skill);
-      }}
-      onMouseEnter={() => soundFX.playHover()}
-      className="group relative p-5 rounded-2xl bg-[#090d18]/70 backdrop-blur-md border border-white/10 hover:border-cyan-400/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-cyan-500/10 cursor-pointer overflow-hidden flex flex-col justify-between select-none"
-    >
-      {/* Dynamic Specular Sheen (Jesper Landberg & Zero University signature) */}
-      {mousePos.active && (
-        <div
-          className="pointer-events-none absolute -inset-px rounded-[inherit] transition-opacity duration-200"
-          style={{
-            background: `radial-gradient(240px circle at ${mousePos.x}px ${mousePos.y}px, rgba(34, 211, 238, 0.16), transparent 70%)`,
-          }}
-        />
-      )}
-
-      {/* Cyber Corner Tech Crosshairs (+) */}
-      <span className="absolute top-2 left-2 text-[8px] font-mono text-zinc-700 group-hover:text-cyan-400/50 transition-colors pointer-events-none">
-        +
-      </span>
-      <span className="absolute top-2 right-2 text-[8px] font-mono text-zinc-700 group-hover:text-cyan-400/50 transition-colors pointer-events-none">
-        +
-      </span>
-      <span className="absolute bottom-2 left-2 text-[8px] font-mono text-zinc-700 group-hover:text-cyan-400/50 transition-colors pointer-events-none">
-        +
-      </span>
-      <span className="absolute bottom-2 right-2 text-[8px] font-mono text-zinc-700 group-hover:text-cyan-400/50 transition-colors pointer-events-none">
-        +
-      </span>
-
-      <div>
-        {/* Top Header: Logo + Level Indicator */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="relative w-12 h-12 rounded-xl bg-black/70 border border-white/15 flex items-center justify-center p-2.5 flex-shrink-0 group-hover:border-cyan-400/70 group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(34,211,238,0.25)] transition-all duration-300">
-            <img
-              src={skill.icon}
-              alt={skill.name}
-              className="w-full h-full object-contain filter drop-shadow"
-              loading="lazy"
-              onError={(e) => {
-                // Fallback icon if image fails
-                (e.currentTarget as HTMLElement).style.display = "none";
-              }}
-            />
-          </div>
-
-          <div className="flex flex-col items-end gap-1">
-            <span
-              className={`inline-flex items-center gap-1.5 text-[10px] font-mono px-2.5 py-0.5 rounded-full border ${badgeStyle.bg}`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${badgeStyle.dot}`} />
-              <span>{skill.level}</span>
-            </span>
-
-            <span className="text-[9px] font-mono text-zinc-500">
-              {skill.proficiency}% PROFICIENCY
-            </span>
-          </div>
-        </div>
-
-        {/* Title and Short Description */}
-        <div className="mt-4">
-          <h4 className="font-display font-medium text-base text-white group-hover:text-cyan-200 transition-colors tracking-tight">
-            {skill.name}
-          </h4>
-          <p className="text-xs text-zinc-400 font-sans mt-1.5 leading-relaxed line-clamp-2">
-            {skill.detail}
-          </p>
-        </div>
-
-        {/* Tags / Telemetry pills */}
-        <div className="flex flex-wrap gap-1 mt-3">
-          {skill.tags.slice(0, 3).map((tag) => (
-            <span
-              key={tag}
-              className="text-[9px] font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-300 group-hover:border-cyan-400/30 transition-colors"
-            >
-              {tag}
-            </span>
-          ))}
-          {skill.tags.length > 3 && (
-            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-500">
-              +{skill.tags.length - 3}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Footer: Proficiency Bar & Inspection Action */}
-      <div className="mt-5 pt-3 border-t border-white/10">
-        <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 mb-1.5">
-          <span className="uppercase tracking-wider">{skill.categoryLabel}</span>
-          <span className="text-cyan-300 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-            <Eye size={11} />
-            <span>Inspect Spec</span>
-          </span>
-        </div>
-
-        {/* Mini Segmented Bar */}
-        <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 rounded-full transition-all duration-700 ease-out group-hover:brightness-125"
-            style={{ width: `${skill.proficiency}%` }}
-          />
-        </div>
-      </div>
-    </div>
-  );
+const levelStyles: Record<string, string> = {
+  "Daily use": "border-emerald-400/35 bg-emerald-950/30 text-emerald-200",
+  "Hands-on practice": "border-cyan-400/35 bg-cyan-950/30 text-cyan-200",
+  "Portfolio project": "border-purple-400/35 bg-purple-950/30 text-purple-200",
+  "Academic exposure": "border-amber-400/35 bg-amber-950/30 text-amber-200",
+  Foundational: "border-sky-400/35 bg-sky-950/30 text-sky-200",
+  Recognition: "border-pink-400/35 bg-pink-950/30 text-pink-200",
+  "Current work": "border-emerald-400/35 bg-emerald-950/30 text-emerald-200",
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Diagnostic Spec Modal (Zero University Low-Level Telemetry Drawer)
-// ─────────────────────────────────────────────────────────────────────────────
-interface SpecModalProps {
-  skill: DetailedSkill | null;
-  onClose: () => void;
-}
-
-const DiagnosticSpecModal: React.FC<SpecModalProps> = ({ skill, onClose }) => {
-  const [copied, setCopied] = useState(false);
-
+const SkillDetails: React.FC<{ skill: DetailedSkill; onClose: () => void }> = ({ skill, onClose }) => {
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
     };
+    document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [onClose]);
 
-  if (!skill) return null;
-
-  const copyCommand = () => {
-    soundFX.playClick();
-    navigator.clipboard.writeText(skill.command);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={skill.name}
-      onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-2xl animate-fadeIn"
+      role="presentation"
+      onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+      className="fixed inset-0 z-[70] flex items-end justify-center bg-black/80 p-0 backdrop-blur-xl sm:items-center sm:p-5"
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-2xl rounded-3xl bg-[#090d18] border border-cyan-400/40 p-6 sm:p-8 shadow-2xl space-y-6 text-left"
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="skill-details-title"
+        className="max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-t-3xl border border-white/15 bg-[#090d18] p-5 shadow-2xl sm:rounded-3xl sm:p-8"
       >
-        {/* Modal Top Header */}
-        <div className="flex items-start justify-between gap-4 border-b border-white/15 pb-5">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-black/80 border border-cyan-400/40 p-3 flex items-center justify-center shadow-lg">
-              <img
-                src={skill.icon}
-                alt={skill.name}
-                className="w-full h-full object-contain filter drop-shadow"
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.2em] text-cyan-400">
-                <span>{skill.categoryLabel}</span>
-                <span className="text-zinc-600">·</span>
-                <span className="text-emerald-400">ACTIVE SUBSYSTEM</span>
-              </div>
-              <h3 className="text-2xl font-display font-medium text-white tracking-tight">
-                {skill.name}
-              </h3>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                soundFX.playClick();
-                onClose();
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/15 bg-white/5 hover:bg-white/15 text-xs font-mono text-zinc-300 hover:text-white transition-all group"
-              aria-label="Back to skills matrix"
-            >
-              <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" />
-              <span>Back</span>
-            </button>
-            <button
-              onClick={() => {
-                soundFX.playClick();
-                onClose();
-              }}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-red-500/30 bg-red-500/10 hover:bg-red-500/25 text-red-200 hover:text-white text-xs font-mono transition-all"
-              aria-label="Close specification"
-            >
-              <X size={14} />
-              <span className="hidden sm:inline font-bold">Close</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Detailed Explanation */}
-        <div className="space-y-2">
-          <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-zinc-500">
-            ENGINEERING SPECIFICATION
-          </span>
-          <p className="text-sm text-zinc-200 font-sans leading-relaxed">
-            {skill.detail}
-          </p>
-        </div>
-
-        {/* Production Deployment Highlight */}
-        <div className="p-4 rounded-xl bg-cyan-950/20 border border-cyan-400/25 space-y-1.5">
-          <div className="flex items-center gap-2 text-[11px] font-mono text-cyan-300">
-            <Zap size={13} className="text-cyan-400" />
-            <span className="font-bold">VERIFIED PRODUCTION DEPLOYMENT</span>
-          </div>
-          <p className="text-xs text-zinc-300 font-sans leading-relaxed">
-            {skill.productionUse}
-          </p>
-        </div>
-
-        {/* Live Command Terminal Readout */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-zinc-500 flex items-center gap-1.5">
-              <Terminal size={12} className="text-cyan-400" />
-              <span>TERMINAL TELEMETRY / INVOCATION</span>
-            </span>
-
-            <button
-              onClick={copyCommand}
-              className="text-[10px] font-mono px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-cyan-300 flex items-center gap-1.5 transition-colors"
-            >
-              {copied ? <CheckCircle2 size={11} className="text-emerald-400" /> : <Copy size={11} />}
-              <span>{copied ? "COPIED" : "COPY COMMAND"}</span>
-            </button>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-black/90 border border-white/15 font-mono text-xs text-emerald-400 flex items-center justify-between overflow-x-auto">
-            <code>$ {skill.command}</code>
-            <span className="text-[10px] text-zinc-600 ml-4 flex-shrink-0">SYS_OK</span>
-          </div>
-        </div>
-
-        {/* Proficiency Gauge & Tags */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-          <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block mb-2">
-              PROFICIENCY RATING
-            </span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-display font-medium text-white">
-                {skill.proficiency}%
-              </span>
-              <span className="text-xs font-mono text-cyan-400 uppercase tracking-wider">
-                [{skill.level}]
-              </span>
-            </div>
-            <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden mt-3">
-              <div
-                className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full"
-                style={{ width: `${skill.proficiency}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block mb-2">
-              ASSOCIATED TOOLCHAIN
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {skill.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="text-[10px] font-mono px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-zinc-300"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Modal Footer */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/10 text-[10px] font-mono text-zinc-500">
-          <button
-            onClick={() => {
-              soundFX.playClick();
-              onClose();
-            }}
-            className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-zinc-300 hover:text-white flex items-center gap-1.5 transition-all"
-          >
-            <ArrowLeft size={13} />
-            <span>Back to Skills Matrix</span>
-          </button>
+        <header className="flex items-start justify-between gap-4 border-b border-white/10 pb-5">
           <div className="flex items-center gap-3">
-            <span className="hidden sm:inline">IDENTIFIER: 0x{skill.id.replace(/-/g, "").slice(0, 8).toUpperCase()}</span>
-            <button
-              onClick={() => {
-                soundFX.playClick();
-                onClose();
-              }}
-              className="px-4 py-1.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-mono text-xs font-bold tracking-wider transition-colors flex items-center gap-1.5 shadow-md"
-            >
-              <X size={13} />
-              <span>Close Spec</span>
-            </button>
+            <img src={skill.icon} alt="" className="h-10 w-10 rounded-xl bg-black/50 p-2 object-contain" />
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-400">{skill.categoryLabel}</p>
+              <h3 id="skill-details-title" className="mt-1 text-xl font-semibold text-white">{skill.name}</h3>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close skill details"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 text-zinc-300 transition hover:border-white/35 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300"
+          >
+            <X size={17} />
+          </button>
+        </header>
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The Main SkillsMatrix Component (Zero University & Jesper Landberg Architecture)
-// ─────────────────────────────────────────────────────────────────────────────
-export const SkillsMatrix: React.FC = () => {
-  const [activeCategory, setActiveCategory] = useState<string>("all");
-  const [activeLevel, setActiveLevel] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [selectedSkill, setSelectedSkill] = useState<DetailedSkill | null>(null);
-  const [cursorCoord, setCursorCoord] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-
-  // Update cursor coordinate readout
-  const handleSectionMouseMove = (e: React.MouseEvent<HTMLElement>) => {
-    setCursorCoord({ x: Math.round(e.clientX), y: Math.round(e.clientY) });
-  };
-
-  // Filter skills based on Category, Level, and Search Query
-  const filteredSkills = useMemo(() => {
-    return ALL_SKILLS.filter((s) => {
-      // Category match
-      if (activeCategory !== "all" && s.category !== activeCategory) return false;
-      // Level match
-      if (activeLevel !== "all" && s.level.toLowerCase() !== activeLevel.toLowerCase()) return false;
-      // Search match
-      if (searchQuery.trim() !== "") {
-        const q = searchQuery.toLowerCase();
-        const matchesName = s.name.toLowerCase().includes(q);
-        const matchesDetail = s.detail.toLowerCase().includes(q);
-        const matchesTags = s.tags.some((t) => t.toLowerCase().includes(q));
-        const matchesCategory = s.categoryLabel.toLowerCase().includes(q);
-        return matchesName || matchesDetail || matchesTags || matchesCategory;
-      }
-      return true;
-    });
-  }, [activeCategory, activeLevel, searchQuery]);
-
-  // Category counts
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: ALL_SKILLS.length };
-    for (const cat of SKILL_CATEGORIES) {
-      if (cat.id !== "all") {
-        counts[cat.id] = ALL_SKILLS.filter((s) => s.category === cat.id).length;
-      }
-    }
-    return counts;
-  }, []);
-
-  return (
-    <section
-      id="skills"
-      onMouseMove={handleSectionMouseMove}
-      className="py-24 px-6 sm:px-12 max-w-[1700px] mx-auto scroll-mt-20 border-t border-white/10 select-none relative"
-    >
-      {/* ── ZERO UNIVERSITY TELEMETRY HEADER ── */}
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12 border-b border-white/15 pb-8">
-        <div>
-          {/* High-tech status indicator */}
-          <div className="flex flex-wrap items-center gap-3 font-mono text-[10px] sm:text-xs uppercase tracking-[0.24em] text-cyan-300">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            <span>03 // COMPLETE ARSENAL & TOOLCHAIN</span>
-            <span className="text-zinc-600">·</span>
-            <span className="text-zinc-400 hidden sm:inline">
-              SYS_REV: 2026.10
+        <div className="space-y-6 py-6">
+          <div>
+            <span className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-mono ${levelStyles[skill.level] ?? levelStyles.Foundational}`}>
+              {skill.level}
             </span>
-            <span className="text-zinc-600 hidden sm:inline">·</span>
-            <span className="text-emerald-400 font-mono hidden md:inline">
-              COORD [X:{String(cursorCoord.x).padStart(4, "0")} Y:{String(cursorCoord.y).padStart(4, "0")}]
-            </span>
+            <p className="mt-3 text-sm leading-relaxed text-zinc-200">{skill.detail}</p>
           </div>
 
-          <h2 className="text-3xl sm:text-5xl font-display font-medium tracking-[-0.05em] text-white mt-3">
-            Hardware Protocols <span className="text-white/40">& Creative Code</span>
-          </h2>
-          <p className="text-xs sm:text-sm text-zinc-400 font-sans mt-2 max-w-2xl leading-relaxed">
-            All 38 production proficiencies across low-level Linux kernels, automotive cockpit networks, real-time WebGL graphics, and algorithmic sound synthesis.
-          </p>
-        </div>
-
-        {/* Live Search & Filter Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-          {/* Search Input */}
-          <div className="relative flex-1 sm:w-72">
-            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search 38 technologies, tags..."
-              className="w-full pl-9 pr-8 py-2 rounded-full bg-white/5 border border-white/15 focus:border-cyan-400 focus:outline-none text-xs font-mono text-white placeholder-zinc-500 transition-colors"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
-              >
-                <X size={12} />
-              </button>
-            )}
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <h4 className="font-mono text-[10px] uppercase tracking-[0.18em] text-cyan-200">Evidence &amp; context</h4>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-300">{skill.evidence}</p>
           </div>
 
-          {/* Level Filter Dropdown / Pill */}
-          <div className="flex items-center gap-1 p-1 rounded-full bg-white/5 border border-white/10 text-xs font-mono">
-            {["all", "expert", "advanced", "intermediate"].map((lvl) => (
-              <button
-                key={lvl}
-                onClick={() => {
-                  soundFX.playClick();
-                  setActiveLevel(lvl);
-                }}
-                className={`px-3 py-1 rounded-full transition-all capitalize ${
-                  activeLevel === lvl
-                    ? "bg-cyan-400 text-black font-bold shadow-md"
-                    : "text-zinc-400 hover:text-white"
-                }`}
-              >
-                {lvl}
-              </button>
+          {skill.command && (
+            <div className="rounded-2xl border border-white/10 bg-black/45 p-4">
+              <h4 className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-400">Example command</h4>
+              <code className="mt-2 block overflow-x-auto text-xs text-emerald-200">$ {skill.command}</code>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            {skill.tags.map((tag) => (
+              <span key={tag} className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] text-zinc-300">{tag}</span>
             ))}
           </div>
         </div>
-      </div>
+      </section>
+    </div>
+  );
+};
 
-      {/* ── CATEGORY PILL SELECTORS ── */}
-      <div className="flex flex-wrap items-center gap-2 mb-8">
-        {SKILL_CATEGORIES.map((cat) => {
-          const isActive = activeCategory === cat.id;
-          const count = categoryCounts[cat.id] ?? 0;
+export const SkillsMatrix: React.FC = () => {
+  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [activeLevel, setActiveLevel] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSkill, setSelectedSkill] = useState<DetailedSkill | null>(null);
+
+  const filteredSkills = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return ALL_SKILLS.filter((skill) => {
+      const matchesCategory = activeCategory === "all" || skill.category === activeCategory;
+      const matchesLevel = activeLevel === "all" || skill.level === activeLevel;
+      const searchableText = [skill.name, skill.detail, skill.evidence, skill.categoryLabel, ...skill.tags].join(" ").toLowerCase();
+      return matchesCategory && matchesLevel && (!query || searchableText.includes(query));
+    });
+  }, [activeCategory, activeLevel, searchQuery]);
+
+  return (
+    <section id="skills" className="mx-auto max-w-[1700px] scroll-mt-20 border-t border-white/10 px-4 py-16 sm:px-8 sm:py-24 lg:px-12">
+      <header className="mb-8 flex flex-col gap-6 border-b border-white/15 pb-8 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-cyan-300">03 // Skills &amp; practice</p>
+          <h2 className="mt-3 text-3xl font-medium tracking-tight text-white sm:text-5xl">Skills <span className="text-white/40">with evidence</span></h2>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zinc-400">
+            Practical Linux maintenance, AI-assisted web projects, engineering coursework, and current learning areas. Each label describes where the experience comes from.
+          </p>
+        </div>
+
+        <div className="grid w-full gap-3 sm:grid-cols-[minmax(0,1fr)_auto] lg:w-auto lg:min-w-[32rem]">
+          <label className="relative block">
+            <Search size={15} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder={`Search ${ALL_SKILLS.length} skills and projects`}
+              aria-label="Search skills and projects"
+              className="w-full rounded-full border border-white/15 bg-white/[0.04] py-3 pl-10 pr-4 text-sm text-white placeholder:text-zinc-500 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-300/20"
+            />
+          </label>
+          <label className="sr-only" htmlFor="skill-evidence-filter">Filter by evidence type</label>
+          <select
+            id="skill-evidence-filter"
+            value={activeLevel}
+            onChange={(event) => setActiveLevel(event.target.value)}
+            className="rounded-full border border-white/15 bg-[#090d18] px-4 py-3 text-sm text-zinc-200 focus:border-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-300/20"
+          >
+            <option value="all">All evidence types</option>
+            {SKILL_LEVELS.map((level) => <option key={level} value={level}>{level}</option>)}
+          </select>
+        </div>
+      </header>
+
+      <nav aria-label="Filter skills by category" className="no-scrollbar mb-6 flex gap-2 overflow-x-auto pb-2">
+        {SKILL_CATEGORIES.map((category) => {
+          const count = category.id === "all" ? ALL_SKILLS.length : ALL_SKILLS.filter((skill) => skill.category === category.id).length;
+          const selected = activeCategory === category.id;
           return (
             <button
-              key={cat.id}
-              onClick={() => {
-                soundFX.playClick();
-                setActiveCategory(cat.id);
-              }}
-              className={`px-4 py-2 rounded-full text-xs font-mono transition-all flex items-center gap-2.5 border ${
-                isActive
-                  ? "bg-white text-black font-bold border-white shadow-xl scale-[1.02]"
-                  : "bg-white/[0.03] border-white/10 text-zinc-400 hover:text-white hover:border-white/20 hover:bg-white/[0.06]"
-              }`}
+              key={category.id}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => { setActiveCategory(category.id); soundFX.playClick(); }}
+              className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-xs transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 ${selected ? "border-white bg-white font-semibold text-black" : "border-white/10 bg-white/[0.03] text-zinc-300 hover:border-white/25 hover:text-white"}`}
             >
-              <span>{cat.label}</span>
-              <span
-                className={`text-[10px] px-2 py-0.5 rounded-full ${
-                  isActive ? "bg-black text-white" : "bg-white/10 text-zinc-300"
-                }`}
-              >
-                {count}
-              </span>
+              <span>{category.label}</span><span className={`rounded-full px-1.5 py-0.5 text-[10px] ${selected ? "bg-black/10" : "bg-white/10"}`}>{count}</span>
             </button>
           );
         })}
-      </div>
+      </nav>
 
-      {/* ── SKILLS GRID (All 38 Skills) ── */}
-      {filteredSkills.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {filteredSkills.length ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filteredSkills.map((skill) => (
-            <ZeroUniversityCard
+            <button
+              type="button"
               key={skill.id}
-              skill={skill}
-              onInspect={(s) => setSelectedSkill(s)}
-            />
+              onClick={() => { setSelectedSkill(skill); soundFX.playZoom(); }}
+              className="group flex min-h-40 flex-col rounded-2xl border border-white/10 bg-[#090d18]/75 p-5 text-left transition hover:-translate-y-0.5 hover:border-cyan-300/40 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300"
+            >
+              <span className="flex w-full items-start justify-between gap-4">
+                <span className="flex min-w-0 items-center gap-3">
+                  <img src={skill.icon} alt="" loading="lazy" className="h-9 w-9 shrink-0 rounded-xl bg-black/50 p-2 object-contain" />
+                  <span className="font-medium leading-snug text-white">{skill.name}</span>
+                </span>
+                <ArrowUpRight size={15} aria-hidden="true" className="mt-1 shrink-0 text-zinc-500 transition group-hover:text-cyan-300" />
+              </span>
+              <span className="mt-3 line-clamp-2 text-xs leading-relaxed text-zinc-400">{skill.detail}</span>
+              <span className="mt-auto flex flex-wrap items-center gap-2 pt-4">
+                <span className={`rounded-full border px-2.5 py-1 text-[10px] font-mono ${levelStyles[skill.level] ?? levelStyles.Foundational}`}>{skill.level}</span>
+                <span className="text-[10px] text-zinc-500">{skill.categoryLabel}</span>
+              </span>
+            </button>
           ))}
         </div>
       ) : (
-        <div className="text-center py-20 border border-dashed border-white/10 rounded-3xl p-8 space-y-4">
-          <Terminal size={32} className="text-zinc-500 mx-auto" />
-          <h4 className="text-xl font-display font-medium text-white">
-            No matching engineering subsystems found
-          </h4>
-          <p className="text-xs text-zinc-400 font-mono">
-            Zero modules matched query "{searchQuery}" under level "{activeLevel}".
-          </p>
-          <button
-            onClick={() => {
-              setSearchQuery("");
-              setActiveCategory("all");
-              setActiveLevel("all");
-            }}
-            className="px-4 py-2 rounded-full bg-cyan-400 text-black font-mono text-xs font-bold hover:bg-cyan-300 transition-colors"
-          >
-            Reset All Filters
-          </button>
+        <div className="rounded-2xl border border-dashed border-white/15 px-5 py-12 text-center">
+          <h3 className="text-lg font-medium text-white">No matching skills</h3>
+          <p className="mt-2 text-sm text-zinc-400">Change the search or evidence filter to see more.</p>
+          <button type="button" onClick={() => { setSearchQuery(""); setActiveCategory("all"); setActiveLevel("all"); }} className="mt-4 rounded-full border border-white/20 px-4 py-2 text-xs text-zinc-200 hover:bg-white/10">Clear filters</button>
         </div>
       )}
 
-      {/* ── TECHNICAL ARSENAL FOOTER TELEMETRY ── */}
-      <div className="mt-12 p-5 rounded-2xl bg-white/[0.02] border border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-mono text-zinc-400">
-        <div className="flex items-center gap-3">
-          <span className="w-2 h-2 rounded-full bg-emerald-400" />
-          <span>SHOWING {filteredSkills.length} OF 38 TOTAL SKILLS LOADED FROM PROFILE CONFIG</span>
-        </div>
-        <div className="flex items-center gap-6 text-[11px] text-zinc-500">
-          <span>HARDWARE: CAN 2.0B / MCP2515</span>
-          <span>KERNEL: LINUX 6.x</span>
-          <span>GRAPHICS: WEBGL 2.0</span>
-        </div>
-      </div>
+      <p aria-live="polite" className="mt-6 text-xs font-mono text-zinc-500">Showing {filteredSkills.length} of {ALL_SKILLS.length} areas</p>
 
-      {/* ── ZERO UNIVERSITY SPECIFICATION MODAL ── */}
-      <DiagnosticSpecModal
-        skill={selectedSkill}
-        onClose={() => setSelectedSkill(null)}
-      />
+      {selectedSkill && <SkillDetails skill={selectedSkill} onClose={() => setSelectedSkill(null)} />}
     </section>
   );
 };

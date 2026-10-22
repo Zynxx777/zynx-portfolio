@@ -1,7 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { ArrowRight, Terminal, FileText, Cpu, Compass, Disc3, Shield, Monitor, ArrowUpRight, Sparkles, User } from "lucide-react";
-import { LiquidMercuryCanvas } from "../components/LiquidMercuryCanvas";
-import { Projects3D } from "../components/Projects3D";
+import React, { lazy, Suspense, useEffect, useState, useRef } from "react";
+import { ArrowRight, Terminal, Cpu, Compass, Disc3, Shield, Monitor, ArrowUpRight, Sparkles, User, Download, Mail } from "lucide-react";
 import { TapeTicker } from "../components/TapeTicker";
 import { SystemsRadar } from "../components/SystemsRadar";
 import { ExperienceTimeline } from "../components/ExperienceTimeline";
@@ -9,6 +7,43 @@ import { ContactTerminal } from "../components/ContactTerminal";
 import { ProfileDossierDrawer } from "../components/ProfileDossierDrawer";
 import { soundFX } from "../utils/audioFX";
 import profileData from "../data/profile.json";
+
+const LiquidMercuryCanvas = lazy(() => import("../components/LiquidMercuryCanvas").then((module) => ({ default: module.LiquidMercuryCanvas })));
+const Projects3D = lazy(() => import("../components/Projects3D").then((module) => ({ default: module.Projects3D })));
+
+const ProjectsPlaceholder: React.FC = () => (
+  <div className="flex min-h-[760px] flex-col justify-center border-t border-white/10 px-6 py-16 sm:px-12" role="status">
+    <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-cyan-300">Selected work</p>
+    <h2 className="mt-3 max-w-4xl text-3xl font-medium tracking-tight text-white sm:text-5xl">Recent projects and practical experience.</h2>
+    <p className="mt-4 max-w-xl text-sm leading-relaxed text-zinc-400">Loading the interactive project gallery…</p>
+  </div>
+);
+
+const DeferredProjects3D: React.FC = () => {
+  const sectionRef = useRef<HTMLDivElement | null>(null);
+  const [isNearViewport, setIsNearViewport] = useState(() => typeof IntersectionObserver === "undefined");
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section || !("IntersectionObserver" in window)) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsNearViewport(true);
+        observer.disconnect();
+      }
+    }, { rootMargin: "450px 0px" });
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div id="projects" ref={sectionRef} className="min-h-[900px] scroll-mt-16">
+      {isNearViewport ? (
+        <Suspense fallback={<ProjectsPlaceholder />}><Projects3D /></Suspense>
+      ) : <ProjectsPlaceholder />}
+    </div>
+  );
+};
 
 interface PortfolioPageProps {
   openResume: () => void;
@@ -79,23 +114,6 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
   onNavigateSkills,
 }) => {
   const [isProfileDrawerOpen, setIsProfileDrawerOpen] = useState(false);
-  const [roleIndex, setRoleIndex] = useState(0);
-
-  const roles = [
-    "ELECTRONICS & COMMUNICATION ENGINEER",
-    "AUTOMOTIVE COCKPIT & AAOS SPECIALIST",
-    "LINUX KERNEL & EMBEDDED ARCHITECT",
-    "CREATIVE WEBGL & SHADER DEVELOPER",
-    "7CHATS BUG BOUNTY WINNER"
-  ];
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setRoleIndex((prev) => (prev + 1) % roles.length);
-    }, 3200);
-    return () => clearInterval(timer);
-  }, [roles.length]);
-
   const scrollToSection = (id: string) => {
     soundFX.playClick();
     const el = document.getElementById(id);
@@ -103,16 +121,16 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
   };
 
   const navJumps = [
-    { id: "projects", label: "01 // WORK (TAPE)", action: () => scrollToSection("projects") },
-    { id: "tape-stream", label: "02 // TELEMETRY TAPE", action: () => scrollToSection("tape-stream") },
-    { id: "radar", label: "03 // RADAR", action: () => scrollToSection("radar") },
-    { id: "timeline", label: "04 // TIMELINE", action: () => scrollToSection("timeline") },
-    { id: "realms", label: "05 // 3D SANCTUARY", action: onNavigateSpace },
-    { id: "contact", label: "06 // TRANSMISSION", action: () => scrollToSection("contact") },
+    { id: "projects", label: "Projects", action: () => scrollToSection("projects") },
+    { id: "tape-stream", label: "Skills", action: () => scrollToSection("tape-stream") },
+    { id: "radar", label: "Focus areas", action: () => scrollToSection("radar") },
+    { id: "timeline", label: "Experience", action: () => scrollToSection("timeline") },
+    { id: "realms", label: "3D room", action: onNavigateSpace },
+    { id: "contact", label: "Contact", action: () => scrollToSection("contact") },
   ];
 
   return (
-    <div className="relative space-y-24 select-none">
+    <div className="relative space-y-24">
       {/* ── Ambient Chromatic Flow Aura (Liquid Chrome & Obsidian Vibe Continuity) ── */}
       <div className="pointer-events-none absolute top-[20%] -left-32 w-[520px] h-[520px] rounded-full bg-cyan-500/[0.04] blur-[150px] -z-10" />
       <div className="pointer-events-none absolute top-[45%] -right-32 w-[600px] h-[600px] rounded-full bg-purple-500/[0.035] blur-[170px] -z-10" />
@@ -124,7 +142,10 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
       ══════════════════════════════════════════════════════════ */}
       <section id="hero" className="relative min-h-[96svh] flex flex-col justify-between pb-8 px-4 sm:px-8 overflow-hidden">
         {/* Full-Page Dynamic Hero WebGL Background (Liquid Chrome Ferrofluid) */}
-        <LiquidMercuryCanvas className="z-0 opacity-95" />
+        <Suspense fallback={<div aria-hidden="true" className="absolute inset-0 z-0 bg-gradient-to-br from-cyan-950/20 via-[#07080d] to-purple-950/20" />}>
+          <LiquidMercuryCanvas className="z-0 opacity-35 sm:opacity-50 lg:opacity-60" />
+        </Suspense>
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-b from-[#07080d]/35 via-[#07080d]/45 to-[#07080d]/60" />
 
         {/* Jesper Landberg 4-Corner Top Header HUD - Anchored cleanly under top Navbar */}
         <div className="absolute top-14 sm:top-16 inset-x-0 z-20 w-full max-w-[1600px] mx-auto px-4 sm:px-8 flex items-center justify-between pointer-events-auto gap-2 sm:gap-4">
@@ -132,7 +153,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
           <div className="flex items-center gap-2 sm:gap-2.5">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-2xl bg-[#090d18]/80 border border-cyan-400/25 text-[10px] sm:text-xs font-mono tracking-[0.16em] text-zinc-300 shadow-xl">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
-              <span>BENGALURU, INDIA</span>
+              <span>{profileData.basics.location.city.toUpperCase()}, INDIA</span>
             </div>
           </div>
 
@@ -169,48 +190,41 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
             </p>
           </div>
 
-          {/* Cycling Roles Rotator */}
-          <div className="min-h-7 flex items-center justify-center">
-            <p className="font-mono text-[11px] sm:text-xs tracking-[0.16em] text-purple-200/90 animate-fadeIn">
-              {roles[roleIndex]}
-            </p>
-          </div>
+          <p className="max-w-2xl px-4 font-mono text-[11px] tracking-[0.13em] text-purple-200/90 sm:text-xs">
+            OPEN TO IT SUPPORT · DESKTOP SUPPORT · JUNIOR LINUX ADMIN ROLES
+          </p>
 
           <p className="max-w-2xl text-sm sm:text-base text-zinc-300 font-sans leading-relaxed px-4">
-            Hey, I'm <span className="text-white font-medium">ZYNX</span> (Joshua D)—I engineer software close to the hardware—from automotive cockpit domain controllers (CAN bus, AAOS) and Linux kernel diagnostics to creative WebGL shaders and electronic music.
+            I’m <span className="text-white font-medium">Joshua D</span> (ZYNX), an Electronics and Communication Engineering graduate. I use Arch Linux, build web projects with an AI-assisted workflow, and am pursuing an entry-level IT support or junior Linux administration role while continuing to grow my software development skills.
           </p>
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             <button
               onClick={() => scrollToSection("projects")}
-              className="px-6 py-3 rounded-full bg-white hover:bg-zinc-200 text-black font-mono text-xs font-bold tracking-wider transition-all duration-300 shadow-xl flex items-center gap-2 group hover:scale-[1.03]"
+              className="px-5 py-3 rounded-full bg-white hover:bg-zinc-200 text-black font-mono text-xs font-bold tracking-wider transition-all duration-300 shadow-xl flex items-center gap-2 group hover:scale-[1.03]"
             >
-              <span>Explore Selected Work</span>
+              <span>Explore selected work</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </button>
 
             <button
               onClick={() => {
-                soundFX.playZoom();
-                setIsProfileDrawerOpen(true);
+                soundFX.playClick();
+                openResume();
               }}
-              className="px-5 py-3 rounded-full backdrop-blur-2xl bg-white/5 hover:bg-white/10 border border-white/15 hover:border-white/35 text-white font-mono text-xs tracking-wider transition-all duration-300 flex items-center gap-2 hover:scale-[1.03]"
+              className="px-5 py-3 rounded-full backdrop-blur-2xl bg-emerald-950/30 hover:bg-emerald-900/40 border border-emerald-400/35 hover:border-emerald-300 text-emerald-100 font-mono text-xs tracking-wider transition-all duration-300 flex items-center gap-2 hover:scale-[1.03]"
             >
-              <FileText size={14} className="text-cyan-300" />
-              <span>View Dossier</span>
+              <Download size={14} className="text-emerald-300" />
+              <span>Choose a résumé</span>
             </button>
 
             <button
-              onClick={() => {
-                soundFX.playClick();
-                window.dispatchEvent(new CustomEvent("trigger-liquid-ripple"));
-              }}
-              className="px-5 py-3 rounded-full backdrop-blur-2xl bg-cyan-950/25 hover:bg-cyan-900/35 border border-cyan-400/35 hover:border-cyan-300 text-cyan-200 font-mono text-xs tracking-wider transition-all duration-300 flex items-center gap-2 hover:scale-[1.03] cursor-pointer"
-              title="Send a physical wave impulse through the liquid chrome"
+              onClick={() => scrollToSection("contact")}
+              className="px-5 py-3 rounded-full backdrop-blur-2xl bg-white/5 hover:bg-white/10 border border-white/15 hover:border-white/35 text-white font-mono text-xs tracking-wider transition-all duration-300 flex items-center gap-2 hover:scale-[1.03]"
             >
-              <Sparkles size={14} className="text-cyan-300 animate-pulse" />
-              <span>Fluid Wave Impulse</span>
+              <Mail size={14} className="text-cyan-300" />
+              <span>Contact</span>
             </button>
           </div>
 
@@ -240,8 +254,8 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
               className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-cyan-400/40 shadow-lg cursor-pointer"
             >
               <Cpu size={16} className="text-cyan-400 mb-2" />
-              <h4 className="font-display font-medium text-xs text-white">AAOS Cockpit</h4>
-              <p className="text-[10px] font-mono text-zinc-400 mt-0.5">CAN Bus & Luxoft CDC</p>
+              <h4 className="font-display font-medium text-xs text-white">Arch Linux</h4>
+              <p className="text-[10px] font-mono text-zinc-400 mt-0.5">Package maintenance practice</p>
             </InteractiveTiltCard>
 
             <InteractiveTiltCard
@@ -249,8 +263,8 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
               className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-emerald-400/40 shadow-lg cursor-pointer"
             >
               <Terminal size={16} className="text-emerald-400 mb-2" />
-              <h4 className="font-display font-medium text-xs text-white">Arch Linux</h4>
-              <p className="text-[10px] font-mono text-zinc-400 mt-0.5">Kernel & procfs Tracing</p>
+              <h4 className="font-display font-medium text-xs text-white">S.M. School Site</h4>
+              <p className="text-[10px] font-mono text-zinc-400 mt-0.5">Astro & responsive pages</p>
             </InteractiveTiltCard>
 
             <InteractiveTiltCard
@@ -258,8 +272,8 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
               className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-purple-400/40 shadow-lg cursor-pointer"
             >
               <Sparkles size={16} className="text-purple-400 mb-2" />
-              <h4 className="font-display font-medium text-xs text-white">WebGL & GLSL</h4>
-              <p className="text-[10px] font-mono text-zinc-400 mt-0.5">8,000 Particle Sims</p>
+              <h4 className="font-display font-medium text-xs text-white">ECE Graduate</h4>
+              <p className="text-[10px] font-mono text-zinc-400 mt-0.5">Embedded coursework</p>
             </InteractiveTiltCard>
 
             <InteractiveTiltCard
@@ -270,8 +284,8 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
               className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-pink-400/40 shadow-lg cursor-pointer"
             >
               <Shield size={16} className="text-pink-400 mb-2" />
-              <h4 className="font-display font-medium text-xs text-white">Bug Bounty</h4>
-              <p className="text-[10px] font-mono text-zinc-400 mt-0.5">7chats Winner</p>
+              <h4 className="font-display font-medium text-xs text-white">Current Work</h4>
+              <p className="text-[10px] font-mono text-zinc-400 mt-0.5">Part-time music teacher</p>
             </InteractiveTiltCard>
           </div>
 
@@ -312,7 +326,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
       {/* ══════════════════════════════════════════════════════════
           ACT II: THE WEBGL PROJECT RIBBON (Jesper Landberg Architecture)
       ══════════════════════════════════════════════════════════ */}
-      <Projects3D />
+      <DeferredProjects3D />
 
       {/* ══════════════════════════════════════════════════════════
           ACT III: KINETIC TAPE SCROLLING & BRIEF ARSENAL STRIP
@@ -328,13 +342,13 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.22em] text-cyan-300">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>TECHNICAL ARSENAL // 38 PRODUCTION PROTOCOLS</span>
+                <span>TECHNICAL AREAS // EXPERIENCE LABELS INCLUDED</span>
               </div>
               <h3 className="text-xl sm:text-2xl font-display font-medium text-white">
-                Hardware Protocols, Custom Kernels & Creative Shaders
+                Linux, Web Projects & Engineering
               </h3>
               <p className="text-xs text-zinc-400 font-sans max-w-2xl leading-relaxed">
-                Arch Linux Zen kernel, AAOS Vehicle HAL, CAN 2.0B bus (8,000 frames/sec), Three.js GLSL physics, and 7chats bug bounty authentication research.
+                Arch Linux package maintenance, the S.M. English School website, AI-assisted portfolio development, and academic ECE project work.
               </p>
             </div>
 
@@ -347,7 +361,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                   }}
                   className="px-6 py-3 rounded-full bg-cyan-400 hover:bg-cyan-300 text-black font-mono text-xs font-bold tracking-wider flex items-center gap-2 transition-all shadow-lg shadow-cyan-400/20 hover:scale-105 flex-shrink-0"
                 >
-                  <span>Launch Full 38-Skill Terminal</span>
+                  <span>Browse skills and evidence</span>
                   <ArrowRight size={14} />
                 </button>
               )}
@@ -459,7 +473,7 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                 Enter 7YNX Music & Sound Lab
               </h3>
               <p className="text-xs text-zinc-300 font-sans line-clamp-2 max-w-md">
-                Electronic music tracks, FL Studio productions, Serum sound design, and custom GLSL smoke & frequency spectrum visualizers.
+                Music teaching and personal electronic music projects, alongside interactive audio experiments.
               </p>
               <div className="pt-2 flex items-center gap-2 text-xs font-mono text-purple-300 group-hover:translate-x-1 transition-transform">
                 <span>Listen to 7YNX Tracks</span>

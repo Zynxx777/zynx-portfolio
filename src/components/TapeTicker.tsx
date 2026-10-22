@@ -11,18 +11,18 @@ export const TapeTicker: React.FC<TapeTickerProps> = ({ onTagClick, className = 
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const tapeItems = [
-    { label: "ARCH LINUX (ZEN KERNEL)", tag: "systems", icon: "⚡" },
-    { label: "CAN BUS 2.0B // 8,000 FRAMES/SEC", tag: "automotive", icon: "🏎" },
-    { label: "ANDROID AUTOMOTIVE (AAOS) & VHAL", tag: "automotive", icon: "🤖" },
-    { label: "7CHATS BUG BOUNTY WINNER (AUTH BYPASS)", tag: "security", icon: "🛡" },
-    { label: "8,000 PARTICLE RELATIVISTIC BLACK HOLE", tag: "frontend", icon: "🪐" },
-    { label: "GLSL SHADERS & S-CURVE DEPTH WAVE", tag: "frontend", icon: "✨" },
-    { label: "VERILOG RTL DIGITAL SYNTHESIS", tag: "automotive", icon: "📟" },
-    { label: "FL STUDIO 21 SIGNATURE (SOUND LAB)", tag: "security", icon: "🎹" },
-    { label: "MCP2515 SPI HARDWARE TRANSCEIVER", tag: "automotive", icon: "🔌" },
-    { label: "WEB AUDIO API REAL-TIME DSP", tag: "frontend", icon: "🔊" },
-    { label: "LUXOFT COCKPIT DOMAIN CONTROLLER", tag: "automotive", icon: "🎛" },
-    { label: "PROCFS & KERNEL MEMORY TRACING", tag: "systems", icon: "💻" },
+    { label: "ARCH LINUX DAILY DESKTOP USE", tag: "systems", icon: "⚡" },
+    { label: "PACMAN UPDATE CONFIGURATION", tag: "systems", icon: "📦" },
+    { label: "PACKAGE DEPENDENCY REVIEW WITH PACTREE", tag: "systems", icon: "🔎" },
+    { label: "S.M. ENGLISH SCHOOL WEBSITE", tag: "web", icon: "🏫" },
+    { label: "ASTRO & TAILWIND CSS", tag: "web", icon: "🌐" },
+    { label: "AI-ASSISTED REACT PORTFOLIO WORK", tag: "web", icon: "🧩" },
+    { label: "RESPONSIVE UI ITERATION", tag: "web", icon: "📱" },
+    { label: "B.E. ELECTRONICS & COMMUNICATION", tag: "ece", icon: "📟" },
+    { label: "EMBEDDED SYSTEMS COURSEWORK", tag: "ece", icon: "🔌" },
+    { label: "7CHATS BUG BOUNTY RECOGNITION", tag: "security", icon: "🛡" },
+    { label: "MUSIC TEACHING · PART-TIME", tag: "creative", icon: "🎹" },
+    { label: "BUILDING PROGRAMMING FOUNDATIONS", tag: "learning", icon: "💻" },
   ];
 
   // Duplicate items for continuous seamless loop

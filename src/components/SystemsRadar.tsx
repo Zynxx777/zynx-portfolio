@@ -18,124 +18,119 @@ interface DomainSpec {
 
 const DOMAINS: DomainSpec[] = [
   {
-    id: "automotive",
-    number: "01",
-    title: "Automotive Cockpit & AAOS",
-    subtitle: "CAN 2.0B · Vehicle HAL · Cockpit Domain Controller",
-    icon: Cpu,
-    accentColor: "text-cyan-400",
-    badge: "Automotive ECE",
-    summary: "Engineered Cockpit Domain Controller (Luxoft CDC) prototypes integrating CAN 2.0B protocols to manage Electronic Control Units (ECUs) at 8,000+ frames/sec. Implemented Vehicle HAL property listeners on Android Automotive OS for real-time instrument cluster telemetry.",
-    protocols: ["CAN 2.0B (11-bit / 29-bit)", "Vehicle HAL (VHAL)", "Android Automotive OS", "MCP2515 SPI Transceiver", "CarService Telemetry", "OBD-II Diagnostics"],
-    metrics: [
-      { label: "Throughput", value: "8,000+ fps" },
-      { label: "Protocol", value: "CAN 2.0B ISO 11898" },
-      { label: "Target OS", value: "AAOS 13 / 14" },
-      { label: "Latency", value: "< 1.2 ms" },
-    ],
-    terminalLog: [
-      "[CAN_BUS] Initialized MCP2515 @ 500kbps 16MHz clock",
-      "[VHAL] Binding CarPropertyManager to HVAC & Speedometer",
-      "[CDC_CORE] ECU frame buffer synced with 0 dropped frames",
-      "[CLUSTER] Display rendering 60fps telemetry stream",
-    ],
-  },
-  {
     id: "linux",
-    number: "02",
-    title: "Linux Kernel & Systems Engineering",
-    subtitle: "Arch Linux · procfs Tracing · AOSP ROM Compilation",
+    number: "01",
+    title: "Linux desktop support practice",
+    subtitle: "Arch Linux · pacman · Dependency checks",
     icon: Terminal,
     accentColor: "text-emerald-400",
-    badge: "Core Systems",
-    summary: "Daily driver Arch Linux power user with custom Wayland Hyprland compositor. Hands-on experience in Linux kernel compilation, memory tracing via procfs, systemd unit design, AOSP ROM compilation, bootloader unlocking, and custom Magisk/KernelSU modules.",
-    protocols: ["Arch Linux (Rolling)", "Linux Kernel Compilation", "procfs / sysfs Tracing", "POSIX Shell (Bash/Zsh)", "Systemd Service Units", "Docker Containerization"],
+    badge: "Personal system use",
+    summary: "Uses Arch Linux as a personal desktop system and has recently worked through package update settings and dependency checks. This is personal system administration practice rather than professional Linux administrator experience.",
+    protocols: ["Arch Linux", "pacman configuration", "pactree dependency review", "Desktop app updates"],
     metrics: [
-      { label: "Environment", value: "Arch Linux / Hyprland" },
-      { label: "Kernel", value: "Linux 6.x Zen / Hardened" },
-      { label: "Editor", value: "Neovim (Lua / LSP)" },
-      { label: "Architecture", value: "x86_64 / aarch64" },
+      { label: "Environment", value: "Arch Linux" },
+      { label: "Package manager", value: "pacman" },
+      { label: "Dependency review", value: "pactree" },
+      { label: "Context", value: "Personal workstation" },
     ],
     terminalLog: [
-      "[KERNEL] Compiling custom kernel config with BBR congestion",
-      "[PROCFS] Memory slab allocator verified zero leak status",
-      "[SYSTEMD] Started automotive-gateway.service in 12ms",
-      "[DEV] Neovim LSP tree-sitter AST validation active",
+      "Reviewed pacman configuration for a pinned application",
+      "Checked package relationships with pactree",
+      "Inspected package output before cleanup decisions",
     ],
   },
   {
-    id: "webgl",
-    number: "03",
-    title: "Creative WebGL & GLSL Shaders",
-    subtitle: "Three.js · Fragment Math · Relativistic Particle Sims",
-    icon: Sparkles,
-    accentColor: "text-purple-400",
-    badge: "Creative Code",
-    summary: "Architecting GPU-accelerated interactive 3D web experiences with Three.js and raw GLSL shaders. Handcrafted 1,114 lines of reactive GLSL for fluid smoke audio visualizers, relativistic black hole accretion discs, and cloth-wave physics.",
-    protocols: ["Three.js & WebGL 2.0", "Custom GLSL Shaders", "Relativistic Accretion Math", "Web Audio API FFT", "Instanced Mesh Buffers", "Blender Low-Poly glTF"],
+    id: "web",
+    number: "02",
+    title: "AI-assisted web projects",
+    subtitle: "React portfolio · Astro school website",
+    icon: Code2,
+    accentColor: "text-cyan-400",
+    badge: "Portfolio work",
+    summary: "Builds and improves web projects with AI-assisted code generation, then reviews the output and makes manual design, content, and UI changes. Current work includes this React portfolio and a school website MVP using Astro and Tailwind.",
+    protocols: ["React and TypeScript codebase", "Astro", "Tailwind CSS", "Responsive UI", "Supabase sign-in prototype"],
     metrics: [
-      { label: "GLSL Lines", value: "1,114 Handcrafted" },
-      { label: "Particles", value: "8,000 GPU accelerated" },
-      { label: "Framerate", value: "Stable 60 FPS" },
-      { label: "Audio", value: "Real-time FFT 2048 bins" },
+      { label: "Portfolio", value: "React + Vite" },
+      { label: "School site", value: "Astro" },
+      { label: "Styling", value: "Tailwind CSS" },
+      { label: "Workflow", value: "AI-assisted" },
     ],
     terminalLog: [
-      "[GLSL] Compiled accretion vertex & fragment programs",
-      "[GPU] Binding instanced buffer attribute for 8,000 stars",
-      "[WEB_AUDIO] FFT analyser connected to lowpass filter",
-      "[RENDER] Frame delta locked to requestAnimationFrame",
+      "Iterated on page layouts and mobile navigation",
+      "Reviewed generated code and made manual UI edits",
+      "Added public pages and an admin sign-in prototype",
+    ],
+  },
+  {
+    id: "ece",
+    number: "03",
+    title: "ECE academic foundation",
+    subtitle: "Electronics · Embedded systems · Digital logic",
+    icon: Cpu,
+    accentColor: "text-amber-400",
+    badge: "Academic exposure",
+    summary: "Completed a B.E. in Electronics and Communication Engineering. Academic work includes exposure to embedded systems, digital logic, microcontrollers, and automotive cockpit system concepts.",
+    protocols: ["Electronics and communication", "Embedded systems coursework", "Arduino project exposure", "Verilog and digital logic", "CAN and AAOS concepts"],
+    metrics: [
+      { label: "Degree", value: "B.E. ECE" },
+      { label: "Institution", value: "DBIT" },
+      { label: "Graduation", value: "2025" },
+      { label: "CGPA", value: "7.16" },
+    ],
+    terminalLog: [
+      "Coursework: embedded systems and digital design",
+      "Academic project: automotive cockpit system concepts",
+      "Certificate: VLSI digital design and Verilog programming",
     ],
   },
   {
     id: "security",
     number: "04",
-    title: "Reverse Engineering & Security Research",
-    subtitle: "Bug Bounty Winner · JADX · Frida Instrumentation",
+    title: "Security recognition",
+    subtitle: "7chats Messenger bug bounty contest",
     icon: Shield,
     accentColor: "text-pink-400",
-    badge: "Security Award",
-    summary: "Winner of the official 7chats Messenger Bug Bounty contest for discovering and responsibly disclosing an authentication bypass vulnerability. Proficient in APK reverse engineering using JADX, dynamic hooking with Frida, and Burp Suite traffic proxying.",
-    protocols: ["APK Reverse Engineering", "Frida Dynamic Hooking", "JADX Decompilation", "Burp Suite Pro Intercept", "OAuth 2.0 & JWT Auditing", "Responsible Disclosure"],
+    badge: "Recognition",
+    summary: "Existing resume materials record a 7chats Messenger bug bounty contest award for reporting an authentication issue. The award is included as a recognition item; no broader professional security experience is claimed.",
+    protocols: ["Application security issue reporting", "Bug bounty contest recognition", "Network security coursework"],
     metrics: [
-      { label: "Award", value: "7chats Bounty Winner" },
-      { label: "Disclosed", value: "Auth Bypass Zero-Day" },
-      { label: "Instrumentation", value: "Frida Runtime Scripts" },
-      { label: "Status", value: "Patched Upstream" },
+      { label: "Recognition", value: "7chats Messenger" },
+      { label: "Type", value: "Bug bounty contest" },
+      { label: "Recorded date", value: "September 2021" },
+      { label: "Scope", value: "Authentication issue" },
     ],
     terminalLog: [
-      "[FRIDA] Attached to messenger process PID 14922",
-      "[HOOK] Intercepted token validation callback signature",
-      "[AUDIT] Discovered logic flaw in server response parsing",
-      "[DISCLOSURE] Official bounty awarded and CVE report resolved",
+      "Award recorded in existing resume materials",
+      "Application: 7chats Messenger",
+      "Reported issue: authentication-related",
     ],
   },
   {
-    id: "languages",
+    id: "teaching",
     number: "05",
-    title: "Core Languages & Digital Hardware",
-    subtitle: "C/C++ · Verilog HDL · Python · TypeScript · Rust",
-    icon: Code2,
-    accentColor: "text-amber-400",
-    badge: "Multi-Language",
-    summary: "Polyglot software engineer capable of writing low-level pointer-manipulating C/C++ firmware, digital logic in Verilog HDL for FPGA simulation, high-concurrency Go and Python backend scripts, and strictly typed TypeScript applications.",
-    protocols: ["C & Modern C++ (C++20)", "Verilog HDL Digital Logic", "TypeScript & React 19", "Python 3 & Automation", "Rust (Memory Safety)", "Dart & Flutter Mobile"],
+    title: "Music teaching and creative work",
+    subtitle: "Part-time music teacher · Personal audio projects",
+    icon: Sparkles,
+    accentColor: "text-purple-400",
+    badge: "Current role",
+    summary: "Currently teaches music part-time at St Sophia Convent High School. Music and audio production remain a creative practice alongside the technical career focus.",
+    protocols: ["Music instruction", "Classroom communication", "Electronic music interest", "Audio production practice"],
     metrics: [
-      { label: "Primary", value: "C / C++ / TypeScript" },
-      { label: "Hardware HDL", value: "Verilog / ModelSim" },
-      { label: "Microcontroller", value: "Arduino / ESP32 / STM32" },
-      { label: "Web", value: "React 19 / Vite / Tailwind" },
+      { label: "Role", value: "Music Teacher" },
+      { label: "Schedule", value: "Part-time" },
+      { label: "Started", value: "August 2026" },
+      { label: "Focus", value: "Music instruction" },
     ],
     terminalLog: [
-      "[VERILOG] Synthesizing 4-bit state machine in ModelSim",
-      "[CPP] Compiling firmware with -O3 optimizations and zero warnings",
-      "[RUST] Cargo build verified zero memory leaks at compile-time",
-      "[TYPESCRIPT] Strict type-check complete with 0 errors",
+      "Current role: part-time music teacher",
+      "School: St Sophia Convent High School",
+      "Personal interest: music and audio production",
     ],
   },
 ];
 
 export const SystemsRadar: React.FC = () => {
-  const [activeDomainId, setActiveDomainId] = useState<string>("automotive");
+  const [activeDomainId, setActiveDomainId] = useState<string>("linux");
   const activeDomain = DOMAINS.find(d => d.id === activeDomainId) || DOMAINS[0];
   const consoleRef = useRef<HTMLDivElement | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0, active: false });
@@ -152,18 +147,18 @@ export const SystemsRadar: React.FC = () => {
   };
 
   return (
-    <section id="systems-radar" className="py-24 px-6 sm:px-12 max-w-[1700px] mx-auto scroll-mt-20 border-t border-white/10 select-none">
+    <section id="systems-radar" className="py-24 px-6 sm:px-12 max-w-[1700px] mx-auto scroll-mt-20 border-t border-white/10">
       {/* Header */}
       <div className="mb-14 text-left">
         <div className="flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.24em] text-cyan-300">
           <Activity size={14} className="text-cyan-400 animate-pulse" />
-          <span>02 // ARCHITECTURAL TELEMETRY & SYSTEMS RADAR</span>
+          <span>02 // EXPERIENCE AREAS & EVIDENCE</span>
         </div>
         <h2 className="text-3xl sm:text-5xl font-display font-medium tracking-[-0.05em] text-white mt-3">
-          Engineering Domains <span className="text-white/40">& Core Arsenal</span>
+          Experience <span className="text-white/40">beyond code</span>
         </h2>
         <p className="text-xs sm:text-sm text-zinc-400 font-sans mt-2 max-w-xl">
-          Direct hardware interfaces, low-level kernel diagnostics, GPU mathematics, and security research. Click or hover any domain to inspect telemetry.
+          Linux desktop maintenance, web projects, engineering education, recognition, and current work. Choose an area to see its context.
         </p>
       </div>
 
@@ -175,11 +170,13 @@ export const SystemsRadar: React.FC = () => {
             const Icon = domain.icon;
             const isSelected = domain.id === activeDomainId;
             return (
-              <div
+              <button
+                type="button"
                 key={domain.id}
                 onClick={() => selectDomain(domain.id)}
                 onMouseEnter={() => soundFX.playHover()}
-                className={`relative p-5 rounded-2xl border transition-all duration-300 cursor-pointer flex items-center justify-between group overflow-hidden ${
+                aria-pressed={isSelected}
+                className={`relative w-full p-5 text-left rounded-2xl border transition-all duration-300 cursor-pointer flex items-center justify-between group overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 ${
                   isSelected
                     ? "bg-white/[0.06] border-cyan-400/60 shadow-xl shadow-cyan-400/10 -translate-x-1 sm:translate-x-2"
                     : "bg-white/[0.015] border-white/10 hover:border-white/25 hover:bg-white/[0.03]"
@@ -218,12 +215,12 @@ export const SystemsRadar: React.FC = () => {
                 }`}>
                   {domain.badge}
                 </span>
-              </div>
+              </button>
             );
           })}
         </div>
 
-        {/* Right: Live Telemetry & Architecture Display with Dynamic Specular Sheen */}
+        {/* Right: selected experience area */}
         <div
           ref={consoleRef}
           onMouseMove={handleMouseMove}
@@ -246,7 +243,7 @@ export const SystemsRadar: React.FC = () => {
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/50 border border-cyan-400/30 text-cyan-300 text-xs font-mono">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>DOMAIN STATUS // VERIFIED HANDS-ON</span>
+                  <span>EXPERIENCE CONTEXT // {activeDomain.badge.toUpperCase()}</span>
                 </div>
                 <h3 className="text-2xl sm:text-4xl font-display font-medium text-white mt-3">
                   {activeDomain.title}
@@ -257,7 +254,7 @@ export const SystemsRadar: React.FC = () => {
               </div>
 
               <div className="text-right font-mono text-xs text-zinc-500">
-                <span>SYSTEM ID:</span> <span className="text-white font-bold">{activeDomain.number}</span>
+                <span>AREA:</span> <span className="text-white font-bold">{activeDomain.number}</span>
               </div>
             </div>
 
@@ -266,7 +263,8 @@ export const SystemsRadar: React.FC = () => {
               {activeDomain.summary}
             </p>
 
-            {/* Metrics HUD Row */}
+            {/* Selected context */}
+            <h4 className="font-mono text-[10px] uppercase tracking-widest text-zinc-500">At a glance</h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {activeDomain.metrics.map((m, idx) => (
                 <div key={idx} className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10">
@@ -280,7 +278,7 @@ export const SystemsRadar: React.FC = () => {
             <div className="space-y-2.5">
               <h4 className="text-[11px] font-mono uppercase tracking-widest text-zinc-400 flex items-center gap-2">
                 <CheckCircle2 size={13} className="text-cyan-400" />
-                <span>Verified Protocols & Toolchain</span>
+                <span>Related tools and topics</span>
               </h4>
               <div className="flex flex-wrap gap-2">
                 {activeDomain.protocols.map((proto) => (
@@ -296,14 +294,10 @@ export const SystemsRadar: React.FC = () => {
             </div>
           </div>
 
-          {/* Bottom Live Simulated Terminal Log (Overworld Audio style) */}
+          {/* Selected examples and context */}
           <div className="p-4 rounded-2xl bg-black/70 border border-white/10 font-mono text-[11px] space-y-1 text-zinc-400 shadow-inner">
             <div className="flex items-center justify-between text-[10px] text-zinc-500 pb-1 border-b border-white/5">
-              <span>LIVE_TELEMETRY_LOG // BENGALURU_NODE</span>
-              <span className="text-emerald-400 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                ONLINE
-              </span>
+              <span>SELECTED EVIDENCE</span>
             </div>
             {activeDomain.terminalLog.map((log, i) => (
               <div key={i} className="leading-relaxed">

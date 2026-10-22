@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Navbar, type EcosystemView } from "./components/Navbar";
 import { PortfolioPage } from "./pages/PortfolioPage";
-import { SkillsUniversePage } from "./pages/SkillsUniversePage";
-import { BedroomSpacePage } from "./pages/BedroomSpacePage";
-import { CommunityMusicPage } from "./pages/CommunityMusicPage";
 import { Footer } from "./components/Footer";
 import { ResumeModal } from "./components/ResumeModal";
 import { AmbientCosmicCanvas } from "./components/AmbientCosmicCanvas";
 import { CustomAuraCursor } from "./components/CustomAuraCursor";
+
+const SkillsUniversePage = lazy(() => import("./pages/SkillsUniversePage").then((module) => ({ default: module.SkillsUniversePage })));
+const BedroomSpacePage = lazy(() => import("./pages/BedroomSpacePage").then((module) => ({ default: module.BedroomSpacePage })));
+const CommunityMusicPage = lazy(() => import("./pages/CommunityMusicPage").then((module) => ({ default: module.CommunityMusicPage })));
+const ShowcasePage = lazy(() => import("./pages/ShowcasePage").then((module) => ({ default: module.ShowcasePage })));
 
 export default function App() {
   const [currentView, setCurrentView] = useState<EcosystemView>(() => {
@@ -15,6 +17,7 @@ export default function App() {
     if (hash.includes("space") || hash.includes("bedroom") || hash.includes("room")) return "space";
     if (hash.includes("community") || hash.includes("7ynx") || hash.includes("music") || hash.includes("gaming")) return "community";
     if (hash.includes("skills") || hash.includes("arsenal") || hash.includes("tech")) return "skills";
+    if (hash.includes("showcase") || hash.includes("index")) return "showcase";
     return "portfolio";
   });
 
@@ -30,7 +33,9 @@ export default function App() {
         setCurrentView("community");
       } else if (hash.includes("skills") || hash.includes("arsenal") || hash.includes("tech")) {
         setCurrentView("skills");
-      } else {
+      } else if (hash.includes("showcase") || hash.includes("index")) {
+        setCurrentView("showcase");
+      } else if (!hash || hash === "#") {
         setCurrentView("portfolio");
       }
     };
@@ -48,54 +53,76 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#07080d] text-zinc-100 relative selection:bg-cyan-400 selection:text-black">
       {/* Living Cosmic Noir Background & Film Grain Overlay (Replaces flat black) */}
-      {currentView !== "space" && <AmbientCosmicCanvas />}
+      {currentView !== "space" && currentView !== "showcase" && <AmbientCosmicCanvas />}
 
       {/* Non-intrusive interactive magnetic cursor aura */}
-      {currentView !== "space" && <CustomAuraCursor />}
+      {currentView !== "space" && currentView !== "showcase" && <CustomAuraCursor />}
 
       {/* Top Universal Navbar & Ecosystem Switcher */}
-      <Navbar
-        currentView={currentView}
-        setCurrentView={handleNavigate}
-        openResume={() => setIsResumeOpen(true)}
-      />
+      {currentView !== "showcase" && (
+        <Navbar
+          currentView={currentView}
+          setCurrentView={handleNavigate}
+          openResume={() => setIsResumeOpen(true)}
+        />
+      )}
 
       {/* Main Active Independent Website / Webpage */}
       <main>
-        {currentView === "portfolio" && (
-          <PortfolioPage
-            openResume={() => setIsResumeOpen(true)}
-            onNavigateSpace={() => handleNavigate("space")}
-            onNavigateCommunity={() => handleNavigate("community")}
-            onNavigateSkills={() => handleNavigate("skills")}
-          />
-        )}
+        <Suspense fallback={<div aria-live="polite" className="flex min-h-[60vh] items-center justify-center px-6 text-sm text-zinc-400">Loading page…</div>}>
+          {currentView === "portfolio" && (
+            <PortfolioPage
+              openResume={() => setIsResumeOpen(true)}
+              onNavigateSpace={() => handleNavigate("space")}
+              onNavigateCommunity={() => handleNavigate("community")}
+              onNavigateSkills={() => handleNavigate("skills")}
+            />
+          )}
 
-        {currentView === "skills" && (
-          <SkillsUniversePage
-            onNavigatePortfolio={() => handleNavigate("portfolio")}
-            onNavigateSpace={() => handleNavigate("space")}
-            onNavigateCommunity={() => handleNavigate("community")}
-          />
-        )}
+          {currentView === "skills" && (
+            <SkillsUniversePage
+              onNavigatePortfolio={() => handleNavigate("portfolio")}
+              onNavigateSpace={() => handleNavigate("space")}
+              onNavigateCommunity={() => handleNavigate("community")}
+            />
+          )}
 
-        {currentView === "space" && (
-          <BedroomSpacePage
-            onNavigatePortfolio={() => handleNavigate("portfolio")}
-            onNavigateCommunity={() => handleNavigate("community")}
-          />
-        )}
+          {currentView === "showcase" && (
+            <ShowcasePage
+              openResume={() => setIsResumeOpen(true)}
+              onNavigatePortfolio={() => handleNavigate("portfolio")}
+              onNavigateSkills={() => handleNavigate("skills")}
+              onNavigateSpace={() => handleNavigate("space")}
+              onNavigateCommunity={() => handleNavigate("community")}
+            />
+          )}
 
-        {currentView === "community" && (
-          <CommunityMusicPage
-            onNavigatePortfolio={() => handleNavigate("portfolio")}
-            onNavigateSpace={() => handleNavigate("space")}
-          />
-        )}
+          {currentView === "space" && (
+            <BedroomSpacePage
+              onNavigatePortfolio={() => handleNavigate("portfolio")}
+              onNavigateCommunity={() => handleNavigate("community")}
+            />
+          )}
+
+          {currentView === "community" && (
+            <CommunityMusicPage
+              onNavigatePortfolio={() => handleNavigate("portfolio")}
+              onNavigateSpace={() => handleNavigate("space")}
+            />
+          )}
+        </Suspense>
       </main>
 
       {/* Footer (Rendered on standard pages, hidden in full-screen 3D sanctuary) */}
-      {currentView !== "space" && <Footer />}
+      {currentView !== "space" && currentView !== "showcase" && (
+        <Footer
+          onNavigatePortfolio={() => handleNavigate("portfolio")}
+          onNavigateSpace={() => handleNavigate("space")}
+          onNavigateCommunity={() => handleNavigate("community")}
+          onNavigateSkills={() => handleNavigate("skills")}
+          onNavigateShowcase={() => handleNavigate("showcase")}
+        />
+      )}
 
       {/* ATS Resume Modal & Print Engine */}
       <ResumeModal

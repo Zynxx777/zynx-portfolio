@@ -16,39 +16,55 @@ export const AmbientCosmicCanvas: React.FC = () => {
   const posRef = useRef({ currentX: window.innerWidth / 2, currentY: window.innerHeight / 2, targetX: window.innerWidth / 2, targetY: window.innerHeight / 2 });
 
   useEffect(() => {
-    let animId: number;
-    let isVisible = true;
+    let animId = 0;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const handleMouseMove = (e: MouseEvent) => {
       posRef.current.targetX = e.clientX;
       posRef.current.targetY = e.clientY;
+      scheduleSpotlightUpdate();
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches[0]) {
         posRef.current.targetX = e.touches[0].clientX;
         posRef.current.targetY = e.touches[0].clientY;
+        scheduleSpotlightUpdate();
       }
-    };
-
-    const handleVisibility = () => {
-      isVisible = !document.hidden;
     };
 
     const updateSpotlight = () => {
-      if (isVisible && spotlightRef.current) {
-        const p = posRef.current;
-        p.currentX += (p.targetX - p.currentX) * 0.08;
-        p.currentY += (p.targetY - p.currentY) * 0.08;
-        spotlightRef.current.style.transform = `translate3d(${p.currentX - 450}px, ${p.currentY - 450}px, 0)`;
+      animId = 0;
+      const p = posRef.current;
+      if (reducedMotion) {
+        p.currentX = p.targetX;
+        p.currentY = p.targetY;
+      } else {
+        p.currentX += (p.targetX - p.currentX) * 0.35;
+        p.currentY += (p.targetY - p.currentY) * 0.35;
       }
-      animId = requestAnimationFrame(updateSpotlight);
+      spotlightRef.current?.style.setProperty("transform", `translate3d(${p.currentX - 450}px, ${p.currentY - 450}px, 0)`);
+
+      if (!reducedMotion && !document.hidden && (Math.abs(p.targetX - p.currentX) > 1 || Math.abs(p.targetY - p.currentY) > 1)) {
+        animId = requestAnimationFrame(updateSpotlight);
+      }
+    };
+
+    function scheduleSpotlightUpdate() {
+      if (!animId && !document.hidden) animId = requestAnimationFrame(updateSpotlight);
+    }
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(animId);
+        animId = 0;
+      } else scheduleSpotlightUpdate();
     };
 
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
     window.addEventListener("touchmove", handleTouchMove, { passive: true });
     document.addEventListener("visibilitychange", handleVisibility);
-    animId = requestAnimationFrame(updateSpotlight);
+    scheduleSpotlightUpdate();
 
     return () => {
       cancelAnimationFrame(animId);

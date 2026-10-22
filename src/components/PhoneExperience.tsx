@@ -84,11 +84,21 @@ const PhoneExperience: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [clock, setClock] = useState(() => new Date());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mediaUrlsRef = useRef<Record<string, string>>({});
+
+  const replaceStoredMedia = (items: StoredMedia[]) => {
+    const next: Record<string, string> = {};
+    items.forEach(item => { next[item.id] = URL.createObjectURL(item.blob); });
+    Object.values(mediaUrlsRef.current).forEach(url => URL.revokeObjectURL(url));
+    mediaUrlsRef.current = next;
+    setStoredMedia(items);
+    setMediaUrls(next);
+  };
 
   useEffect(() => {
     let cancelled = false;
     readStoredMedia().then(items => {
-      if (!cancelled) setStoredMedia(items);
+      if (!cancelled) replaceStoredMedia(items);
     }).catch(() => {
       if (!cancelled) setNotice("Local media storage is unavailable in this browser.");
     });
@@ -99,15 +109,9 @@ const PhoneExperience: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     };
   }, []);
 
-  useEffect(() => {
-    const next: Record<string, string> = {};
-    storedMedia.forEach(item => { next[item.id] = URL.createObjectURL(item.blob); });
-    setMediaUrls(next);
-    return () => Object.values(next).forEach(url => URL.revokeObjectURL(url));
-  }, [storedMedia]);
-
   useEffect(() => () => {
     if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    Object.values(mediaUrlsRef.current).forEach(url => URL.revokeObjectURL(url));
   }, []);
 
   useEffect(() => {
@@ -135,7 +139,7 @@ const PhoneExperience: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
   const refreshFiles = async () => {
     try {
-      setStoredMedia(await readStoredMedia());
+      replaceStoredMedia(await readStoredMedia());
     } catch {
       showNotice("Could not update this device's media library.");
     }

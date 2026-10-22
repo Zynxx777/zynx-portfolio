@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { Terminal, Monitor, Disc3, FileText, Sparkles, Layers } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Terminal, Monitor, Disc3, FileText, Sparkles, Layers, FolderOpen } from "lucide-react";
 
-export type EcosystemView = "portfolio" | "skills" | "space" | "community";
+export type EcosystemView = "portfolio" | "skills" | "space" | "community" | "showcase";
 
 interface NavbarProps {
   currentView: EcosystemView;
@@ -15,8 +15,39 @@ export const Navbar: React.FC<NavbarProps> = ({
   openResume,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
 
-  const worlds: { id: EcosystemView; label: string; icon: any; color: string; activeBg: string }[] = [
+  // Close drawer on outside click
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) {
+        setMobileMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [mobileMenuOpen]);
+
+  // Close mobile menu on resize to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) setMobileMenuOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const worlds: { id: EcosystemView; label: string; icon: React.ElementType; color: string; activeBg: string }[] = [
     {
       id: "portfolio",
       label: "Works",
@@ -30,6 +61,13 @@ export const Navbar: React.FC<NavbarProps> = ({
       icon: Layers,
       color: "text-emerald-400",
       activeBg: "bg-emerald-400 text-black shadow-lg shadow-emerald-400/25",
+    },
+    {
+      id: "showcase",
+      label: "Showcase",
+      icon: FolderOpen,
+      color: "text-amber-300",
+      activeBg: "bg-amber-200 text-black shadow-lg shadow-amber-200/20",
     },
     {
       id: "space",
@@ -55,14 +93,18 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-8 py-3 pointer-events-none">
-      <div className="max-w-[1600px] mx-auto flex items-center justify-between">
-        {/* Left: Brand Identity Pill (Edolus & Overworld Audio minimal style) */}
+    <header ref={drawerRef} className="fixed top-0 left-0 right-0 z-50 px-4 py-3 pointer-events-none sm:px-8">
+      <div className="relative mx-auto flex max-w-[1600px] items-center justify-between">
+        {/* Left: Brand Identity Pill */}
         <div
           onClick={() => handleWorldClick("portfolio")}
-          className="pointer-events-auto flex items-center gap-3 px-3.5 py-2 rounded-full backdrop-blur-2xl bg-[#0a0d18]/80 border border-white/10 hover:border-cyan-400/40 cursor-pointer group transition-all duration-300 shadow-xl"
+          className="pointer-events-auto flex items-center gap-2.5 px-3.5 py-2 rounded-full backdrop-blur-2xl bg-[#0a0d18]/80 border border-white/10 hover:border-cyan-400/40 cursor-pointer group transition-all duration-300 shadow-xl"
+          role="button"
+          tabIndex={0}
+          aria-label="Go to portfolio home"
+          onKeyDown={(e) => e.key === "Enter" && handleWorldClick("portfolio")}
         >
-          <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-cyan-400/60 via-purple-500/40 to-white/20 p-[1px] group-hover:scale-110 transition-transform duration-300 shadow-[0_0_12px_rgba(34,211,238,0.35)]">
+          <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-cyan-400/60 via-purple-500/40 to-white/20 p-[1px] group-hover:scale-110 transition-transform duration-300 shadow-[0_0_12px_rgba(34,211,238,0.35)] flex-shrink-0">
             <div className="w-full h-full bg-[#080911] rounded-full flex items-center justify-center p-0.5">
               <img
                 src="/images/z7x-logo.svg"
@@ -71,20 +113,24 @@ export const Navbar: React.FC<NavbarProps> = ({
               />
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
             <span className="font-display font-bold text-xs tracking-wider text-white group-hover:text-cyan-300 transition-colors">
               ZYNX
             </span>
-            <span className="text-zinc-600 text-[10px] font-mono">/</span>
-            <span className="font-mono text-[10px] text-zinc-400 hidden sm:inline">
+            <span className="text-zinc-600 text-[10px] font-mono hidden sm:inline">/</span>
+            <span className="font-mono text-[10px] text-zinc-400 hidden sm:inline truncate">
               JOSHUA D
             </span>
           </div>
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
         </div>
 
-        {/* Center: Floating Capsule Ecosystem Switcher (A24 / Locomotive minimalist pill) */}
-        <nav className="pointer-events-auto hidden md:flex items-center gap-1.5 p-1 rounded-full backdrop-blur-2xl bg-[#090c16]/85 border border-white/10 shadow-2xl">
+        {/* Center: Floating Capsule Ecosystem Switcher */}
+        <nav
+          className="pointer-events-auto absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-1 rounded-full border border-white/10 bg-[#090c16]/85 p-1 shadow-2xl backdrop-blur-2xl lg:flex"
+          role="navigation"
+          aria-label="Main navigation"
+        >
           {worlds.map((w) => {
             const Icon = w.icon;
             const isActive = currentView === w.id;
@@ -92,13 +138,22 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={w.id}
                 onClick={() => handleWorldClick(w.id)}
-                className={`relative px-4 py-1.5 rounded-full text-xs font-mono tracking-wider transition-all duration-300 flex items-center gap-2 ${
-                  isActive
-                    ? `${w.activeBg} font-bold scale-[1.02]`
-                    : "text-zinc-400 hover:text-white hover:bg-white/5"
-                }`}
+                aria-current={isActive ? "page" : undefined}
+                className={`relative px-4 py-1.5 rounded-full text-xs font-mono tracking-wider transition-all duration-300 flex items-center gap-2 ${isActive
+                  ? `${w.activeBg} font-bold scale-[1.02]`
+                  : "text-zinc-400 hover:text-white hover:bg-white/5"
+                  }`}
               >
-                <Icon size={13} className={isActive && (w.id === "portfolio" || w.id === "skills") ? "text-black" : isActive ? "text-white" : w.color} />
+                <Icon
+                  size={13}
+                  className={
+                    isActive && (w.id === "portfolio" || w.id === "skills")
+                      ? "text-black"
+                      : isActive
+                        ? "text-white"
+                        : w.color
+                  }
+                />
                 <span>{w.label}</span>
               </button>
             );
@@ -109,31 +164,42 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="pointer-events-auto flex items-center gap-2.5">
           <button
             onClick={openResume}
-            className="px-4 py-2 rounded-full backdrop-blur-2xl bg-emerald-950/30 hover:bg-emerald-900/40 border border-emerald-500/35 hover:border-emerald-400 text-emerald-200 hover:text-white font-mono text-xs tracking-wider transition-all duration-200 flex items-center gap-2 shadow-lg hover:scale-105"
+            className="px-3.5 sm:px-4 py-2 rounded-full backdrop-blur-2xl bg-emerald-950/30 hover:bg-emerald-900/40 border border-emerald-500/35 hover:border-emerald-400 text-emerald-200 hover:text-white font-mono text-xs tracking-wider transition-all duration-200 flex items-center gap-1.5 sm:gap-2 shadow-lg hover:scale-105"
+            aria-label="Open ATS Resume"
           >
             <FileText size={13} className="text-emerald-400" />
-            <span>ATS Resume</span>
+            <span>Resume</span>
             <Sparkles size={11} className="text-emerald-400 animate-pulse hidden sm:inline" />
           </button>
 
-          {/* Mobile hamburger button */}
+          {/* Mobile hamburger */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2.5 rounded-full backdrop-blur-2xl bg-[#0a0d18]/80 border border-white/10 text-zinc-300 hover:text-white"
-            aria-label="Toggle navigation"
+            className="lg:hidden p-2.5 rounded-full backdrop-blur-2xl bg-[#0a0d18]/80 border border-white/10 text-zinc-300 hover:text-white hover:border-white/25 transition-all"
+            aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}
+            aria-expanded={mobileMenuOpen}
           >
             <div className="w-4 h-3.5 flex flex-col justify-between">
-              <span className={`h-0.5 w-full bg-current transition-all ${mobileMenuOpen ? "rotate-45 translate-y-1.5" : ""}`} />
-              <span className={`h-0.5 w-full bg-current transition-all ${mobileMenuOpen ? "opacity-0" : ""}`} />
-              <span className={`h-0.5 w-full bg-current transition-all ${mobileMenuOpen ? "-rotate-45 -translate-y-1.5" : ""}`} />
+              <span
+                className={`h-0.5 w-full bg-current rounded-full transition-all duration-300 origin-center ${mobileMenuOpen ? "rotate-45 translate-y-[6px]" : ""
+                  }`}
+              />
+              <span
+                className={`h-0.5 w-full bg-current rounded-full transition-all duration-200 ${mobileMenuOpen ? "opacity-0 scale-x-0" : ""
+                  }`}
+              />
+              <span
+                className={`h-0.5 w-full bg-current rounded-full transition-all duration-300 origin-center ${mobileMenuOpen ? "-rotate-45 -translate-y-[6px]" : ""
+                  }`}
+              />
             </div>
           </button>
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer — slides down under the header bar */}
       {mobileMenuOpen && (
-        <div className="pointer-events-auto md:hidden mt-3 p-3 rounded-2xl backdrop-blur-2xl bg-[#090c16]/95 border border-white/15 shadow-2xl flex flex-col gap-1.5 animate-fadeIn">
+        <div className="pointer-events-auto lg:hidden mt-2 mx-4 p-2 rounded-2xl backdrop-blur-2xl bg-[#090c16]/96 border border-white/15 shadow-2xl flex flex-col gap-1 animate-slideUp">
           {worlds.map((w) => {
             const Icon = w.icon;
             const isActive = currentView === w.id;
@@ -141,17 +207,39 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={w.id}
                 onClick={() => handleWorldClick(w.id)}
-                className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-mono tracking-wider flex items-center gap-3 transition-colors ${
-                  isActive
-                    ? `${w.activeBg} font-bold`
-                    : "text-zinc-300 hover:bg-white/10"
-                }`}
+                aria-current={isActive ? "page" : undefined}
+                className={`w-full text-left px-4 py-3 rounded-xl text-xs font-mono tracking-wider flex items-center gap-3 transition-colors ${isActive
+                  ? `${w.activeBg} font-bold`
+                  : "text-zinc-300 hover:bg-white/8 hover:text-white"
+                  }`}
               >
-                <Icon size={14} className={isActive && (w.id === "portfolio" || w.id === "skills") ? "text-black" : isActive ? "text-white" : w.color} />
+                <Icon
+                  size={15}
+                  className={
+                    isActive && (w.id === "portfolio" || w.id === "skills")
+                      ? "text-black"
+                      : isActive
+                        ? "text-white"
+                        : w.color
+                  }
+                />
                 <span>{w.label}</span>
+                {isActive && (
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-current opacity-60" />
+                )}
               </button>
             );
           })}
+          <div className="border-t border-white/10 mt-1 pt-2 px-1">
+            <button
+              onClick={() => { openResume(); setMobileMenuOpen(false); }}
+              className="w-full text-left px-4 py-3 rounded-xl text-xs font-mono flex items-center gap-3 text-emerald-300 hover:bg-emerald-950/30 hover:text-emerald-200 transition-colors"
+            >
+              <FileText size={15} className="text-emerald-400" />
+              <span>ATS Resume &amp; CV</span>
+              <Sparkles size={11} className="ml-auto text-emerald-400 animate-pulse" />
+            </button>
+          </div>
         </div>
       )}
     </header>

@@ -22,7 +22,8 @@ export const CustomAuraCursor: React.FC = () => {
     let mouseY = -100;
     let ringX = -100;
     let ringY = -100;
-    let animId: number;
+    let animId = 0;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const dot = document.getElementById("aura-cursor-dot");
     const ring = document.getElementById("aura-cursor-ring");
@@ -30,7 +31,7 @@ export const CustomAuraCursor: React.FC = () => {
     const onMouseMove = (e: MouseEvent) => {
       mouseX = e.clientX;
       mouseY = e.clientY;
-      if (!isVisible) setIsVisible(true);
+      setIsVisible(true);
 
       if (dot) {
         dot.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0)`;
@@ -44,13 +45,26 @@ export const CustomAuraCursor: React.FC = () => {
         );
         setIsHovering(isInteractive);
       }
+
+      if (reducedMotion) {
+        ringX = mouseX;
+        ringY = mouseY;
+        ring?.style.setProperty("transform", `translate3d(${ringX}px, ${ringY}px, 0)`);
+      } else if (!animId) {
+        animId = requestAnimationFrame(render);
+      }
     };
 
     const onMouseDown = () => setIsClicking(true);
     const onMouseUp = () => setIsClicking(false);
-    const onMouseLeave = () => setIsVisible(false);
+    const onMouseLeave = () => {
+      setIsVisible(false);
+      cancelAnimationFrame(animId);
+      animId = 0;
+    };
 
     const render = () => {
+      animId = 0;
       // Smooth lerp for outer aura ring
       ringX += (mouseX - ringX) * 0.15;
       ringY += (mouseY - ringY) * 0.15;
@@ -59,14 +73,16 @@ export const CustomAuraCursor: React.FC = () => {
         ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0)`;
       }
 
-      animId = requestAnimationFrame(render);
+      if (Math.abs(mouseX - ringX) > 0.75 || Math.abs(mouseY - ringY) > 0.75) {
+        animId = requestAnimationFrame(render);
+      }
     };
 
     window.addEventListener("mousemove", onMouseMove, { passive: true });
     window.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mouseup", onMouseUp);
     document.addEventListener("mouseleave", onMouseLeave);
-    animId = requestAnimationFrame(render);
+    document.addEventListener("visibilitychange", onMouseLeave);
 
     return () => {
       cancelAnimationFrame(animId);
@@ -74,8 +90,9 @@ export const CustomAuraCursor: React.FC = () => {
       window.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mouseup", onMouseUp);
       document.removeEventListener("mouseleave", onMouseLeave);
+      document.removeEventListener("visibilitychange", onMouseLeave);
     };
-  }, [isVisible, mounted]);
+  }, [mounted]);
 
   if (!mounted) return null;
 

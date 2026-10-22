@@ -10,10 +10,14 @@ export const ContactTerminal: React.FC = () => {
   const formBoxRef = useRef<HTMLDivElement | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0, active: false });
 
-  const copyEmail = () => {
-    navigator.clipboard.writeText(profileData.basics.email);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
+  const copyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(profileData.basics.email);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      window.location.href = `mailto:${profileData.basics.email}`;
+    }
   };
 
   const handleSendMail = (e: React.FormEvent) => {
@@ -34,13 +38,13 @@ export const ContactTerminal: React.FC = () => {
       <div className="mb-14 text-left">
         <div className="flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.24em] text-cyan-300">
           <Terminal size={14} className="text-cyan-400" />
-          <span>05 // INITIATE TRANSMISSION & DISCUSS WORK</span>
+          <span>06 // CONTACT &amp; OPPORTUNITIES</span>
         </div>
         <h2 className="text-3xl sm:text-5xl font-display font-medium tracking-[-0.05em] text-white mt-3">
-          Let's Build Something <span className="text-white/40">Remarkable</span>
+          Let’s talk about <span className="text-white/40">the next role.</span>
         </h2>
         <p className="text-xs sm:text-sm text-zinc-400 font-sans mt-2 max-w-xl">
-          Available for automotive cockpit engineering, Linux embedded development, WebGL graphics, and music production inquiries.
+          Interested in entry-level IT support, desktop support, junior Linux administration, and junior software roles.
         </p>
       </div>
 

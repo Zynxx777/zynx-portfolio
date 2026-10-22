@@ -2,13 +2,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { SoundLab } from "../components/SoundLab";
 import { soundFX } from "../utils/audioFX";
 import {
-  Disc, Radio, ArrowLeft, Monitor, ExternalLink, Flame, Music,
-  Sliders, Waves, Sparkles, Send, Play, Pause, Volume2,
+  Flame, Music, Sliders, Waves, Sparkles, Send, Play, Pause, Volume2,
 } from "lucide-react";
 
 interface CommunityMusicPageProps {
-  onNavigatePortfolio: () => void;
-  onNavigateSpace: () => void;
+  onNavigatePortfolio?: () => void;
+  onNavigateSpace?: () => void;
 }
 
 // ── Moto-Card 3D Perspective Tilt Card Primitive ────────────────────────────
@@ -62,8 +61,7 @@ const MusicReleaseCard: React.FC<MusicCardProps> = ({
       ref={cardRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="perspective-1000 w-full group cursor-pointer"
-      onClick={() => onPlay(audioSrc)}
+      className="perspective-1000 w-full group"
     >
       <div
         style={{
@@ -108,6 +106,8 @@ const MusicReleaseCard: React.FC<MusicCardProps> = ({
 
           {/* Play / Pause Floating Trigger */}
           <button
+            type="button"
+            aria-label={`${isPlayingThis ? "Pause" : "Play"} ${title}`}
             onClick={(e) => {
               e.stopPropagation();
               onPlay(audioSrc);
@@ -117,7 +117,6 @@ const MusicReleaseCard: React.FC<MusicCardProps> = ({
                 ? "bg-pink-500 text-white scale-110 shadow-pink-500/50 animate-pulse"
                 : "bg-black/80 hover:bg-pink-600 text-white border border-white/20 hover:scale-110"
             }`}
-            aria-label={`Play ${title}`}
           >
             {isPlayingThis ? <Pause size={18} /> : <Play size={18} className="translate-x-0.5" />}
           </button>
@@ -139,10 +138,7 @@ const MusicReleaseCard: React.FC<MusicCardProps> = ({
   );
 };
 
-export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = ({
-  onNavigatePortfolio,
-  onNavigateSpace,
-}) => {
+export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [playingTrack, setPlayingTrack] = useState<string | null>(null);
   const audioElemRef = useRef<HTMLAudioElement | null>(null);
@@ -154,8 +150,11 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let animId: number;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let animId: number | null = null;
+    const isPhoneViewport = window.matchMedia("(max-width: 640px)").matches;
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const pixelRatio = () => Math.min(window.devicePixelRatio || 1, window.innerWidth < 640 ? 1.25 : 1.5);
+    const dpr = pixelRatio();
     let width = canvas.clientWidth;
     let height = canvas.clientHeight;
     canvas.width = width * dpr;
@@ -165,7 +164,7 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = ({
     const particles: { x: number; y: number; vx: number; vy: number; size: number; alpha: number; col: string }[] = [];
     const colors = ["#F72585", "#9D4EDD", "#00F2FE", "#7209B7"];
 
-    for (let i = 0; i < 65; i++) {
+    for (let i = 0; i < (isPhoneViewport ? 32 : 65); i++) {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
@@ -177,8 +176,7 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = ({
       });
     }
 
-    const render = () => {
-      animId = requestAnimationFrame(render);
+    const renderFrame = () => {
       ctx.clearRect(0, 0, width, height);
 
       particles.forEach((p, idx) => {
@@ -211,22 +209,49 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = ({
       });
     };
 
-    render();
+    const animate = () => {
+      if (document.hidden) {
+        animId = null;
+        return;
+      }
+      renderFrame();
+      animId = requestAnimationFrame(animate);
+    };
+
+    const startAnimation = () => {
+      if (!prefersReducedMotion && !document.hidden && animId === null) {
+        animId = requestAnimationFrame(animate);
+      }
+    };
+
+    renderFrame();
+    startAnimation();
 
     const handleResize = () => {
       if (!canvas || !ctx) return;
-      const newDpr = Math.min(window.devicePixelRatio || 1, 2);
+      const newDpr = pixelRatio();
       width = canvas.clientWidth;
       height = canvas.clientHeight;
       canvas.width = width * newDpr;
       canvas.height = height * newDpr;
       ctx.scale(newDpr, newDpr);
+      if (prefersReducedMotion) renderFrame();
+    };
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        if (animId !== null) cancelAnimationFrame(animId);
+        animId = null;
+      } else {
+        startAnimation();
+      }
     };
     window.addEventListener("resize", handleResize);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      cancelAnimationFrame(animId);
+      if (animId !== null) cancelAnimationFrame(animId);
       window.removeEventListener("resize", handleResize);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
@@ -251,41 +276,17 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = ({
   };
 
   return (
-    <div className="pt-20 pb-28 px-6 max-w-7xl mx-auto space-y-20 animate-fadeIn select-none">
-      {/* ── Top Avant-Garde Navigation (Emotion Agency Style) ─────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl cyber-glass border border-pink-500/30">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => {
-              soundFX.playClick();
-              onNavigatePortfolio();
-            }}
-            className="px-4 py-2 rounded-xl cyber-glass border border-white/10 hover:border-cyan-400 text-xs font-mono text-zinc-300 hover:text-white flex items-center gap-2 transition-all shadow-md"
-          >
-            <ArrowLeft size={13} />
-            <span>Developer Portfolio</span>
-          </button>
-          <span className="text-zinc-600 font-mono text-xs">/</span>
-          <span className="text-xs font-mono text-pink-300 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-pink-400 animate-pulse" />
-            <span>7YNX SOUND LAB // AUDIO REALM</span>
-          </span>
-        </div>
-
-        <button
-          onClick={() => {
-            soundFX.playClick();
-            onNavigateSpace();
-          }}
-          className="px-4 py-2 rounded-xl bg-purple-900/40 border border-purple-400/50 hover:border-purple-300 text-xs font-mono text-purple-200 hover:text-white flex items-center gap-2 transition-all shadow-md shadow-purple-900/30 hover:scale-105"
-        >
-          <Monitor size={14} className="text-purple-400" />
-          <span>3D Bedroom & Sanctuary</span>
-        </button>
+    <div className="mx-auto max-w-7xl space-y-12 px-4 pb-28 pt-20 animate-fadeIn select-none sm:space-y-20 sm:px-6">
+      {/* ── Page Identity Breadcrumb ─────────────────────────────────── */}
+      <div className="flex items-center gap-2 text-xs font-mono text-zinc-500">
+        <span className="w-2 h-2 rounded-full bg-pink-400 animate-pulse" />
+        <span className="text-pink-300 font-semibold tracking-wider uppercase">7YNX SOUND LAB</span>
+        <span className="text-zinc-700">//</span>
+        <span>AUDIO REALM</span>
       </div>
 
       {/* ── Hero: Faceless Electronic Music Artist Identity ────────────────── */}
-      <div className="relative rounded-3xl p-12 sm:p-6 overflow-hidden cyber-glass border border-pink-500/30 bg-gradient-to-br from-purple-950/40 via-black/85 to-pink-950/40 shadow-2xl">
+      <div className="relative overflow-hidden rounded-3xl border border-pink-500/30 bg-gradient-to-br from-purple-950/40 via-black/85 to-pink-950/40 p-5 shadow-2xl cyber-glass sm:p-6 lg:p-12">
         {/* Interactive Fluid Particle Background Canvas (Lusion style) */}
         <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none opacity-60 z-0" />
 
@@ -293,13 +294,13 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = ({
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-pink-500/10 rounded-full blur-[140px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
 
-        <div className="relative z-10 max-w-3xl space-y-6">
+        <div className="relative z-10 min-w-0 max-w-3xl space-y-6">
           <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-pink-950/60 border border-pink-500/40 text-pink-300 text-xs font-mono tracking-wider shadow-lg shadow-pink-500/10">
             <Flame size={13} className="text-pink-400" />
             <span>FACELESS ELECTRONIC MUSIC PRODUCER // 7YNX</span>
           </div>
 
-          <h1 className="text-6xl sm:text-4xl xs:text-3xl font-display font-extrabold text-white tracking-tight leading-tight">
+          <h1 className="break-words font-display text-[clamp(2rem,9vw,3.75rem)] font-extrabold leading-tight tracking-tight text-white sm:text-4xl lg:text-6xl">
             Sound Design, Modular Synthesis & Melodic Techno
           </h1>
 
@@ -307,28 +308,14 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = ({
             Welcome to the dedicated sound sanctuary of <span className="text-purple-400 font-bold">7YNX</span>. Sculpting heavy sidechain future bounce, deep atmospheric house grooves, and audio-reactive WebGL visualizers with FL Studio and analog tape saturation.
           </p>
 
-          {/* Streaming & Artist Direct Links */}
+          {/* Jump to the working player rather than generic profile placeholders. */}
           <div className="flex flex-wrap gap-3 pt-2">
             <a
-              href="https://soundcloud.com"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="#sound-lab"
               className="px-5 py-2.5 rounded-xl bg-black/60 hover:bg-pink-600/20 border border-pink-500/30 text-pink-300 text-xs font-mono flex items-center gap-2 transition-all hover:scale-105 shadow-md"
             >
-              <Radio size={14} />
-              <span>SoundCloud</span>
-              <ExternalLink size={12} className="opacity-60" />
-            </a>
-
-            <a
-              href="https://spotify.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-5 py-2.5 rounded-xl bg-black/60 hover:bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center gap-2 transition-all hover:scale-105 shadow-md"
-            >
-              <Disc size={14} />
-              <span>Spotify Artist</span>
-              <ExternalLink size={12} className="opacity-60" />
+              <Waves size={14} />
+              <span>Browse the Sound Lab</span>
             </a>
 
             <button
@@ -395,7 +382,7 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = ({
       <SoundLab />
 
       {/* ── Production Toolchain & Synthesis Arsenal ───────────────────────── */}
-      <section className="p-10 sm:p-6 rounded-3xl cyber-glass border border-white/10 space-y-8">
+      <section className="p-6 sm:p-10 rounded-3xl cyber-glass border border-white/10 space-y-8">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-pink-950/80 border border-pink-400/30 flex items-center justify-center text-pink-400 shadow-lg">
             <Sliders size={22} />
@@ -407,7 +394,7 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = ({
         </div>
 
         <p className="text-xs text-zinc-300 font-sans max-w-2xl leading-relaxed">
-          Every track released under 7YNX is mixed, engineered, and mastered in-house using surgical digital audio plugins, analog tape harmonics, and custom wavetable sound synthesis.
+          Personal electronic music practice and audio tools sit alongside the technical portfolio. The examples here are creative work, not professional audio-engineering credentials.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -416,9 +403,9 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = ({
               <Music size={15} />
               <h4 className="font-mono text-xs font-bold uppercase">DAW of Choice</h4>
             </div>
-            <p className="text-sm text-zinc-100 font-sans font-semibold">FL Studio 21 Signature</p>
+            <p className="text-sm text-zinc-100 font-sans font-semibold">FL Studio</p>
             <p className="text-[11px] text-zinc-500 font-sans leading-relaxed">
-              Advanced automation clips, patcher routing, and zero-latency ASIO drivers.
+              Personal use for arranging, editing, and experimenting with sound.
             </p>
           </div>
 
@@ -427,9 +414,9 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = ({
               <Waves size={15} />
               <h4 className="font-mono text-xs font-bold uppercase">Wavetable Synths</h4>
             </div>
-            <p className="text-sm text-zinc-100 font-sans font-semibold">Xfer Serum & Vital</p>
+            <p className="text-sm text-zinc-100 font-sans font-semibold">Synths & sound design</p>
             <p className="text-[11px] text-zinc-500 font-sans leading-relaxed">
-              Custom wavetables, unison detuning, and sub-bass oscillator modulation.
+              Personal exploration of synthesizers and electronic music textures.
             </p>
           </div>
 
@@ -438,9 +425,9 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = ({
               <Sliders size={15} />
               <h4 className="font-mono text-xs font-bold uppercase">Dynamics & EQ</h4>
             </div>
-            <p className="text-sm text-zinc-100 font-sans font-semibold">FabFilter Total Bundle & OTT</p>
+            <p className="text-sm text-zinc-100 font-sans font-semibold">Mixing and audio effects</p>
             <p className="text-[11px] text-zinc-500 font-sans leading-relaxed">
-              Multi-band upward compression and surgical linear-phase parametric EQing.
+              Learning and applying basic mixing choices in personal projects.
             </p>
           </div>
 
@@ -449,9 +436,9 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = ({
               <Sparkles size={15} />
               <h4 className="font-mono text-xs font-bold uppercase">Color & Tape</h4>
             </div>
-            <p className="text-sm text-zinc-100 font-sans font-semibold">Soundtoys & Tape Saturation</p>
+            <p className="text-sm text-zinc-100 font-sans font-semibold">Creative effects</p>
             <p className="text-[11px] text-zinc-500 font-sans leading-relaxed">
-              Analog warmth, tape flutter, stereo field widening, and plate reverbs.
+              Exploring effects as part of a personal audio workflow.
             </p>
           </div>
         </div>
@@ -477,36 +464,6 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = ({
         </a>
       </div>
 
-      {/* ── Footer Navigation Bar ─────────────────────────────────────────── */}
-      <div className="p-8 rounded-3xl cyber-glass border border-white/10 text-center space-y-4 max-w-3xl mx-auto">
-        <h3 className="text-2xl font-display font-bold text-white">
-          Explore Other ZYNX Realms
-        </h3>
-        <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-          Switch freely between my music realm, my engineering developer portfolio, and my personal 3D bedroom studio.
-        </p>
-
-        <div className="pt-2 flex justify-center gap-4">
-          <button
-            onClick={() => {
-              soundFX.playClick();
-              onNavigatePortfolio();
-            }}
-            className="px-6 py-2.5 rounded-full cyber-glass border border-white/15 hover:border-cyan-400 text-xs font-mono text-zinc-300 hover:text-white transition-colors"
-          >
-            ← Developer Portfolio
-          </button>
-          <button
-            onClick={() => {
-              soundFX.playClick();
-              onNavigateSpace();
-            }}
-            className="px-6 py-2.5 rounded-full cyber-glass border border-purple-500/40 hover:border-purple-300 text-xs font-mono text-purple-200 hover:text-white transition-colors"
-          >
-            Enter 3D Bedroom Sanctuary →
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

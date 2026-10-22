@@ -57,11 +57,11 @@ export const ExperienceTimeline: React.FC = () => (
             <span>02 // CAREER & EDUCATION RECORD</span>
           </div>
           <h2 className="mt-4 max-w-5xl font-display text-[clamp(2.5rem,7vw,6.5rem)] font-medium leading-[0.88] tracking-[-0.06em] text-white">
-            The work <span className="text-white/35">behind the code.</span>
+          Work and study <span className="text-white/35">in context.</span>
           </h2>
         </div>
         <p className="max-w-md text-xs sm:text-sm font-sans leading-relaxed text-zinc-400 md:pb-1">
-          Low-level systems architecture, automotive cockpit telemetry, reverse engineering security research, and academic rigor.
+          Current part-time teaching work, an Electronics and Communication Engineering degree, and practical portfolio projects.
         </p>
       </header>
 

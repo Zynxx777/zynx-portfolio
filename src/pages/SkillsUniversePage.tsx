@@ -1,7 +1,6 @@
 import React from "react";
-import { ArrowLeft, Terminal, Cpu, Shield, Sparkles, Monitor, Disc3 } from "lucide-react";
+import { Terminal, Code2, Cpu, Award } from "lucide-react";
 import { SkillsMatrix } from "../components/SkillsMatrix";
-import { soundFX } from "../utils/audioFX";
 
 interface SkillsUniversePageProps {
   onNavigatePortfolio: () => void;
@@ -9,145 +8,33 @@ interface SkillsUniversePageProps {
   onNavigateCommunity: () => void;
 }
 
-export const SkillsUniversePage: React.FC<SkillsUniversePageProps> = ({
-  onNavigatePortfolio,
-  onNavigateSpace,
-  onNavigateCommunity,
-}) => {
-  return (
-    <div className="min-h-screen pt-24 pb-20 px-4 sm:px-8 select-none relative">
-      {/* ── TOP HERO HEADER: ZERO UNIVERSITY HUD ── */}
-      <div className="max-w-[1700px] mx-auto mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-[#090d18]/80 border border-white/15 backdrop-blur-2xl shadow-2xl">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => {
-                soundFX.playClick();
-                onNavigatePortfolio();
-              }}
-              className="p-3 rounded-full border border-white/20 bg-white/5 hover:bg-white/15 text-zinc-300 hover:text-white flex items-center justify-center transition-all group shadow-lg"
-              title="Return to Selected Work"
-              aria-label="Return to Selected Work"
-            >
-              <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-            </button>
+const highlights = [
+  { icon: Terminal, label: "LINUX", title: "Arch Linux", note: "Daily personal desktop use", color: "text-emerald-300" },
+  { icon: Code2, label: "WEB PROJECTS", title: "React · Astro", note: "AI-assisted project work", color: "text-cyan-300" },
+  { icon: Cpu, label: "EDUCATION", title: "B.E. Electronics", note: "Engineering foundation", color: "text-amber-300" },
+  { icon: Award, label: "RECOGNITION", title: "7chats bounty", note: "Contest recognition, 2021", color: "text-pink-300" },
+];
 
-            <div>
-              <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.22em] text-cyan-300">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>WHY.ZERO.UNIVERSITY // STANDALONE ARSENAL TERMINAL</span>
-              </div>
-              <h1 className="text-2xl sm:text-4xl font-display font-medium text-white tracking-tight mt-0.5">
-                Technical Arsenal & Hardware Toolchain
-              </h1>
-            </div>
-          </div>
+export const SkillsUniversePage: React.FC<SkillsUniversePageProps> = () => (
+  <main className="relative mx-auto min-h-screen max-w-[1700px] space-y-6 px-4 pb-20 pt-24 sm:px-8">
+    <header className="rounded-3xl border border-white/15 bg-[#090d18]/80 p-6 shadow-2xl backdrop-blur-2xl sm:p-9">
+      <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-cyan-300">Skills &amp; experience</p>
+      <h1 className="mt-3 max-w-4xl text-3xl font-medium tracking-tight text-white sm:text-5xl">A clear view of what I use, build, and study.</h1>
+      <p className="mt-4 max-w-3xl text-sm leading-relaxed text-zinc-400 sm:text-base">
+        I am targeting entry-level IT support and junior Linux administration roles. My background also includes an ECE degree, AI-assisted web projects, and music teaching. Each skill is labeled by its source so employers can quickly distinguish daily use, project work, and academic exposure.
+      </p>
+    </header>
 
-          {/* Quick Ecosystem Portals */}
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => {
-                soundFX.playClick();
-                onNavigateSpace();
-              }}
-              className="px-4 py-2 rounded-full border border-purple-500/30 bg-purple-950/20 hover:bg-purple-900/30 text-purple-300 text-xs font-mono flex items-center gap-2 transition-all"
-            >
-              <Monitor size={13} />
-              <span>3D Bedroom</span>
-            </button>
+    <section aria-label="Selected experience highlights" className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {highlights.map(({ icon: Icon, label, title, note, color }) => (
+        <article key={label} className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 transition hover:border-white/20">
+          <div className={`flex items-center gap-2 font-mono text-[10px] tracking-[0.16em] ${color}`}><Icon size={14} />{label}</div>
+          <h2 className="mt-3 text-xl font-medium text-white">{title}</h2>
+          <p className="mt-1 text-xs text-zinc-400">{note}</p>
+        </article>
+      ))}
+    </section>
 
-            <button
-              onClick={() => {
-                soundFX.playClick();
-                onNavigateCommunity();
-              }}
-              className="px-4 py-2 rounded-full border border-pink-500/30 bg-pink-950/20 hover:bg-pink-900/30 text-pink-300 text-xs font-mono flex items-center gap-2 transition-all"
-            >
-              <Disc3 size={13} />
-              <span>7YNX Music</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── CORE CAPABILITIES TELEMETRY TICKER ── */}
-      <div className="max-w-[1700px] mx-auto grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10">
-          <div className="flex items-center gap-2 text-cyan-400 text-xs font-mono">
-            <Cpu size={14} />
-            <span>AUTOMOTIVE CDC</span>
-          </div>
-          <div className="text-xl font-display font-medium text-white mt-1">CAN 2.0B / AAOS</div>
-          <div className="text-[10px] font-mono text-zinc-400 mt-0.5">8,000 frames/sec parsing</div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10">
-          <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono">
-            <Terminal size={14} />
-            <span>OPERATING SYSTEM</span>
-          </div>
-          <div className="text-xl font-display font-medium text-white mt-1">Arch Linux Zen</div>
-          <div className="text-[10px] font-mono text-zinc-400 mt-0.5">procfs & custom modules</div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10">
-          <div className="flex items-center gap-2 text-purple-400 text-xs font-mono">
-            <Sparkles size={14} />
-            <span>GRAPHICS SHADERS</span>
-          </div>
-          <div className="text-xl font-display font-medium text-white mt-1">WebGL & GLSL</div>
-          <div className="text-[10px] font-mono text-zinc-400 mt-0.5">S-curve ribbons & sims</div>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10">
-          <div className="flex items-center gap-2 text-pink-400 text-xs font-mono">
-            <Shield size={14} />
-            <span>SECURITY RESEARCH</span>
-          </div>
-          <div className="text-xl font-display font-medium text-white mt-1">7chats Bug Bounty</div>
-          <div className="text-[10px] font-mono text-zinc-400 mt-0.5">Auth bypass contest winner</div>
-        </div>
-      </div>
-
-      {/* ── THE INTERACTIVE ZERO UNIVERSITY SKILLS MATRIX ── */}
-      <SkillsMatrix />
-
-      {/* ── BOTTOM RETURN NAVIGATION ── */}
-      <div className="max-w-[1700px] mx-auto mt-12 pt-8 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
-        <button
-          onClick={() => {
-            soundFX.playClick();
-            onNavigatePortfolio();
-          }}
-          className="px-5 py-2.5 rounded-full border border-white/20 bg-white/5 hover:bg-white/15 text-zinc-300 hover:text-white text-xs font-mono flex items-center gap-2 transition-all shadow-lg"
-        >
-          <ArrowLeft size={14} />
-          <span>Back to Developer Portfolio</span>
-        </button>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              soundFX.playClick();
-              onNavigateSpace();
-            }}
-            className="px-4 py-2 rounded-full border border-purple-500/30 bg-purple-950/20 hover:bg-purple-900/30 text-purple-300 text-xs font-mono flex items-center gap-2 transition-all"
-          >
-            <Monitor size={13} />
-            <span>3D Bedroom Space</span>
-          </button>
-          <button
-            onClick={() => {
-              soundFX.playClick();
-              onNavigateCommunity();
-            }}
-            className="px-4 py-2 rounded-full border border-pink-500/30 bg-pink-950/20 hover:bg-pink-900/30 text-pink-300 text-xs font-mono flex items-center gap-2 transition-all"
-          >
-            <Disc3 size={13} />
-            <span>7YNX Music</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+    <SkillsMatrix />
+  </main>
+);

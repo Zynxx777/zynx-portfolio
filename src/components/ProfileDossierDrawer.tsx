@@ -10,7 +10,6 @@ import {
   ArrowUpRight,
   Sparkles,
   Award,
-  ArrowLeft,
 } from "lucide-react";
 import profileData from "../data/profile.json";
 import { soundFX } from "../utils/audioFX";
@@ -59,19 +58,8 @@ export const ProfileDossierDrawer: React.FC<ProfileDossierDrawerProps> = ({
       >
         {/* Top Bar HUD */}
         <div className="flex items-center justify-between border-b border-white/10 pb-6 gap-3">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                soundFX.playClick();
-                onClose();
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/15 bg-white/5 hover:bg-white/15 text-xs font-mono text-zinc-300 hover:text-white transition-all group shadow-sm"
-              aria-label="Back to page"
-            >
-              <ArrowLeft size={13} className="group-hover:-translate-x-0.5 transition-transform" />
-              <span>Back</span>
-            </button>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse hidden sm:inline-block" />
+          <div className="flex items-center gap-2.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span className="font-mono text-xs uppercase tracking-[0.24em] text-cyan-300">
               PROFILE DOSSIER
             </span>
@@ -82,11 +70,10 @@ export const ProfileDossierDrawer: React.FC<ProfileDossierDrawerProps> = ({
               soundFX.playClick();
               onClose();
             }}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/25 text-red-200 hover:text-white text-xs font-mono transition-all"
+            className="w-8 h-8 rounded-full border border-white/15 bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white flex items-center justify-center transition-all"
             aria-label="Close dossier"
           >
             <X size={15} />
-            <span className="hidden sm:inline font-bold">Close</span>
           </button>
         </div>
 
@@ -138,13 +125,13 @@ export const ProfileDossierDrawer: React.FC<ProfileDossierDrawerProps> = ({
         <div className="p-5 rounded-2xl bg-gradient-to-br from-pink-950/30 to-purple-950/20 border border-pink-500/30 space-y-2">
           <div className="flex items-center gap-2 text-xs font-mono text-pink-300">
             <Award size={15} className="text-pink-400" />
-            <span className="font-bold tracking-wider uppercase">BUG BOUNTY CONTEST WINNER</span>
+            <span className="font-bold tracking-wider uppercase">BUG BOUNTY RECOGNITION</span>
           </div>
           <h4 className="font-display font-medium text-base text-white">
-            7chats Messenger Authentication Bypass
+            7chats Messenger Contest
           </h4>
           <p className="text-xs text-zinc-300 font-sans leading-relaxed">
-            Officially awarded Bug Bounty Winner title for uncovering and responsibly disclosing a critical token authentication bypass vulnerability in production messenger clients.
+            Existing resume materials record contest recognition for reporting an authentication issue in the 7chats Messenger app.
           </p>
         </div>
 
@@ -285,21 +272,11 @@ export const ProfileDossierDrawer: React.FC<ProfileDossierDrawerProps> = ({
           </div>
         </div>
 
-        {/* Bottom Close Button & Footer */}
-        <div className="pt-4 border-t border-white/10 space-y-4">
-          <button
-            onClick={() => {
-              soundFX.playClick();
-              onClose();
-            }}
-            className="w-full py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-mono font-bold text-white flex items-center justify-center gap-2 transition-all shadow-lg"
-          >
-            <ArrowLeft size={14} />
-            <span>Close Dossier & Return</span>
-          </button>
+        {/* Footer Metadata */}
+        <div className="pt-4 border-t border-white/10">
           <div className="text-[10px] font-mono text-zinc-600 flex items-center justify-between">
-            <span>SYSTEM TIME: 2026 // BENGALURU</span>
-            <span>ZYNX ENGINE VER 2.4.0</span>
+            <span>SYS TIME: 2026 // BENGALURU, IN</span>
+            <span>ZYNX ENGINE v2.4</span>
           </div>
         </div>
       </aside>
