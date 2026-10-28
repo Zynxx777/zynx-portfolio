@@ -1,133 +1,100 @@
-import { useState, useEffect, lazy, Suspense } from "react";
-import { Navbar, type EcosystemView } from "./components/Navbar";
-import { PortfolioPage } from "./pages/PortfolioPage";
-import { Footer } from "./components/Footer";
-import { ResumeModal } from "./components/ResumeModal";
-import { AmbientCosmicCanvas } from "./components/AmbientCosmicCanvas";
-import { CustomAuraCursor } from "./components/CustomAuraCursor";
-
-const SkillsUniversePage = lazy(() => import("./pages/SkillsUniversePage").then((module) => ({ default: module.SkillsUniversePage })));
-const BedroomSpacePage = lazy(() => import("./pages/BedroomSpacePage").then((module) => ({ default: module.BedroomSpacePage })));
-const CommunityMusicPage = lazy(() => import("./pages/CommunityMusicPage").then((module) => ({ default: module.CommunityMusicPage })));
-const ShowcasePage = lazy(() => import("./pages/ShowcasePage").then((module) => ({ default: module.ShowcasePage })));
+import { useState, useEffect } from 'react';
+import { BedroomDesk3D } from './components/BedroomDesk3D';
+import { ShowcaseCarousel3D } from './components/ShowcaseCarousel3D';
+import { DiaryModal } from './components/DiaryModal';
+import { ProjectDetailModal } from './components/ProjectDetailModal';
+import { ProfileSphereModal } from './components/ProfileSphereModal';
+import { NewsletterModal } from './components/NewsletterModal';
+import { AnatomyDissectionModal } from './components/AnatomyDissectionModal';
+import { type Project, PROJECTS } from './data/portfolioData';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<EcosystemView>(() => {
+  const [currentView, setCurrentView] = useState<'desk' | 'showcase'>(() => {
     const hash = window.location.hash.toLowerCase();
-    if (hash.includes("space") || hash.includes("bedroom") || hash.includes("room")) return "space";
-    if (hash.includes("community") || hash.includes("7ynx") || hash.includes("music") || hash.includes("gaming")) return "community";
-    if (hash.includes("skills") || hash.includes("arsenal") || hash.includes("tech")) return "skills";
-    if (hash.includes("showcase") || hash.includes("index")) return "showcase";
-    return "portfolio";
+    if (hash.includes('showcase') || hash.includes('ribbon')) return 'showcase';
+    return 'desk';
   });
 
-  const [isResumeOpen, setIsResumeOpen] = useState<boolean>(false);
+  const [isDiaryOpen, setIsDiaryOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNewsletterOpen, setIsNewsletterOpen] = useState(false);
+  const [isAnatomyOpen, setIsAnatomyOpen] = useState(false);
 
-  // Sync hash changes (browser back/forward button)
+  // Sync hash changes with browser navigation
   useEffect(() => {
-    const handleHashChange = () => {
+    const handleHash = () => {
       const hash = window.location.hash.toLowerCase();
-      if (hash.includes("space") || hash.includes("bedroom") || hash.includes("room")) {
-        setCurrentView("space");
-      } else if (hash.includes("community") || hash.includes("7ynx") || hash.includes("music") || hash.includes("gaming")) {
-        setCurrentView("community");
-      } else if (hash.includes("skills") || hash.includes("arsenal") || hash.includes("tech")) {
-        setCurrentView("skills");
-      } else if (hash.includes("showcase") || hash.includes("index")) {
-        setCurrentView("showcase");
-      } else if (!hash || hash === "#") {
-        setCurrentView("portfolio");
+      if (hash.includes('showcase') || hash.includes('ribbon')) {
+        setCurrentView('showcase');
+      } else {
+        setCurrentView('desk');
       }
     };
-
-    window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
-  const handleNavigate = (view: EcosystemView) => {
-    setCurrentView(view);
-    window.location.hash = view === "portfolio" ? "" : view;
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const handleOpenProjectById = (projectId: string) => {
+    const found = PROJECTS.find((p) => p.id === projectId) || PROJECTS[0];
+    setSelectedProject(found);
+  };
+
+  const handleSwitchToShowcase = () => {
+    setCurrentView('showcase');
+    window.location.hash = 'showcase';
+  };
+
+  const handleSwitchToDesk = () => {
+    setCurrentView('desk');
+    window.location.hash = '';
   };
 
   return (
-    <div className="min-h-screen bg-[#07080d] text-zinc-100 relative selection:bg-cyan-400 selection:text-black">
-      {/* Living Cosmic Noir Background & Film Grain Overlay (Replaces flat black) */}
-      {currentView !== "space" && currentView !== "showcase" && <AmbientCosmicCanvas />}
-
-      {/* Non-intrusive interactive magnetic cursor aura */}
-      {currentView !== "space" && currentView !== "showcase" && <CustomAuraCursor />}
-
-      {/* Top Universal Navbar & Ecosystem Switcher */}
-      {currentView !== "showcase" && (
-        <Navbar
-          currentView={currentView}
-          setCurrentView={handleNavigate}
-          openResume={() => setIsResumeOpen(true)}
+    <div className="relative w-screen h-screen overflow-hidden bg-[#050608] text-white selection:bg-cyan-400 selection:text-black">
+      {/* ── Active 3D Experience (pradiplabs.dev 3D Desk vs jesperlandberg.com GLSL Ribbon) ── */}
+      {currentView === 'desk' ? (
+        <BedroomDesk3D
+          onOpenDiary={() => setIsDiaryOpen(true)}
+          onOpenProject={handleOpenProjectById}
+          onSwitchToShowcase={handleSwitchToShowcase}
+          onOpenAnatomy={() => setIsAnatomyOpen(true)}
+        />
+      ) : (
+        <ShowcaseCarousel3D
+          onSelectProject={(project) => setSelectedProject(project)}
+          onOpenProfile={() => setIsProfileOpen(true)}
+          onOpenNewsletter={() => setIsNewsletterOpen(true)}
+          onSwitchToBedroom={handleSwitchToDesk}
+          onOpenAnatomy={() => setIsAnatomyOpen(true)}
         />
       )}
 
-      {/* Main Active Independent Website / Webpage */}
-      <main>
-        <Suspense fallback={<div aria-live="polite" className="flex min-h-[60vh] items-center justify-center px-6 text-sm text-zinc-400">Loading page…</div>}>
-          {currentView === "portfolio" && (
-            <PortfolioPage
-              openResume={() => setIsResumeOpen(true)}
-              onNavigateSpace={() => handleNavigate("space")}
-              onNavigateCommunity={() => handleNavigate("community")}
-              onNavigateSkills={() => handleNavigate("skills")}
-            />
-          )}
+      {/* ── Interactive Modals ── */}
+      <DiaryModal
+        isOpen={isDiaryOpen}
+        onClose={() => setIsDiaryOpen(false)}
+      />
 
-          {currentView === "skills" && (
-            <SkillsUniversePage
-              onNavigatePortfolio={() => handleNavigate("portfolio")}
-              onNavigateSpace={() => handleNavigate("space")}
-              onNavigateCommunity={() => handleNavigate("community")}
-            />
-          )}
+      <ProjectDetailModal
+        project={selectedProject}
+        onClose={() => setSelectedProject(null)}
+        onOpenAnatomy={() => setIsAnatomyOpen(true)}
+      />
 
-          {currentView === "showcase" && (
-            <ShowcasePage
-              openResume={() => setIsResumeOpen(true)}
-              onNavigatePortfolio={() => handleNavigate("portfolio")}
-              onNavigateSkills={() => handleNavigate("skills")}
-              onNavigateSpace={() => handleNavigate("space")}
-              onNavigateCommunity={() => handleNavigate("community")}
-            />
-          )}
+      <ProfileSphereModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+      />
 
-          {currentView === "space" && (
-            <BedroomSpacePage
-              onNavigatePortfolio={() => handleNavigate("portfolio")}
-              onNavigateCommunity={() => handleNavigate("community")}
-            />
-          )}
+      <NewsletterModal
+        isOpen={isNewsletterOpen}
+        onClose={() => setIsNewsletterOpen(false)}
+      />
 
-          {currentView === "community" && (
-            <CommunityMusicPage
-              onNavigatePortfolio={() => handleNavigate("portfolio")}
-              onNavigateSpace={() => handleNavigate("space")}
-            />
-          )}
-        </Suspense>
-      </main>
-
-      {/* Footer (Rendered on standard pages, hidden in full-screen 3D sanctuary) */}
-      {currentView !== "space" && currentView !== "showcase" && (
-        <Footer
-          onNavigatePortfolio={() => handleNavigate("portfolio")}
-          onNavigateSpace={() => handleNavigate("space")}
-          onNavigateCommunity={() => handleNavigate("community")}
-          onNavigateSkills={() => handleNavigate("skills")}
-          onNavigateShowcase={() => handleNavigate("showcase")}
-        />
-      )}
-
-      {/* ATS Resume Modal & Print Engine */}
-      <ResumeModal
-        isOpen={isResumeOpen}
-        onClose={() => setIsResumeOpen(false)}
+      <AnatomyDissectionModal
+        isOpen={isAnatomyOpen}
+        onClose={() => setIsAnatomyOpen(false)}
       />
     </div>
   );
