@@ -14,19 +14,22 @@ import {
   Eye
 } from 'lucide-react';
 import { soundFX } from '../utils/audioFX';
+import { MonitorDesktopModal } from './MonitorDesktopModal';
 
 interface BedroomDesk3DProps {
   onOpenDiary: () => void;
   onOpenProject: (projectId: string) => void;
   onSwitchToShowcase: () => void;
   onOpenAnatomy: () => void;
+  onOpenMonitor?: () => void;
 }
 
 export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   onOpenDiary,
   onOpenProject,
   onSwitchToShowcase,
-  onOpenAnatomy
+  onOpenAnatomy,
+  onOpenMonitor
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const [hoveredObject, setHoveredObject] = useState<string | null>(null);
@@ -35,6 +38,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   const [isXRayMode, setIsXRayMode] = useState(false); // Matching pradiplabs X-Ray mode
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [printedReceipt, setPrintedReceipt] = useState(false);
+  const [isMonitorOpen, setIsMonitorOpen] = useState(false);
   const [focusedTarget, setFocusedTarget] = useState<'laptop' | 'tablet' | 'phone' | 'diary' | 'zcard' | 'printer' | 'zoro' | null>(null);
 
   const controlsRef = useRef<OrbitControls | null>(null);
@@ -931,7 +935,8 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           });
         } else if (name === 'laptop') {
           soundFX.playClick();
-          focusObject('laptop');
+          if (onOpenMonitor) onOpenMonitor();
+          else setIsMonitorOpen(true);
         } else if (name === 'tablet') {
           soundFX.playClick();
           focusObject('tablet');
@@ -1069,12 +1074,12 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
       {/* Top HUD Controls: Day/Night, X-Ray, Reset, Music, Showcase */}
       <div className="absolute top-6 right-6 z-30 flex items-center gap-2">
-        {focusedTarget === 'laptop' && (
+        {(focusedTarget === 'laptop' || isMonitorOpen) && (
           <button
-            onClick={() => { soundFX.playClick(); onOpenProject('zcard-hardware'); }}
+            onClick={() => { soundFX.playClick(); if (onOpenMonitor) onOpenMonitor(); else setIsMonitorOpen(true); }}
             className="px-3 py-1.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400 text-xs font-mono text-cyan-200 flex items-center gap-1.5 shadow-lg backdrop-blur-md transition-all"
           >
-            <ExternalLink className="w-3.5 h-3.5" /> View Projects
+            <ExternalLink className="w-3.5 h-3.5" /> Open Desktop
           </button>
         )}
 
@@ -1227,9 +1232,13 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       {/* Bottom Bar Pills (Exact Navigation from pradiplabs.dev) */}
       <div className="absolute bottom-6 inset-x-0 z-30 flex items-center justify-center gap-2 px-4 flex-wrap pointer-events-auto">
         <button
-          onClick={() => focusObject('laptop')}
+          onClick={() => {
+            soundFX.playClick();
+            if (onOpenMonitor) onOpenMonitor();
+            else setIsMonitorOpen(true);
+          }}
           className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg ${
-            focusedTarget === 'laptop'
+            focusedTarget === 'laptop' || isMonitorOpen
               ? 'bg-white text-slate-950 font-bold border-white'
               : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
           }`}
@@ -1302,6 +1311,14 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           <span>Z Card Anatomy</span>
         </button>
       </div>
+
+      {/* Full Desktop Monitor Experience (pradiplabs.dev replica) */}
+      <MonitorDesktopModal
+        isOpen={isMonitorOpen}
+        onClose={() => setIsMonitorOpen(false)}
+        onOpenAnatomy={onOpenAnatomy}
+        onOpenProject={onOpenProject}
+      />
     </div>
   );
 };
