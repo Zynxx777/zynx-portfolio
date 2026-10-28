@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { PROJECTS, type Project } from '../data/portfolioData';
+import { type Project } from '../data/portfolioData';
 import { ArrowLeft, ExternalLink, Sparkles, Layers } from 'lucide-react';
 
 interface ShowcaseCarousel3DProps {
@@ -11,6 +11,138 @@ interface ShowcaseCarousel3DProps {
   onOpenAnatomy?: () => void;
 }
 
+// ── Z Card v0.1 Flagship Showcase Collection ──────────────────────────────────
+// Dedicated exclusively to the Z Card hardware architecture and exploded engineering views.
+const ZCARD_SHOWCASE_CARDS: Project[] = [
+  {
+    id: "zcard",
+    title: "Z Card v0.1 — Blueprint Architecture",
+    subtitle: "Nordic nRF52840 SoC • Dual-core BLE 5.3 & NFC Controller",
+    category: "Hardware & 3D CAD",
+    year: "2026",
+    badge: "Flagship Innovation",
+    award: "Next-Gen Smart Card",
+    heroImage: "/images/zcard/blueprint_hero.png",
+    gallery: [
+      "/images/zcard/front.png",
+      "/images/zcard/back.png",
+      "/images/zcard/exploded.png",
+      "/images/zcard/xray_internal.png",
+      "/images/zcard/solar_biometric_detail.png"
+    ],
+    description: "All-in-one smart credit/debit card replacement and universal ID card with flexible E-Ink display, solar harvester, solid-state battery, and biometric security.",
+    fullOverview: [
+      "Ultra-slim 1.4mm profile complying with ISO/IEC 7810 standard",
+      "Dynamic flexible E-Paper display for barcode, QR, and multiple card numbers",
+      "Energy harvesting via ambient solar and Qi inductive wireless charging",
+      "Military-grade secure element with hardware biometric authentication"
+    ],
+    techStack: ["Blender 3D", "Three.js", "Nordic nRF52840", "E-Paper (EPD)", "Qi Inductive", "Embedded C++"],
+    githubUrl: "https://github.com/Zynxx777/ZCard",
+    liveUrl: "http://localhost:5173"
+  },
+  {
+    id: "zcard",
+    title: "Z Card v0.1 — Flexible E-Ink Display",
+    subtitle: "Dynamic Card Switcher • Barcode, QR & Real-time Balance Display",
+    category: "Hardware & 3D CAD",
+    year: "2026",
+    badge: "Interactive Screen",
+    award: "Zero-Power Standby",
+    heroImage: "/images/zcard/front.png",
+    gallery: ["/images/zcard/blueprint_hero.png", "/images/zcard/front.png"],
+    description: "Bi-stable electrophoretic front panel requiring 0.0mA static holding power. Retains payment credentials, loyalty cards, and travel passes indefinitely without battery drain.",
+    fullOverview: [
+      "2.9-inch flexible active-matrix E-Ink panel",
+      "Full sunlight readability with zero glare",
+      "Capacitive touch slider for toggling payment accounts",
+      "Real-time encrypted balance and transaction docket"
+    ],
+    techStack: ["E-Paper (EPD)", "SPI Bus", "Capacitive Touch", "Nordic BLE", "Ultra-thin FPC"],
+    githubUrl: "https://github.com/Zynxx777/ZCard"
+  },
+  {
+    id: "zcard",
+    title: "Z Card v0.1 — Qi Inductive Coil & Solar",
+    subtitle: "High-Efficiency Resonance Charging • Solid-State Battery",
+    category: "Hardware & 3D CAD",
+    year: "2026",
+    badge: "Infinite Power",
+    award: "Harvesting Subsystem",
+    heroImage: "/images/zcard/back.png",
+    gallery: ["/images/zcard/back.png", "/images/zcard/solar_biometric_detail.png"],
+    description: "Ultra-thin planar copper coil paired with perimeter photovoltaic cells, providing continuous passive recharging from ambient office lighting and NFC payment terminals.",
+    fullOverview: [
+      "Qi compliant 13.56MHz inductive resonance harvesting",
+      "Planar micro-coil printed directly on multi-layer substrate",
+      "Solid-state lithium ceramic pouch cell (5000+ charge cycles)",
+      "Zero degradation under card bending and flex tests"
+    ],
+    techStack: ["Qi Inductive", "Solar Harvesting", "Power Management IC", "Solid-State Battery"],
+    githubUrl: "https://github.com/Zynxx777/ZCard"
+  },
+  {
+    id: "zcard",
+    title: "Z Card v0.1 — 9-Layer Stack Architecture",
+    subtitle: "Titanium Chassis • Anti-Flex Enclosure • Micro-Sensors",
+    category: "Hardware & 3D CAD",
+    year: "2026",
+    badge: "Mechanical Stack",
+    award: "9-Layer Dissection",
+    heroImage: "/images/zcard/exploded.png",
+    gallery: ["/images/zcard/exploded.png", "/images/zcard/blueprint_hero.png"],
+    description: "Precision exploded engineering stack combining sapphire-coated top cover, flexible display, rigid-flex HDI PCB, lithium ceramic cell, and CNC titanium perimeter bezel.",
+    fullOverview: [
+      "Aviation-grade titanium perimeter ring to withstand 250N torsional flex",
+      "Hermetically sealed IP68 water and dust resistance",
+      "6-layer ultra-thin HDI micro-via circuit core",
+      "Integrated 6-pin ISO gold smart contact pad"
+    ],
+    techStack: ["Blender 3D", "CAD / CAM", "Titanium CNC", "Rigid-Flex PCB", "IP68 Enclosure"],
+    githubUrl: "https://github.com/Zynxx777/ZCard"
+  },
+  {
+    id: "zcard",
+    title: "Z Card v0.1 — Internal X-Ray Circuitry",
+    subtitle: "EAL6+ Secure Cryptographic Enclave • Biometric Match-on-Card",
+    category: "Hardware & 3D CAD",
+    year: "2026",
+    badge: "Silicon Interior",
+    award: "Security Core",
+    heroImage: "/images/zcard/xray_internal.png",
+    gallery: ["/images/zcard/xray_internal.png", "/images/zcard/blueprint_hero.png"],
+    description: "Sub-millimeter component placement showing the Nordic dual-core MCU, discrete secure element, haptic micro-actuator, and surface-mount antenna array.",
+    fullOverview: [
+      "EAL6+ certified secure tamper-resistant vault",
+      "AES-256 and ECC hardware acceleration",
+      "Haptic confirmation feedback on tap-to-pay",
+      "Active anti-tamper mesh coating preventing chip decapsulation"
+    ],
+    techStack: ["Secure Element", "Hardware Crypto", "X-Ray Inspection", "Tamper Resistance"],
+    githubUrl: "https://github.com/Zynxx777/ZCard"
+  },
+  {
+    id: "zcard",
+    title: "Z Card v0.1 — Biometric Sensor & Solar Array",
+    subtitle: "Capacitive Fingerprint Match • Ambient Photovoltaic Strip",
+    category: "Hardware & 3D CAD",
+    year: "2026",
+    badge: "Biometric Auth",
+    award: "Zero PIN Authentication",
+    heroImage: "/images/zcard/solar_biometric_detail.png",
+    gallery: ["/images/zcard/solar_biometric_detail.png", "/images/zcard/front.png"],
+    description: "High-resolution 508 DPI capacitive fingerprint scanner seamlessly flush with the card surface, ensuring transactions can only be authorized by the verified owner's touch.",
+    fullOverview: [
+      "Sub-200ms biometric match-on-card verification",
+      "Zero PIN or signature needed at payment terminals",
+      "Liveness detection preventing spoof silicone molds",
+      "Monocrystalline micro-solar ribbon for trickle charging"
+    ],
+    techStack: ["Capacitive Fingerprint", "Biometric Algorithms", "Micro-Solar", "Embedded Security"],
+    githubUrl: "https://github.com/Zynxx777/ZCard"
+  }
+];
+
 export const ShowcaseCarousel3D: React.FC<ShowcaseCarousel3DProps> = ({
   onSelectProject,
   onOpenProfile,
@@ -19,8 +151,7 @@ export const ShowcaseCarousel3D: React.FC<ShowcaseCarousel3DProps> = ({
   onOpenAnatomy
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
-  const [filterMode, setFilterMode] = useState<'featured' | 'all'>('featured');
-  const [activeProject, setActiveProject] = useState<Project>(PROJECTS[0]);
+  const [activeProject, setActiveProject] = useState<Project>(ZCARD_SHOWCASE_CARDS[0]);
 
   const rotationRef = useRef(0);
   const targetRotationRef = useRef(0);
@@ -28,9 +159,7 @@ export const ShowcaseCarousel3D: React.FC<ShowcaseCarousel3DProps> = ({
   const prevMouseXRef = useRef(0);
   const cardsMeshGroupRef = useRef<THREE.Group | null>(null);
 
-  const displayProjects = filterMode === 'featured' 
-    ? PROJECTS.slice(0, 4) 
-    : PROJECTS;
+  const displayProjects = ZCARD_SHOWCASE_CARDS;
 
   useEffect(() => {
     const container = mountRef.current;
@@ -231,7 +360,7 @@ export const ShowcaseCarousel3D: React.FC<ShowcaseCarousel3DProps> = ({
         }
       });
 
-      if (closestProj.id !== activeProject.id) {
+      if (closestProj.title !== activeProject.title) {
         setActiveProject(closestProj);
       }
 
@@ -241,11 +370,11 @@ export const ShowcaseCarousel3D: React.FC<ShowcaseCarousel3DProps> = ({
 
     const handleResize = () => {
       if (!container) return;
-      const w = container.clientWidth;
-      const h = container.clientHeight || window.innerHeight;
-      camera.aspect = w / h;
+      const newW = container.clientWidth;
+      const newH = container.clientHeight || window.innerHeight;
+      camera.aspect = newW / newH;
       camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
+      renderer.setSize(newW, newH);
     };
     window.addEventListener('resize', handleResize);
 
@@ -269,12 +398,18 @@ export const ShowcaseCarousel3D: React.FC<ShowcaseCarousel3DProps> = ({
 
   return (
     <div className="relative w-full h-screen overflow-hidden select-none bg-[#020305]">
-      {/* Top Header Bar (Exact layout from jesperlandberg.com) */}
+      {/* Top Header Bar */}
       <header className="absolute top-0 inset-x-0 z-20 p-6 md:p-8 flex items-center justify-between text-xs font-mono tracking-widest text-white uppercase pointer-events-none">
         <div className="pointer-events-auto font-bold flex items-center gap-3">
-          <span className="hover:text-cyan-400 transition-colors">JOSHUA D (ZYNX)</span>
-          <span className="text-[10px] px-2 py-0.5 rounded bg-white/10 text-slate-300 font-normal">
-            SHOWCASE 2.0
+          <button
+            onClick={onSwitchToBedroom}
+            className="flex items-center gap-2 hover:text-cyan-400 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 text-cyan-400" />
+            <span>JOSHUA D (ZYNX)</span>
+          </button>
+          <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30">
+            FLAGSHIP Z CARD SHOWCASE
           </span>
         </div>
 
@@ -289,7 +424,7 @@ export const ShowcaseCarousel3D: React.FC<ShowcaseCarousel3DProps> = ({
       {/* 3D WebGL Canvas */}
       <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
 
-      {/* Floating Center / Bottom Active Project Title & Metadata (Matching jesperlandberg.com card labels) */}
+      {/* Floating Center / Bottom Active Card Metadata */}
       <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 pointer-events-none text-center max-w-xl px-4 animate-fade-in">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/75 backdrop-blur-md border border-white/15 text-cyan-300 text-xs font-mono mb-2">
           <Sparkles className="w-3.5 h-3.5 text-amber-400" />
@@ -309,13 +444,13 @@ export const ShowcaseCarousel3D: React.FC<ShowcaseCarousel3DProps> = ({
         <div className="mt-3.5 flex items-center justify-center gap-2 pointer-events-auto">
           <button
             onClick={() => onSelectProject(activeProject)}
-            className="px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/25 text-white text-xs font-mono font-semibold transition-all inline-flex items-center gap-2 shadow-lg"
+            className="px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/25 text-white text-xs font-mono font-semibold transition-all inline-flex items-center gap-2 shadow-lg hover:border-cyan-400"
           >
             Open Project Case Study <ExternalLink className="w-3.5 h-3.5" />
           </button>
 
-          {/* If the active project is Z Card, provide direct button to Anatomy Dissection! */}
-          {activeProject.id === 'zcard' && onOpenAnatomy && (
+          {/* Direct Anatomy Dissection Trigger */}
+          {onOpenAnatomy && (
             <button
               onClick={onOpenAnatomy}
               className="px-4 py-2 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 backdrop-blur-md border border-cyan-400/50 text-cyan-300 text-xs font-mono font-bold transition-all inline-flex items-center gap-1.5 shadow-lg shadow-cyan-500/20"
@@ -327,33 +462,21 @@ export const ShowcaseCarousel3D: React.FC<ShowcaseCarousel3DProps> = ({
         </div>
       </div>
 
-      {/* Bottom Footer Bar (Exact layout from jesperlandberg.com) */}
+      {/* Bottom Footer Bar */}
       <footer className="absolute bottom-0 inset-x-0 z-20 p-6 md:p-8 flex flex-wrap items-center justify-between gap-4 text-xs font-mono tracking-widest text-slate-400 uppercase pointer-events-none">
-        
-        {/* Left: Filter Toggle */}
-        <div className="pointer-events-auto flex items-center gap-2">
-          <button
-            onClick={() => setFilterMode('featured')}
-            className={`transition-colors ${filterMode === 'featured' ? 'text-white font-bold' : 'hover:text-slate-200'}`}
-          >
-            FEATURED
-          </button>
-          <span>/</span>
-          <button
-            onClick={() => setFilterMode('all')}
-            className={`transition-colors ${filterMode === 'all' ? 'text-white font-bold' : 'hover:text-slate-200'}`}
-          >
-            FULL
-          </button>
+        {/* Left: Indicator */}
+        <div className="pointer-events-auto flex items-center gap-2 text-cyan-400 font-bold">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          <span>Z CARD HARDWARE STACK</span>
         </div>
 
-        {/* Center: Switcher to 3D Bedroom Desk */}
+        {/* Center: Switcher to 3D Bedroom */}
         <div className="pointer-events-auto">
           <button
             onClick={onSwitchToBedroom}
             className="px-4 py-2 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-xs font-mono font-bold tracking-wider transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/20"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Switch to 3D Desk Workspace
+            <ArrowLeft className="w-3.5 h-3.5" /> Switch to 3D Bedroom
           </button>
         </div>
 
@@ -366,7 +489,6 @@ export const ShowcaseCarousel3D: React.FC<ShowcaseCarousel3DProps> = ({
             CONNECT / NEWSLETTER
           </button>
         </div>
-
       </footer>
     </div>
   );
