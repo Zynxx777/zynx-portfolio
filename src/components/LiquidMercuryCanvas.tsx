@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
+const isMobileViewport = () => typeof window !== "undefined" && window.innerWidth < 768;
+
 interface LiquidMercuryCanvasProps {
   className?: string;
   intensity?: number;
@@ -220,7 +222,9 @@ export const LiquidMercuryCanvas: React.FC<LiquidMercuryCanvasProps> = ({
     `;
 
     // ── High-Density Parametric Torus Knot (Möbius Ribbon Loop) ────────────
-    const geometry = new THREE.TorusKnotGeometry(2.35, 0.68, 256, 64, 2, 3);
+    // Reduce geometry on mobile for GPU savings
+    const mobile = isMobileViewport();
+    const geometry = new THREE.TorusKnotGeometry(2.35, 0.68, mobile ? 128 : 256, mobile ? 32 : 64, 2, 3);
 
     const uniforms = {
       uTime: { value: 0 },
@@ -247,7 +251,7 @@ export const LiquidMercuryCanvas: React.FC<LiquidMercuryCanvasProps> = ({
     scene.add(liquidMesh);
 
     // ── Orbiting Stardust & Micro-Mercury Droplets ──────────────────────────
-    const dropletCount = 380;
+    const dropletCount = mobile ? 120 : 380;
     const dropletGeo = new THREE.BufferGeometry();
     const dropletPositions = new Float32Array(dropletCount * 3);
     const dropletScales = new Float32Array(dropletCount);
@@ -383,9 +387,19 @@ export const LiquidMercuryCanvas: React.FC<LiquidMercuryCanvasProps> = ({
     timer.connect(document);
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let isPageVisible = !document.hidden;
+    let lastRenderTime = 0;
+    const frameInterval = mobile ? 40 : 16; // ~25fps on mobile, ~60fps on desktop
 
-    const animate = () => {
+    const animate = (now?: number) => {
       if (!isPageVisible) return;
+
+      // Frame throttling for perf
+      if (now !== undefined && now - lastRenderTime < frameInterval) {
+        if (!prefersReducedMotion) animationFrameId = requestAnimationFrame(animate);
+        return;
+      }
+      lastRenderTime = now || 0;
+
       timer.update();
       const elapsed = prefersReducedMotion ? 0 : timer.getElapsed();
 

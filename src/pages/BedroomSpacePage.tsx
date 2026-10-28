@@ -12,12 +12,18 @@ import {
 import { SoundLab } from "../components/SoundLab";
 import { BedroomAudioPlayer } from "../components/BedroomAudioPlayer";
 import PhoneExperience from "../components/PhoneExperience";
+import { BedroomDesk3D } from "../components/BedroomDesk3D";
+import { ProjectDetailModal } from "../components/ProjectDetailModal";
+import { ProfileSphereModal } from "../components/ProfileSphereModal";
+import { DiaryModal } from "../components/DiaryModal";
+import { AnatomyDissectionModal } from "../components/AnatomyDissectionModal";
+import { type Project, PROJECTS } from "../data/portfolioData";
 import { soundFX } from "../utils/audioFX";
 import {
   X, ArrowLeft, Disc3, Award, GraduationCap,
   Terminal, Cpu, Music, Layers, Shield, ChevronRight,
   Monitor, Zap, BookOpen, Headphones, Save,
-  Grid, Eye, BedDouble, Sparkles, Move, RotateCcw, Check,
+  Grid, Eye, BedDouble, Sparkles, Move, RotateCcw, Check, Laptop,
 } from "lucide-react";
 
 interface BedroomSpacePageProps {
@@ -617,7 +623,11 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
   const [activeZone, setActiveZone] = useState<ZoneId | null>(null);
   const [activePoster, setActivePoster] = useState<RoomPosterId | null>(null);
   const [targetZone, setTargetZone] = useState<ZoneId | "overview">("overview");
-  const [viewMode, setViewMode] = useState<"3d" | "catalog">("3d");
+  const [viewMode, setViewMode] = useState<"desk" | "3d" | "catalog">("desk");
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isDiaryOpen, setIsDiaryOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isAnatomyOpen, setIsAnatomyOpen] = useState(false);
   const [roomTheme, setRoomTheme] = useState<"cyberpunk" | "anime-bedroom">(() => {
     try {
       const saved = window.localStorage.getItem("zynx-bedroom-theme-v1");
@@ -744,57 +754,86 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
             <ArrowLeft size={13} />
             <span className="hidden sm:inline">Portfolio</span>
           </button>
-          <button
-            onClick={() => {
-              soundFX.playClick();
-              setViewMode(viewMode === "3d" ? "catalog" : "3d");
-              setEditMode(false);
-              setSelectedFurniture(null);
-            }}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/45 text-zinc-300 shadow-lg backdrop-blur-xl transition hover:border-white/30 hover:text-white"
-            aria-label={viewMode === "3d" ? "Open room catalog" : "Return to 3D room"}
-            title={viewMode === "3d" ? "Room catalog" : "3D room"}
-          >
-            {viewMode === "3d" ? <Grid size={14} /> : <Eye size={14} />}
-          </button>
+          
+          {/* View Mode Switcher */}
+          <div className="flex items-center gap-1 bg-black/45 border border-white/10 rounded-full p-1 shadow-lg backdrop-blur-xl">
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                setViewMode("desk");
+                setEditMode(false);
+                setSelectedFurniture(null);
+              }}
+              className={`flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-mono transition ${viewMode === "desk" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
+            >
+              <Laptop size={12} />
+              <span>3D Desk</span>
+            </button>
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                setViewMode("3d");
+                setEditMode(false);
+                setSelectedFurniture(null);
+              }}
+              className={`flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-mono transition ${viewMode === "3d" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
+            >
+              <BedDouble size={12} />
+              <span className="hidden sm:inline">Room 3D</span>
+            </button>
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                setViewMode("catalog");
+                setEditMode(false);
+                setSelectedFurniture(null);
+              }}
+              className={`flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-mono transition ${viewMode === "catalog" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
+            >
+              <Grid size={12} />
+              <span className="hidden sm:inline">Catalog</span>
+            </button>
+          </div>
         </div>
 
-        <div className="pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-1 rounded-full border border-white/10 bg-black/45 p-1 shadow-lg backdrop-blur-xl">
-          <button
-            onClick={() => {
-              soundFX.playClick();
-              setRoomTheme("cyberpunk");
-              try { window.localStorage.setItem("zynx-bedroom-theme-v1", "cyberpunk"); } catch {}
-              setTargetZone("overview");
-              setActiveZone(null);
-              setEditMode(false);
-              setSelectedFurniture(null);
-            }}
-            className={`flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-mono transition sm:px-3 sm:text-[11px] ${roomTheme === "cyberpunk" ? "bg-cyan-300 text-[#071014] font-bold" : "text-zinc-300 hover:text-white"}`}
-            aria-pressed={roomTheme === "cyberpunk"}
-          >
-            <Sparkles size={12} />
-            <span className="hidden sm:inline">Cyberpunk Space</span>
-            <span className="sm:hidden">Space</span>
-          </button>
-          <button
-            onClick={() => {
-              soundFX.playClick();
-              setRoomTheme("anime-bedroom");
-              try { window.localStorage.setItem("zynx-bedroom-theme-v1", "anime-bedroom"); } catch {}
-              setTargetZone("overview");
-              setActiveZone(null);
-              setEditMode(false);
-              setSelectedFurniture(null);
-            }}
-            className={`flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-mono transition sm:px-3 sm:text-[11px] ${roomTheme === "anime-bedroom" ? "bg-rose-200 text-[#281c2b] font-bold" : "text-zinc-300 hover:text-white"}`}
-            aria-pressed={roomTheme === "anime-bedroom"}
-          >
-            <BedDouble size={12} />
-            <span className="hidden sm:inline">Anime Bedroom</span>
-            <span className="sm:hidden">Bedroom</span>
-          </button>
-        </div>
+        {viewMode === "3d" && (
+          <div className="pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-1 rounded-full border border-white/10 bg-black/45 p-1 shadow-lg backdrop-blur-xl">
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                setRoomTheme("cyberpunk");
+                try { window.localStorage.setItem("zynx-bedroom-theme-v1", "cyberpunk"); } catch {}
+                setTargetZone("overview");
+                setActiveZone(null);
+                setEditMode(false);
+                setSelectedFurniture(null);
+              }}
+              className={`flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-mono transition sm:px-3 sm:text-[11px] ${roomTheme === "cyberpunk" ? "bg-cyan-300 text-[#071014] font-bold" : "text-zinc-300 hover:text-white"}`}
+              aria-pressed={roomTheme === "cyberpunk"}
+            >
+              <Sparkles size={12} />
+              <span className="hidden sm:inline">Cyberpunk Space</span>
+              <span className="sm:hidden">Space</span>
+            </button>
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                setRoomTheme("anime-bedroom");
+                try { window.localStorage.setItem("zynx-bedroom-theme-v1", "anime-bedroom"); } catch {}
+                setTargetZone("overview");
+                setActiveZone(null);
+                setEditMode(false);
+                setSelectedFurniture(null);
+              }}
+              className={`flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-mono transition sm:px-3 sm:text-[11px] ${roomTheme === "anime-bedroom" ? "bg-rose-200 text-[#281c2b] font-bold" : "text-zinc-300 hover:text-white"}`}
+              aria-pressed={roomTheme === "anime-bedroom"}
+            >
+              <BedDouble size={12} />
+              <span className="hidden sm:inline">Anime Bedroom</span>
+              <span className="sm:hidden">Bedroom</span>
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Mobile Gesture Helper Badge */}
@@ -804,6 +843,21 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
             <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
             <span>DRAG TO ROTATE • PINCH TO ZOOM • TAP TO OPEN</span>
           </div>
+        </div>
+      )}
+
+      {/* ── MODE 0: 3D BEDROOM DESK VIEWPORT (pradiplabs.dev replica with Anatomy Reveal) ── */}
+      {viewMode === "desk" && (
+        <div className="w-full h-full relative">
+          <BedroomDesk3D
+            onOpenProject={(projectId) => {
+              const proj = PROJECTS.find((p) => p.id === projectId) || PROJECTS[0];
+              setSelectedProject(proj);
+            }}
+            onOpenDiary={() => setIsDiaryOpen(true)}
+            onSwitchToShowcase={onNavigatePortfolio}
+            onOpenAnatomy={() => setIsAnatomyOpen(true)}
+          />
         </div>
       )}
 
@@ -1251,6 +1305,28 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
       )}
       {activePoster && <PosterView posterId={activePoster} onClose={closePoster} />}
       {phoneOpen && <PhoneExperience onClose={() => setPhoneOpen(false)} />}
+
+      {/* 3D Desk Modals & Anatomy Reveal */}
+      <ProjectDetailModal
+        project={selectedProject}
+        onClose={() => setSelectedProject(null)}
+        onOpenAnatomy={() => setIsAnatomyOpen(true)}
+      />
+
+      <DiaryModal
+        isOpen={isDiaryOpen}
+        onClose={() => setIsDiaryOpen(false)}
+      />
+
+      <ProfileSphereModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+      />
+
+      <AnatomyDissectionModal
+        isOpen={isAnatomyOpen}
+        onClose={() => setIsAnatomyOpen(false)}
+      />
     </div>
   );
 };

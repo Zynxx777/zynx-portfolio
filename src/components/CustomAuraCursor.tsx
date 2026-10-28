@@ -1,81 +1,98 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef } from "react";
 
 /**
  * CustomAuraCursor
  *
- * A high-performance, non-intrusive cursor aura inspired by Bleibtgleich & Edolus.
- * - Subtle glowing ring and center micro-dot that follows the cursor with smooth lerp
- * - Expands when hovering over interactive elements (buttons, links, cards)
- * - Automatically hides on touch devices (pointer: coarse) to prevent any lag
- * - Does not block clicks (pointer-events: none)
+ * High-performance cursor aura. All updates happen via direct DOM manipulation
+ * (no React state/re-renders) for zero-lag tracking. Automatically disabled
+ * on touch devices, reduced-motion, and when tab is hidden.
  */
 export const CustomAuraCursor: React.FC = () => {
-  const [mounted] = useState(() => typeof window !== "undefined" && !window.matchMedia("(pointer: coarse)").matches);
-  const [isHovering, setIsHovering] = useState(false);
-  const [isClicking, setIsClicking] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Skip on touch/coarse pointer devices
+  const isTouch = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
 
   useEffect(() => {
-    if (!mounted) return;
+    if (isTouch) return;
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    const dot = container.querySelector<HTMLElement>("[data-cursor-dot]");
+    const ring = container.querySelector<HTMLElement>("[data-cursor-ring]");
+    if (!dot || !ring) return;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     let mouseX = -100;
     let mouseY = -100;
     let ringX = -100;
     let ringY = -100;
     let animId = 0;
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let isHovering = false;
+    let isClicking = false;
+    let isVisible = false;
 
-    const dot = document.getElementById("aura-cursor-dot");
-    const ring = document.getElementById("aura-cursor-ring");
+    const applyRingClass = () => {
+      // Direct class manipulation — no React setState
+      if (isHovering) {
+        ring.className = "fixed top-0 left-0 rounded-full border will-change-transform w-14 h-14 -ml-7 -mt-7 border-cyan-400/60 bg-cyan-400/10 shadow-[0_0_20px_rgba(0,242,254,0.25)] transition-[width,height,background-color,border-color] duration-200 ease-out";
+      } else if (isClicking) {
+        ring.className = "fixed top-0 left-0 rounded-full border will-change-transform w-8 h-8 -ml-4 -mt-4 border-cyan-300 bg-cyan-400/20 transition-[width,height,background-color,border-color] duration-200 ease-out";
+      } else {
+        ring.className = "fixed top-0 left-0 rounded-full border will-change-transform w-10 h-10 -ml-5 -mt-5 border-white/25 bg-transparent transition-[width,height,background-color,border-color] duration-200 ease-out";
+      }
+
+      dot.className = `fixed top-0 left-0 -ml-1 -mt-1 w-2 h-2 rounded-full will-change-transform transition-transform duration-75 ${isHovering ? "bg-cyan-300 scale-125" : "bg-white"}`;
+    };
+
+    const render = () => {
+      animId = 0;
+      ringX += (mouseX - ringX) * 0.15;
+      ringY += (mouseY - ringY) * 0.15;
+      ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0)`;
+
+      if (Math.abs(mouseX - ringX) > 0.75 || Math.abs(mouseY - ringY) > 0.75) {
+        animId = requestAnimationFrame(render);
+      }
+    };
 
     const onMouseMove = (e: MouseEvent) => {
       mouseX = e.clientX;
       mouseY = e.clientY;
-      setIsVisible(true);
 
-      if (dot) {
-        dot.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0)`;
+      if (!isVisible) {
+        isVisible = true;
+        container.style.opacity = "1";
       }
 
-      // Check if hovering over clickable element
+      dot.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0)`;
+
+      // Check interactive hover
       const target = e.target as HTMLElement | null;
-      if (target) {
-        const isInteractive = Boolean(
-          target.closest("a, button, [role='button'], input, textarea, select, [data-interactive]")
-        );
-        setIsHovering(isInteractive);
-      }
+      const wasHovering = isHovering;
+      isHovering = Boolean(
+        target?.closest("a, button, [role='button'], input, textarea, select, [data-interactive]")
+      );
+      if (wasHovering !== isHovering) applyRingClass();
 
       if (reducedMotion) {
         ringX = mouseX;
         ringY = mouseY;
-        ring?.style.setProperty("transform", `translate3d(${ringX}px, ${ringY}px, 0)`);
+        ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0)`;
       } else if (!animId) {
         animId = requestAnimationFrame(render);
       }
     };
 
-    const onMouseDown = () => setIsClicking(true);
-    const onMouseUp = () => setIsClicking(false);
+    const onMouseDown = () => { isClicking = true; applyRingClass(); };
+    const onMouseUp = () => { isClicking = false; applyRingClass(); };
     const onMouseLeave = () => {
-      setIsVisible(false);
+      isVisible = false;
+      container.style.opacity = "0";
       cancelAnimationFrame(animId);
       animId = 0;
-    };
-
-    const render = () => {
-      animId = 0;
-      // Smooth lerp for outer aura ring
-      ringX += (mouseX - ringX) * 0.15;
-      ringY += (mouseY - ringY) * 0.15;
-
-      if (ring) {
-        ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0)`;
-      }
-
-      if (Math.abs(mouseX - ringX) > 0.75 || Math.abs(mouseY - ringY) > 0.75) {
-        animId = requestAnimationFrame(render);
-      }
     };
 
     window.addEventListener("mousemove", onMouseMove, { passive: true });
@@ -92,35 +109,24 @@ export const CustomAuraCursor: React.FC = () => {
       document.removeEventListener("mouseleave", onMouseLeave);
       document.removeEventListener("visibilitychange", onMouseLeave);
     };
-  }, [mounted]);
+  }, [isTouch]);
 
-  if (!mounted) return null;
+  if (isTouch) return null;
 
   return (
     <div
-      className={`fixed inset-0 pointer-events-none z-[999] transition-opacity duration-300 ${
-        isVisible ? "opacity-100" : "opacity-0"
-      }`}
+      ref={containerRef}
+      className="fixed inset-0 pointer-events-none z-[999]"
+      style={{ opacity: 0, transition: "opacity 0.3s" }}
       aria-hidden="true"
     >
-      {/* Outer Spring Ring */}
       <div
-        id="aura-cursor-ring"
-        className={`fixed top-0 left-0 -ml-5 -mt-5 rounded-full border will-change-transform transition-[width,height,background-color,border-color] duration-200 ease-out flex items-center justify-center ${
-          isHovering
-            ? "w-14 h-14 -ml-7 -mt-7 border-cyan-400/60 bg-cyan-400/10 shadow-[0_0_20px_rgba(0,242,254,0.25)]"
-            : isClicking
-            ? "w-8 h-8 -ml-4 -mt-4 border-cyan-300 bg-cyan-400/20"
-            : "w-10 h-10 border-white/25 bg-transparent"
-        }`}
+        data-cursor-ring
+        className="fixed top-0 left-0 -ml-5 -mt-5 rounded-full border will-change-transform w-10 h-10 border-white/25 bg-transparent transition-[width,height,background-color,border-color] duration-200 ease-out"
       />
-
-      {/* Center Precise Dot */}
       <div
-        id="aura-cursor-dot"
-        className={`fixed top-0 left-0 -ml-1 -mt-1 w-2 h-2 rounded-full will-change-transform transition-transform duration-75 ${
-          isHovering ? "bg-cyan-300 scale-125" : "bg-white"
-        }`}
+        data-cursor-dot
+        className="fixed top-0 left-0 -ml-1 -mt-1 w-2 h-2 rounded-full will-change-transform bg-white transition-transform duration-75"
       />
     </div>
   );

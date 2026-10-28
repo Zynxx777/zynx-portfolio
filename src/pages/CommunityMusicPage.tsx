@@ -176,10 +176,13 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = () => {
       });
     }
 
-    const renderFrame = () => {
+    const renderFrame = (_time?: number) => {
       ctx.clearRect(0, 0, width, height);
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = 1;
 
-      particles.forEach((p, idx) => {
+      for (let idx = 0; idx < particles.length; idx++) {
+        const p = particles[idx];
         p.x += p.vx;
         p.y += p.vy;
 
@@ -194,19 +197,23 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = () => {
         ctx.globalAlpha = p.alpha;
         ctx.fill();
 
-        for (let j = idx + 1; j < particles.length; j++) {
+        // Only check next 8 neighbors instead of all pairs — O(n) vs O(n²)
+        const maxJ = Math.min(idx + 8, particles.length);
+        for (let j = idx + 1; j < maxJ; j++) {
           const p2 = particles[j];
-          const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-          if (dist < 100) {
+          const dx = p.x - p2.x;
+          const dy = p.y - p2.y;
+          const distSq = dx * dx + dy * dy;
+          if (distSq < 10000) { // 100² = 10000
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
             ctx.strokeStyle = p.col;
-            ctx.globalAlpha = (1 - dist / 100) * 0.15;
+            ctx.globalAlpha = (1 - Math.sqrt(distSq) / 100) * 0.15;
             ctx.stroke();
           }
         }
-      });
+      }
     };
 
     const animate = () => {

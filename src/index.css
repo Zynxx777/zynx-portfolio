@@ -26,6 +26,21 @@ input,
 select,
 textarea {
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* GPU compositing for animated layers */
+canvas,
+[class*="animate-"],
+[class*="will-change"] {
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Prevent layout thrashing on scroll */
+img, video {
+  content-visibility: auto;
 }
 
 :focus-visible {

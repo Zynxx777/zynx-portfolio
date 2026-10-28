@@ -84,6 +84,7 @@ export const SoundLab: React.FC = () => {
   };
 
   // Real-Time Canvas Spectrum Visualizer Loop
+  // Optimized: cached gradient, visibility-aware, throttled
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -91,11 +92,34 @@ export const SoundLab: React.FC = () => {
     if (!ctx) return;
 
     let animId: number;
+    let lastTime = 0;
     const bufferLength = analyserRef.current ? analyserRef.current.frequencyBinCount : 32;
     const dataArray = new Uint8Array(bufferLength);
 
-    const draw = () => {
+    // Cache gradient — only rebuild on resize
+    let cachedGradient: CanvasGradient | null = null;
+    let cachedHeight = 0;
+
+    const buildGradient = (height: number) => {
+      if (cachedHeight === height && cachedGradient) return cachedGradient;
+      cachedGradient = ctx.createLinearGradient(0, height, 0, 0);
+      cachedGradient.addColorStop(0, "#00F2FE");
+      cachedGradient.addColorStop(0.6, "#9D4EDD");
+      cachedGradient.addColorStop(1, "#FF7247");
+      cachedHeight = height;
+      return cachedGradient;
+    };
+
+    const draw = (time: number) => {
       animId = requestAnimationFrame(draw);
+
+      // Throttle to ~30fps
+      if (time - lastTime < 32) return;
+      lastTime = time;
+
+      // Skip when hidden
+      if (document.hidden) return;
+
       const width = (canvas.width = canvas.clientWidth);
       const height = (canvas.height = canvas.clientHeight);
 
@@ -104,33 +128,26 @@ export const SoundLab: React.FC = () => {
       if (analyserRef.current && isPlaying) {
         analyserRef.current.getByteFrequencyData(dataArray);
       } else {
-        // Fallback gentle idle wave when paused
-        const time = Date.now() * 0.003;
+        const t = time * 0.003;
         for (let i = 0; i < dataArray.length; i++) {
-          dataArray[i] = Math.sin(time + i * 0.3) * 15 + 20;
+          dataArray[i] = Math.sin(t + i * 0.3) * 15 + 20;
         }
       }
+
+      const gradient = buildGradient(height);
+      ctx.fillStyle = gradient;
 
       const barWidth = (width / bufferLength) * 1.6;
       let x = 0;
 
       for (let i = 0; i < bufferLength; i++) {
         const barHeight = (dataArray[i] / 255) * height * 0.9;
-
-        // Gradient color from Cyan to Purple
-        const gradient = ctx.createLinearGradient(0, height, 0, 0);
-        gradient.addColorStop(0, "#00F2FE");
-        gradient.addColorStop(0.6, "#9D4EDD");
-        gradient.addColorStop(1, "#FF7247");
-
-        ctx.fillStyle = gradient;
         ctx.fillRect(x, height - barHeight, barWidth - 2, barHeight);
-
         x += barWidth;
       }
     };
 
-    draw();
+    animId = requestAnimationFrame(draw);
 
     return () => cancelAnimationFrame(animId);
   }, [isPlaying]);
