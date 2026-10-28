@@ -6,6 +6,10 @@ export const ROOM_ZONES = {
   bookshelf: { label: "Achievements & Creds", color: "#10B981", dot: "◈", code: "05 // AWARDS" },
   poster_wall: { label: "Digital Art Sanctuary", color: "#FFB347", dot: "◉", code: "06 // GALLERY" },
   headphones: { label: "Acoustic Library", color: "#F72585", dot: "◎", code: "07 // AUDIO" },
+  zcard: { label: "Z Card v0.1 Anatomy", color: "#00F2FE", dot: "💳", code: "08 // HARDWARE REVEAL" },
+  diary: { label: "Personal Guestbook", color: "#FFB347", dot: "📖", code: "09 // DIARY" },
+  printer: { label: "Thermal Docket Printer", color: "#38BDF8", dot: "🖨️", code: "10 // DOCKET" },
+  zoro: { label: "Zoro Bobblehead", color: "#10B981", dot: "⚔️", code: "11 // COLLECTIBLE" },
 } as const;
 
 export type ZoneId = keyof typeof ROOM_ZONES;
@@ -18,7 +22,7 @@ export const ROOM_POSTERS = [
 ] as const;
 export type RoomPosterId = typeof ROOM_POSTERS[number]["id"];
 
-export type FurnitureId = "studio" | "cpu" | "phone" | "shelf" | "gallery" | "chair" | "bed" | "door" | "lamp";
+export type FurnitureId = "studio" | "cpu" | "phone" | "shelf" | "gallery" | "chair" | "bed" | "door" | "lamp" | "printer" | "zoro" | "zcard" | "diary";
 export type FurniturePlacement = { x: number; z: number; y?: number; rotation?: number };
 export type FurnitureEditRequest =
   | { sequence: number; action: "rotate"; degrees: number }
@@ -66,6 +70,10 @@ export const ROOM_FURNITURE_CATALOG: Array<{
   { id: "shelf", label: "Bookshelf", shortLabel: "Bookshelf", icon: "📚", themes: ["cyberpunk", "anime-bedroom"] },
   { id: "door", label: "Bedroom door", shortLabel: "Door", icon: "🚪", themes: ["anime-bedroom"] },
   { id: "gallery", label: "Anime art wall", shortLabel: "Art Wall", icon: "🖼️", themes: ["cyberpunk", "anime-bedroom"] },
+  { id: "printer", label: "Thermal POS printer", shortLabel: "Printer", icon: "🖨️", themes: ["cyberpunk", "anime-bedroom"] },
+  { id: "zoro", label: "Zoro bobblehead", shortLabel: "Zoro", icon: "⚔️", themes: ["cyberpunk", "anime-bedroom"] },
+  { id: "zcard", label: "Z Card v0.1 hardware", shortLabel: "Z Card", icon: "💳", themes: ["cyberpunk", "anime-bedroom"] },
+  { id: "diary", label: "Guestbook diary", shortLabel: "Diary", icon: "📖", themes: ["cyberpunk", "anime-bedroom"] },
 ];
 
 export const HARDCODED_DEFAULT_ROOM_LAYOUT: Record<FurnitureId, FurniturePlacement> = {
@@ -78,6 +86,10 @@ export const HARDCODED_DEFAULT_ROOM_LAYOUT: Record<FurnitureId, FurniturePlaceme
   gallery: { x: 0, z: 0, rotation: 0 },
   bed: { x: 5.45, z: 1.97, rotation: 0 },
   lamp: { x: 3.5, z: 0, rotation: 0 },
+  printer: { x: -2.55, y: 1.49, z: 0.42, rotation: 0 },
+  zoro: { x: -3.65, y: 1.49, z: 0.42, rotation: 0 },
+  zcard: { x: -0.85, y: 1.49, z: 0.65, rotation: 0.15 },
+  diary: { x: 2.45, y: 1.49, z: 0.55, rotation: -0.2 },
 };
 
 export const ZONE_FURNITURE: Partial<Record<ZoneId, FurnitureId>> = {
@@ -88,6 +100,10 @@ export const ZONE_FURNITURE: Partial<Record<ZoneId, FurnitureId>> = {
   headphones: "studio",
   bookshelf: "shelf",
   poster_wall: "gallery",
+  zcard: "zcard",
+  diary: "diary",
+  printer: "printer",
+  zoro: "zoro",
 };
 
 const transformCameraForFurniture = (coords: number[], placement: FurniturePlacement) => {
@@ -114,10 +130,10 @@ export const transformCameraForZone = (
   const furnitureId = ZONE_FURNITURE[zone];
   if (!furnitureId) return coords;
   const placement = placements[furnitureId];
-  if (furnitureId === "cpu") {
-    const cpuCoords = placement ? transformCameraForFurniture(coords, placement) : coords;
+  if (["cpu", "phone", "printer", "zoro", "zcard", "diary"].includes(furnitureId)) {
+    const tableCoords = placement ? transformCameraForFurniture(coords, placement) : coords;
     const deskPlacement = placements.studio;
-    return deskPlacement ? transformCameraForFurniture(cpuCoords, deskPlacement) : cpuCoords;
+    return deskPlacement ? transformCameraForFurniture(tableCoords, deskPlacement) : tableCoords;
   }
   return placement ? transformCameraForFurniture(coords, placement) : coords;
 };
@@ -131,4 +147,8 @@ export const ZONE_CAMS: Record<ZoneId | "overview", number[]> = {
   bookshelf: [0, 3.2, 3.2, 0, 2.4, 0.45],
   poster_wall: [-2.5, 4.5, 1.5, -4.2, 4.6, -4.3],
   headphones: [-3.72, 2.5, 2.04, -3.52, 2.1, -0.96],
+  zcard: [-0.85, 2.2, 1.8, -0.85, 1.52, 0.65],
+  diary: [2.45, 2.2, 1.8, 2.45, 1.52, 0.55],
+  printer: [-2.55, 2.3, 1.8, -2.55, 1.6, 0.42],
+  zoro: [-3.65, 2.3, 1.8, -3.65, 1.62, 0.42],
 };

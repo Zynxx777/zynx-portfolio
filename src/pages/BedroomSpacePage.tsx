@@ -459,6 +459,102 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
       </div>
     </div>
   ),
+
+  // 8. Flagship Z Card v0.1 Hardware
+  zcard: (
+    <div className="space-y-8 animate-fadeIn">
+      <div className="relative p-7 rounded-3xl bg-gradient-to-br from-cyan-950/60 via-black/80 to-blue-950/40 border border-cyan-500/30 overflow-hidden shadow-2xl">
+        <div className="relative z-10 space-y-3">
+          <div className="flex items-center gap-2">
+            <Layers size={15} className="text-cyan-400" />
+            <span className="text-[11px] font-mono text-cyan-400 uppercase tracking-widest">
+              [ 08 // FLAGSHIP HARDWARE ]
+            </span>
+          </div>
+          <h2 className="text-3xl sm:text-2xl font-display font-extrabold text-white">
+            Z Card v0.1 — Universal Smart Card
+          </h2>
+          <p className="text-xs sm:text-[11px] text-zinc-300 font-sans leading-relaxed">
+            All-in-One smart credit/debit card replacement and universal ID card with flexible E-Ink display, solar harvester, solid-state battery, and biometric security.
+          </p>
+        </div>
+      </div>
+      <div className="p-5 rounded-2xl bg-cyan-950/30 border border-cyan-500/30 space-y-3">
+        <div className="text-xs font-mono text-cyan-300 font-bold uppercase tracking-wider">
+          Interactive Anatomy Dissection Available
+        </div>
+        <p className="text-xs text-zinc-300">
+          Explore the 9-layer exploded stack, micro-circuit architecture, and technical material breakdown.
+        </p>
+      </div>
+    </div>
+  ),
+
+  // 9. Personal Guestbook Diary
+  diary: (
+    <div className="space-y-8 animate-fadeIn">
+      <div className="relative p-7 rounded-3xl bg-gradient-to-br from-amber-950/60 via-black/80 to-yellow-950/40 border border-amber-500/30 overflow-hidden shadow-2xl">
+        <div className="relative z-10 space-y-3">
+          <div className="flex items-center gap-2">
+            <BookOpen size={15} className="text-amber-400" />
+            <span className="text-[11px] font-mono text-amber-400 uppercase tracking-widest">
+              [ 09 // VISITOR GUESTBOOK ]
+            </span>
+          </div>
+          <h2 className="text-3xl sm:text-2xl font-display font-extrabold text-white">
+            Personal Guestbook Diary
+          </h2>
+          <p className="text-xs sm:text-[11px] text-zinc-300 font-sans leading-relaxed">
+            A digital canvas journal resting on the bedroom desk. Visitors from around the world can leave handwritten notes, sketches, and signatures.
+          </p>
+        </div>
+      </div>
+    </div>
+  ),
+
+  // 10. Thermal POS Receipt Printer
+  printer: (
+    <div className="space-y-8 animate-fadeIn">
+      <div className="relative p-7 rounded-3xl bg-gradient-to-br from-sky-950/60 via-black/80 to-cyan-950/40 border border-sky-500/30 overflow-hidden shadow-2xl">
+        <div className="relative z-10 space-y-3">
+          <div className="flex items-center gap-2">
+            <Zap size={15} className="text-sky-400" />
+            <span className="text-[11px] font-mono text-sky-400 uppercase tracking-widest">
+              [ 10 // TELEMETRY DOCKET SYSTEM ]
+            </span>
+          </div>
+          <h2 className="text-3xl sm:text-2xl font-display font-extrabold text-white">
+            Thermal POS Receipt Printer
+          </h2>
+          <p className="text-xs sm:text-[11px] text-zinc-300 font-sans leading-relaxed">
+            Connected to the Arch Linux workstation and tablet. Generates physical receipts of system status, hardware diagnostics, and visit confirmations.
+          </p>
+        </div>
+      </div>
+    </div>
+  ),
+
+  // 11. Zoro Bobblehead Figurine
+  zoro: (
+    <div className="space-y-8 animate-fadeIn">
+      <div className="relative p-7 rounded-3xl bg-gradient-to-br from-emerald-950/60 via-black/80 to-green-950/40 border border-emerald-500/30 overflow-hidden shadow-2xl">
+        <div className="relative z-10 space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles size={15} className="text-emerald-400" />
+            <span className="text-[11px] font-mono text-emerald-400 uppercase tracking-widest">
+              [ 11 // DESK COMPANION ]
+            </span>
+          </div>
+          <h2 className="text-3xl sm:text-2xl font-display font-extrabold text-white">
+            Roronoa Zoro Bobblehead
+          </h2>
+          <p className="text-xs sm:text-[11px] text-zinc-300 font-sans leading-relaxed">
+            Action figure on a harmonic damped spring. Features triple katanas, emerald hair, and physics wobble when hovered or touched.
+          </p>
+        </div>
+      </div>
+    </div>
+  ),
 };
 
 // ── Slide-Out Exhibition Drawer Modal (BOC Studio & Emotion Agency Style) ───
@@ -880,6 +976,8 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
             furnitureEditRequest={furnitureEditRequest}
             onPosterClick={handlePosterClick}
             onPhoneClick={handlePhoneClick}
+            onOpenAnatomy={() => setIsAnatomyOpen(true)}
+            onOpenDiary={() => setIsDiaryOpen(true)}
           />
 
           {/* Mobile Non-Edit Mode: Arrange Room Button */}

@@ -32,6 +32,8 @@ interface ImmersiveRoomProps {
   onPhoneClick: () => void;
   nightMode: boolean;
   onLightingToggle: () => void;
+  onOpenAnatomy?: () => void;
+  onOpenDiary?: () => void;
 }
 
 const ROOM_LAYOUT_KEY = "zynx-bedroom-room-layout-v2";
@@ -193,6 +195,8 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
   onPhoneClick,
   nightMode,
   onLightingToggle,
+  onOpenAnatomy,
+  onOpenDiary,
 }) => {
   const mountRef  = useRef<HTMLDivElement | null>(null);
   const cursorRef = useRef<HTMLDivElement | null>(null);
@@ -201,6 +205,10 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
   const isLampTooltipHoveredRef = useRef(false);
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editModeRef = useRef(editMode);
+  const onOpenAnatomyRef = useRef(onOpenAnatomy);
+  useEffect(() => { onOpenAnatomyRef.current = onOpenAnatomy; }, [onOpenAnatomy]);
+  const onOpenDiaryRef = useRef(onOpenDiary);
+  useEffect(() => { onOpenDiaryRef.current = onOpenDiary; }, [onOpenDiary]);
   const activeZoneIdRef = useRef(activeZoneId);
   const onFurnitureSelectRef = useRef(onFurnitureSelect);
   const selectedFurnitureIdRef = useRef<FurnitureId | null>(null);
@@ -440,6 +448,10 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       bookshelf:     new THREE.Vector3( 0,    4.5,  0   ),
       poster_wall:   new THREE.Vector3(-4.2,  5.6, -4.0 ),
       headphones:    new THREE.Vector3(-3.52, 2.9, -0.96),
+      printer:       new THREE.Vector3( 0,    0.48, 0   ),
+      zoro:          new THREE.Vector3( 0,    0.60, 0   ),
+      zcard:         new THREE.Vector3( 0,    0.20, 0   ),
+      diary:         new THREE.Vector3( 0,    0.20, 0   ),
     };
 
     // ── Room Shell Architecture ─────────────────────────────────────────────
@@ -670,6 +682,10 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     }
 
     const curtainPivots: { pivot: THREE.Group; phase: number }[] = [];
+    let zoroHeadGroup: THREE.Group | null = null;
+    let zoroWobble = 0.15;
+    let receiptPaperMesh: THREE.Mesh | null = null;
+    let receiptAnimProgress = 0;
     if (isBedroomTheme) {
       const curtainMat = new THREE.MeshStandardMaterial({ color: "#292b55", roughness: 0.94 });
       [-1, 1].forEach(side => {
@@ -1363,6 +1379,153 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     plantMesh.position.set(3.2, 1.67, 0.54);
     scene.add(plantMesh);
 
+    // ── Newly Integrated PradipLabs Desk Artifacts ──────────────────────────
+    // 1. Roronoa Zoro Bobblehead Figurine on Spring
+    const zoroGroup = new THREE.Group();
+    zoroGroup.name = "movable-zoro-bobblehead";
+    zoroGroup.position.set(-3.65, DESK_TOP_Y, 0.42);
+
+    const zoroBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.14, 0.03, 16),
+      new THREE.MeshStandardMaterial({ color: "#161922", roughness: 0.5 })
+    );
+    zoroBase.position.y = 0.015;
+    zoroGroup.add(zoroBase);
+
+    const zoroBody = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.11, 0.22, 16),
+      new THREE.MeshStandardMaterial({ color: "#14532d", roughness: 0.5 })
+    );
+    zoroBody.position.y = 0.14;
+    zoroGroup.add(zoroBody);
+
+    for (let k = 0; k < 3; k++) {
+      const sword = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.008, 0.008, 0.28, 8),
+        new THREE.MeshStandardMaterial({ color: k === 0 ? "#ffffff" : k === 1 ? "#9333ea" : "#dc2626", metalness: 0.8 })
+      );
+      sword.position.set(0.1, 0.12 + k * 0.018, -0.02 + k * 0.02);
+      sword.rotation.set(0.4, 0.1, -0.6);
+      zoroGroup.add(sword);
+    }
+
+    const zoroSpring = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.025, 0.025, 0.09, 12),
+      new THREE.MeshStandardMaterial({ color: "#d1d5db", metalness: 0.9, roughness: 0.2 })
+    );
+    zoroSpring.position.y = 0.28;
+    zoroGroup.add(zoroSpring);
+
+    const zoroHead = new THREE.Group();
+    zoroHead.position.set(0, 0.38, 0);
+
+    const zoroFace = addClickable(new THREE.SphereGeometry(0.11, 16, 16), new THREE.MeshStandardMaterial({ color: "#fbd2b8", roughness: 0.4 }), "zoro");
+    zoroHead.add(zoroFace);
+
+    const zoroHair = new THREE.Mesh(
+      new THREE.SphereGeometry(0.115, 16, 16, 0, Math.PI * 2, 0, Math.PI / 1.7),
+      new THREE.MeshStandardMaterial({ color: "#22c55e", roughness: 0.6 })
+    );
+    zoroHair.position.y = 0.02;
+    zoroHead.add(zoroHair);
+
+    const bandana = new THREE.Mesh(
+      new THREE.TorusGeometry(0.11, 0.02, 10, 24),
+      new THREE.MeshStandardMaterial({ color: "#09090b", roughness: 0.7 })
+    );
+    bandana.rotation.x = Math.PI / 2;
+    bandana.position.y = 0.025;
+    zoroHead.add(bandana);
+
+    zoroHeadGroup = zoroHead;
+    zoroGroup.add(zoroHead);
+    scene.add(zoroGroup);
+
+    // 2. Thermal POS Receipt Printer with paper
+    const printerGroup = new THREE.Group();
+    printerGroup.name = "movable-receipt-printer";
+    printerGroup.position.set(-2.55, DESK_TOP_Y, 0.42);
+
+    const printerBody = addClickable(new THREE.BoxGeometry(0.55, 0.42, 0.58), new THREE.MeshStandardMaterial({ color: "#f3f4f6", roughness: 0.35 }), "printer");
+    printerBody.position.y = 0.21;
+    printerGroup.add(printerBody);
+
+    const printerSlot = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.035, 0.06), new THREE.MeshStandardMaterial({ color: "#111827" }));
+    printerSlot.position.set(0, 0.425, -0.08);
+    printerGroup.add(printerSlot);
+
+    const printerLed = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), new THREE.MeshBasicMaterial({ color: "#10b981" }));
+    printerLed.position.set(0.18, 0.43, 0.18);
+    printerGroup.add(printerLed);
+
+    const paperGeo = new THREE.PlaneGeometry(0.36, 0.68, 8, 8);
+    const paperMat = new THREE.MeshBasicMaterial({ color: "#fafaf7", side: THREE.DoubleSide });
+    const receiptPaper = new THREE.Mesh(paperGeo, paperMat);
+    receiptPaper.position.set(0, 0.43, 0.15);
+    receiptPaper.rotation.x = Math.PI / 3;
+    receiptPaper.scale.set(1, 0.01, 1);
+    printerGroup.add(receiptPaper);
+    receiptPaperMesh = receiptPaper;
+    scene.add(printerGroup);
+
+    // 3. Flagship Z Card v0.1 (Clickable direct entry to Anatomy Reveal)
+    const zcardGroup = new THREE.Group();
+    zcardGroup.name = "movable-zcard-hardware";
+    zcardGroup.position.set(-0.85, DESK_TOP_Y + 0.01, 0.65);
+    zcardGroup.rotation.y = 0.15;
+
+    const zcardBody = addClickable(
+      new THREE.BoxGeometry(0.48, 0.016, 0.30),
+      new THREE.MeshStandardMaterial({ color: "#06090e", roughness: 0.22, metalness: 0.4 }),
+      "zcard"
+    );
+    zcardGroup.add(zcardBody);
+
+    const zcardChip = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.08, 0.06),
+      new THREE.MeshStandardMaterial({ color: "#eab308", roughness: 0.2, metalness: 0.95 })
+    );
+    zcardChip.rotation.x = -Math.PI / 2;
+    zcardChip.position.set(-0.14, 0.01, -0.01);
+    zcardGroup.add(zcardChip);
+
+    const zcardScreen = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.24, 0.12),
+      new THREE.MeshBasicMaterial({ color: "#00f0ff" })
+    );
+    zcardScreen.rotation.x = -Math.PI / 2;
+    zcardScreen.position.set(0.08, 0.01, 0.02);
+    zcardGroup.add(zcardScreen);
+    scene.add(zcardGroup);
+
+    // 4. Guestbook Diary
+    const diaryGroup = new THREE.Group();
+    diaryGroup.name = "movable-guestbook-diary";
+    diaryGroup.position.set(2.45, DESK_TOP_Y + 0.01, 0.55);
+    diaryGroup.rotation.y = -0.2;
+
+    const diaryBook = addClickable(
+      new THREE.BoxGeometry(0.72, 0.065, 0.88),
+      new THREE.MeshStandardMaterial({ color: "#1f1d2b", roughness: 0.45 }),
+      "diary"
+    );
+    diaryGroup.add(diaryBook);
+
+    const diaryPages = new THREE.Mesh(
+      new THREE.BoxGeometry(0.70, 0.05, 0.86),
+      new THREE.MeshStandardMaterial({ color: "#fef3c7", roughness: 0.8 })
+    );
+    diaryGroup.add(diaryPages);
+
+    const pen = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.014, 0.014, 0.65, 12),
+      new THREE.MeshStandardMaterial({ color: "#e2e8f0", metalness: 0.9, roughness: 0.2 })
+    );
+    pen.position.set(0.05, 0.05, 0);
+    pen.rotation.z = Math.PI / 2;
+    diaryGroup.add(pen);
+    scene.add(diaryGroup);
+
     captureFurniture("studio", "Studio desk rig", studioChildrenStart, {
       minX: -7.9, maxX: 7.9, minZ: -4.9, maxZ: 4.9,
     }, { halfX: 4.35, halfZ: 1.55, centerZ: -0.5 }, { x: 0, z: -2.85 });
@@ -1371,6 +1534,18 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     });
     registerFurniture("phone", "Desk phone", phoneGroup, "table", { x: -1.65, z: 0.32 }, DESK_BOUNDS, {
       halfX: 0.16, halfZ: 0.29, centerZ: 0,
+    });
+    registerFurniture("printer", "Thermal POS printer", printerGroup, "table", { x: -2.55, z: 0.42 }, DESK_BOUNDS, {
+      halfX: 0.32, halfZ: 0.35, centerZ: 0
+    });
+    registerFurniture("zoro", "Zoro bobblehead", zoroGroup, "table", { x: -3.65, z: 0.42 }, DESK_BOUNDS, {
+      halfX: 0.18, halfZ: 0.18, centerZ: 0
+    });
+    registerFurniture("zcard", "Z Card v0.1", zcardGroup, "table", { x: -0.85, z: 0.65 }, DESK_BOUNDS, {
+      halfX: 0.26, halfZ: 0.18, centerZ: 0
+    });
+    registerFurniture("diary", "Guestbook diary", diaryGroup, "table", { x: 2.45, z: 0.55 }, DESK_BOUNDS, {
+      halfX: 0.40, halfZ: 0.48, centerZ: 0
     });
 
     // ── Bookshelf & Achievements Shrine ─────────────────────────────────────
@@ -2112,6 +2287,28 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       soundFX.playClick();
       soundFX.playZoom();
 
+      // Special actions for newly designed objects
+      if (zone === "zcard") {
+        soundFX.playClick();
+        onOpenAnatomyRef.current?.();
+        return;
+      }
+      if (zone === "diary") {
+        soundFX.playClick();
+        onOpenDiaryRef.current?.();
+        return;
+      }
+      if (zone === "zoro") {
+        soundFX.playClick();
+        zoroWobble = 0.65;
+        return;
+      }
+      if (zone === "printer") {
+        soundFX.playClick();
+        receiptAnimProgress = 1.0;
+        return;
+      }
+
       // If clicking synth keyboard, trigger polyphonic synthesizer chord
       if (zone === "audio_rig") {
         soundFX.playSynthNote(440);
@@ -2485,6 +2682,16 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         pivot.rotation.y = Math.sin(t * 0.48 + phase) * 0.055;
         pivot.rotation.z = Math.sin(t * 0.34 + phase) * 0.012;
       });
+
+      // Zoro bobblehead spring wobble
+      if (zoroHeadGroup) {
+        zoroWobble *= 0.975;
+        zoroHeadGroup.rotation.x = Math.sin(t * 8.5) * zoroWobble;
+        zoroHeadGroup.rotation.z = Math.cos(t * 7.2) * zoroWobble;
+      }
+      if (receiptPaperMesh && receiptAnimProgress > 0.01) {
+        receiptPaperMesh.scale.y = THREE.MathUtils.lerp(receiptPaperMesh.scale.y, 1.0, 0.08);
+      }
 
       // 1. Decorative audio spectrum animation for the music workstation.
       audioCtx.fillStyle = "#080410";
