@@ -5,7 +5,6 @@ import profileData from "../data/profile.json";
 interface FooterProps {
   onNavigatePortfolio?: () => void;
   onNavigateSpace?: () => void;
-  onNavigateDesk?: () => void;
   onNavigateCommunity?: () => void;
   onNavigateSkills?: () => void;
   onNavigateShowcase?: () => void;
@@ -14,7 +13,6 @@ interface FooterProps {
 export const Footer: React.FC<FooterProps> = ({
   onNavigatePortfolio,
   onNavigateSpace,
-  onNavigateDesk,
   onNavigateCommunity,
   onNavigateSkills,
   onNavigateShowcase,
@@ -123,12 +121,6 @@ export const Footer: React.FC<FooterProps> = ({
                   className="block hover:text-purple-400 transition-colors text-left"
                 >
                   3D Bedroom
-                </button>
-                <button
-                  onClick={() => onNavigateDesk?.()}
-                  className="block hover:text-sky-400 transition-colors text-left"
-                >
-                  3D Desk Setup
                 </button>
                 <button
                   onClick={() => onNavigateCommunity?.()}
