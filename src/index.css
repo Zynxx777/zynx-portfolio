@@ -43,6 +43,10 @@ img, video {
   content-visibility: auto;
 }
 
+.font-hand {
+  font-family: 'Caveat', ui-rounded, cursive;
+}
+
 :focus-visible {
   outline: 2px solid #67e8f9;
   outline-offset: 3px;

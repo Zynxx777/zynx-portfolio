@@ -25,6 +25,7 @@ export default {
         mono: ["'JetBrains Mono'", "'IBM Plex Mono'", "monospace"],
         display: ["'Martian Mono'", "'Space Grotesk'", "sans-serif"],
         sans: ["Inter", "-apple-system", "sans-serif"],
+        hand: ["'Caveat'", "ui-rounded", "cursive"],
       },
       animation: {
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
