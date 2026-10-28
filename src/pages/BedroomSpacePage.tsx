@@ -1196,31 +1196,6 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
               );
             })}
           </nav>}
-
-          <div className="absolute bottom-16 sm:bottom-4 right-3 sm:right-4 z-30 flex items-end gap-2 pointer-events-auto">
-            {musicOpen && (
-              <div className="max-w-[min(92vw,25rem)] animate-fadeIn">
-                <BedroomAudioPlayer />
-              </div>
-            )}
-            <button
-              onClick={() => { soundFX.playClick(); setMusicOpen(!musicOpen); }}
-              className="flex h-10 items-center gap-2 rounded-full border border-white/15 bg-black/55 px-3 text-[10px] font-mono text-zinc-200 shadow-lg backdrop-blur-xl transition hover:border-pink-300/50 hover:text-white"
-              aria-expanded={musicOpen}
-              aria-label={musicOpen ? "Hide room radio" : "Open room radio"}
-            >
-              <Music size={14} className="text-pink-300" />
-              <span className="hidden sm:inline">FM</span>
-            </button>
-            <button
-              onClick={() => { soundFX.playClick(); onNavigateCommunity(); }}
-              className="hidden h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/55 text-zinc-300 shadow-lg backdrop-blur-xl transition hover:border-pink-300/50 hover:text-white sm:flex"
-              aria-label="Open 7YNX music page"
-              title="7YNX music"
-            >
-              <Disc3 size={14} />
-            </button>
-          </div>
         </div>
       )}
 
@@ -1305,6 +1280,32 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
       )}
       {activePoster && <PosterView posterId={activePoster} onClose={closePoster} />}
       {phoneOpen && <PhoneExperience onClose={() => setPhoneOpen(false)} />}
+
+      {/* ── LIVE LO-FI RADIO STATION / SOUND LAB DOCK (Available across all views) ── */}
+      <div className="absolute bottom-20 sm:bottom-4 right-3 sm:right-4 z-40 flex items-end gap-2 pointer-events-auto">
+        {musicOpen && (
+          <div className="max-w-[min(92vw,25rem)] animate-fadeIn">
+            <BedroomAudioPlayer />
+          </div>
+        )}
+        <button
+          onClick={() => { soundFX.playClick(); setMusicOpen(!musicOpen); }}
+          className="flex h-10 items-center gap-2 rounded-full border border-white/15 bg-black/75 px-3 text-[10px] font-mono text-zinc-200 shadow-xl backdrop-blur-xl transition hover:border-pink-300/50 hover:text-white"
+          aria-expanded={musicOpen}
+          aria-label={musicOpen ? "Hide room radio" : "Open room radio"}
+        >
+          <Music size={14} className="text-pink-300" />
+          <span className="hidden sm:inline">FM Radio</span>
+        </button>
+        <button
+          onClick={() => { soundFX.playClick(); onNavigateCommunity(); }}
+          className="hidden h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/75 text-zinc-300 shadow-xl backdrop-blur-xl transition hover:border-pink-300/50 hover:text-white sm:flex"
+          aria-label="Open 7YNX music page"
+          title="7YNX music"
+        >
+          <Disc3 size={14} />
+        </button>
+      </div>
 
       {/* 3D Desk Modals & Anatomy Reveal */}
       <ProjectDetailModal

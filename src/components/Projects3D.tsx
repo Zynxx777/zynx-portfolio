@@ -390,9 +390,10 @@ function getProjectCardMetrics(width: number, height: number, immersive = false)
 interface Projects3DProps {
   immersive?: boolean;
   profileOpen?: boolean;
+  onOpenAnatomy?: () => void;
 }
 
-export const Projects3D: React.FC<Projects3DProps> = ({ immersive = false, profileOpen = false }) => {
+export const Projects3D: React.FC<Projects3DProps> = ({ immersive = false, profileOpen = false, onOpenAnatomy }) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const profileOpenRef = useRef(profileOpen);
   const [activeFilter, setActiveFilter] = useState<string>("featured");
@@ -971,7 +972,7 @@ export const Projects3D: React.FC<Projects3DProps> = ({ immersive = false, profi
           <a className="transition hover:text-cyan-200" href={`mailto:${profileData.basics.email}?subject=${encodeURIComponent("Portfolio enquiry")}`}>Contact <ArrowUpRight size={11} className="ml-1 inline" /></a>
         </nav>
 
-        <PageInsidePageModal project={selectedProject} onClose={() => setSelectedProject(null)} immersive />
+        <PageInsidePageModal project={selectedProject} onClose={() => setSelectedProject(null)} immersive onOpenAnatomy={onOpenAnatomy} />
       </section>
     );
   }
@@ -1109,6 +1110,15 @@ export const Projects3D: React.FC<Projects3DProps> = ({ immersive = false, profi
                   <span>Inspect Spec</span>
                   <ArrowUpRight size={15} />
                 </button>
+
+                {activeProject.id === "zcard-hardware" && onOpenAnatomy && (
+                  <button
+                    onClick={onOpenAnatomy}
+                    className="flex h-10 items-center gap-2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-4 font-mono text-[11px] font-bold tracking-wide text-black shadow-lg shadow-cyan-400/25 transition-all hover:brightness-110 sm:h-11 sm:px-5 sm:text-xs"
+                  >
+                    <span>🔬 3D Anatomy Dissection</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -1189,6 +1199,7 @@ export const Projects3D: React.FC<Projects3DProps> = ({ immersive = false, profi
       <PageInsidePageModal
         project={selectedProject}
         onClose={() => setSelectedProject(null)}
+        onOpenAnatomy={onOpenAnatomy}
       />
     </section>
   );

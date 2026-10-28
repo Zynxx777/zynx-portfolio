@@ -98,6 +98,17 @@
   },
   "projects": [
     {
+      "id": "zcard-hardware",
+      "name": "Z Card v0.1 — Universal Smart Card",
+      "subtitle": "All-in-One Payments & Smart ID with Solar/Wireless Harvester",
+      "category": "Hardware & VLSI",
+      "description": "Next-generation smart credit/debit replacement and universal ID card in standard ISO/IEC 7810 ID-1 format. Features a 2.1-inch flexible E-Ink display, high-efficiency micro solar energy harvester, solid-state lithium battery, capacitive biometric fingerprint sensor, dual-frequency NFC/RFID secure element, and CNC titanium chassis.",
+      "skills": ["Hardware Architecture", "Embedded Systems", "Energy Harvesting", "NFC/RFID", "Biometrics", "E-Ink Display"],
+      "badge": "Flagship Hardware",
+      "img": "/images/zcard/blueprint_hero.png",
+      "link": "https://github.com/Zynxx777/ZCard"
+    },
+    {
       "id": "sm-english-school",
       "name": "S.M. English School Website",
       "subtitle": "Responsive school website MVP",

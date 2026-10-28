@@ -17,9 +17,10 @@ interface PageInsidePageModalProps {
   project: ProjectSpec | null;
   onClose: () => void;
   immersive?: boolean;
+  onOpenAnatomy?: () => void;
 }
 
-export const PageInsidePageModal: React.FC<PageInsidePageModalProps> = ({ project, onClose, immersive = false }) => {
+export const PageInsidePageModal: React.FC<PageInsidePageModalProps> = ({ project, onClose, immersive = false, onOpenAnatomy }) => {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -91,9 +92,20 @@ export const PageInsidePageModal: React.FC<PageInsidePageModalProps> = ({ projec
                   {project.skills.map((skill) => <li className="rounded-full border border-black/15 px-3 py-1.5 text-[10px] text-black/75 sm:text-xs" key={skill}>{skill}</li>)}
                 </ul>
               </div>
-              <a className="mt-8 inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-black px-5 text-xs font-medium text-white transition hover:bg-zinc-700" href={project.link} rel="noreferrer" target="_blank">
-                View project source <ArrowUpRight size={15} />
-              </a>
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <a className="inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-black px-5 text-xs font-medium text-white transition hover:bg-zinc-700" href={project.link} rel="noreferrer" target="_blank">
+                  View project source <ArrowUpRight size={15} />
+                </a>
+                {project.id === "zcard-hardware" && onOpenAnatomy && (
+                  <button
+                    type="button"
+                    onClick={() => { onClose(); onOpenAnatomy(); }}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-cyan-400 px-5 text-xs font-bold text-black shadow-lg shadow-cyan-400/30 transition hover:bg-cyan-300 active:scale-95"
+                  >
+                    <span>🔬 3D Anatomy Dissection</span>
+                  </button>
+                )}
+              </div>
             </div>
             <div className="min-h-0 overflow-y-auto border-t border-black/10 bg-[#e7e6e3] md:border-l md:border-t-0">
               <img alt={`${project.name} project preview`} className="block min-h-[42vh] w-full bg-[#111] object-cover md:min-h-[56vh]" loading="lazy" src={project.img} />
@@ -133,6 +145,15 @@ export const PageInsidePageModal: React.FC<PageInsidePageModalProps> = ({ projec
                 <a className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-cyan-300 px-4 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200" href={project.link} rel="noreferrer" target="_blank">
                   View project source <ArrowUpRight size={15} />
                 </a>
+                {project.id === "zcard-hardware" && onOpenAnatomy && (
+                  <button
+                    type="button"
+                    onClick={() => { onClose(); onOpenAnatomy(); }}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 px-4 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-400/20 transition hover:brightness-110 active:scale-95"
+                  >
+                    <span>🔬 3D Anatomy Dissection</span>
+                  </button>
+                )}
               </div>
             </div>
           </>
