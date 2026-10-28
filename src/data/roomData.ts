@@ -64,7 +64,6 @@ export const ROOM_FURNITURE_CATALOG: Array<{
   { id: "studio", label: "Studio desk rig", shortLabel: "Desk Rig", icon: "🖥️", themes: ["cyberpunk", "anime-bedroom"] },
   { id: "chair", label: "Studio chair", shortLabel: "Chair", icon: "🪑", themes: ["cyberpunk", "anime-bedroom"] },
   { id: "bed", label: "Bed and bedside set", shortLabel: "Bed Set", icon: "🛏️", themes: ["anime-bedroom"] },
-  { id: "lamp", label: "Bedside floor lamp", shortLabel: "Floor Lamp", icon: "💡", themes: ["anime-bedroom"] },
   { id: "cpu", label: "PC tower", shortLabel: "PC Tower", icon: "💻", themes: ["cyberpunk", "anime-bedroom"] },
   { id: "phone", label: "Desk phone", shortLabel: "Desk Phone", icon: "📱", themes: ["cyberpunk", "anime-bedroom"] },
   { id: "shelf", label: "Bookshelf", shortLabel: "Bookshelf", icon: "📚", themes: ["cyberpunk", "anime-bedroom"] },
@@ -76,7 +75,7 @@ export const ROOM_FURNITURE_CATALOG: Array<{
   { id: "diary", label: "Guestbook diary", shortLabel: "Diary", icon: "📖", themes: ["cyberpunk", "anime-bedroom"] },
 ];
 
-export const HARDCODED_DEFAULT_ROOM_LAYOUT: Record<FurnitureId, FurniturePlacement> = {
+export const HARDCODED_DEFAULT_ROOM_LAYOUT: Partial<Record<FurnitureId, FurniturePlacement>> = {
   studio: { x: 0, z: -2.85, rotation: 0 },
   chair: { x: 0, z: -2, rotation: 0 },
   door: { x: 6.45, z: -4.8, rotation: 0 },
@@ -85,7 +84,6 @@ export const HARDCODED_DEFAULT_ROOM_LAYOUT: Record<FurnitureId, FurniturePlaceme
   shelf: { x: -7.95, z: -3.4, rotation: 1.5707963267948966 },
   gallery: { x: 0, z: 0, rotation: 0 },
   bed: { x: 5.45, z: 1.97, rotation: 0 },
-  lamp: { x: 3.5, z: 0, rotation: 0 },
   printer: { x: -2.55, y: 1.49, z: 0.42, rotation: 0 },
   zoro: { x: -3.65, y: 1.49, z: 0.42, rotation: 0 },
   zcard: { x: -0.85, y: 1.49, z: 0.65, rotation: 0.15 },

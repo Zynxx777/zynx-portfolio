@@ -1896,20 +1896,6 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       const drawerLine = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.025, 0.018), new THREE.MeshStandardMaterial({ color: "#e9d1bd", roughness: 0.6 }));
       drawerLine.position.set(-2.26, 0.56, -0.95);
       bedGroup.add(drawerLine);
-      bedsideLamp = new THREE.Group();
-      bedsideLamp.name = "floor-lamp";
-      const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 0.08, 20), new THREE.MeshStandardMaterial({ color: "#d8b6cc", roughness: 0.42 }));
-      lampBase.position.set(0, 0.04, 0);
-      bedsideLamp.add(lampBase);
-      const lampStem = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 1.2, 12), new THREE.MeshStandardMaterial({ color: "#c69db9", metalness: 0.24, roughness: 0.45 }));
-      lampStem.position.set(0, 0.68, 0);
-      bedsideLamp.add(lampStem);
-      const lampShade = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.34, 20, 1, true), new THREE.MeshStandardMaterial({ color: nightMode ? "#f8d8b9" : "#fff0d8", emissive: "#ffcf91", emissiveIntensity: nightMode ? 1.2 : 0.12, side: THREE.DoubleSide, roughness: 0.8 }));
-      lampShade.position.set(0, 1.48, 0);
-      bedsideLamp.add(lampShade);
-      const bedsideLight = new THREE.PointLight("#ffd3a0", nightMode ? 2.3 : 0.08, 5);
-      bedsideLight.position.set(0, 1.43, 0);
-      bedsideLamp.add(bedsideLight);
 
       const plushBody = new THREE.Mesh(new THREE.SphereGeometry(0.26, 16, 12), new THREE.MeshStandardMaterial({ color: "#fff4e7", roughness: 1 }));
       plushBody.scale.set(1, 1.2, 0.8);
@@ -1930,12 +1916,6 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       registerFurniture("bed", "Bed and bedside set", bedGroup, "floor", { x: 5.45, z: 1.97 }, {
         minX: -7.9, maxX: 7.9, minZ: -4.9, maxZ: 4.9,
       }, { halfX: 2.45, halfZ: 2.85, centerZ: 0.08 });
-
-      bedsideLamp.position.set(3.5, 0, 0);
-      scene.add(bedsideLamp);
-      registerFurniture("lamp", "Bedside floor lamp", bedsideLamp, "floor", { x: 3.5, z: 0 }, {
-        minX: -7.9, maxX: 7.9, minZ: -4.9, maxZ: 4.9,
-      }, { halfX: 0.25, halfZ: 0.25, centerZ: 0 });
     }
     if (shiftLegacyWorkspace) {
       furniture.forEach(item => {
