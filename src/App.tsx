@@ -8,13 +8,15 @@ import { CustomAuraCursor } from "./components/CustomAuraCursor";
 
 const SkillsUniversePage = lazy(() => import("./pages/SkillsUniversePage").then((module) => ({ default: module.SkillsUniversePage })));
 const BedroomSpacePage = lazy(() => import("./pages/BedroomSpacePage").then((module) => ({ default: module.BedroomSpacePage })));
+const DeskSetupPage = lazy(() => import("./pages/DeskSetupPage").then((module) => ({ default: module.DeskSetupPage })));
 const CommunityMusicPage = lazy(() => import("./pages/CommunityMusicPage").then((module) => ({ default: module.CommunityMusicPage })));
 const ShowcasePage = lazy(() => import("./pages/ShowcasePage").then((module) => ({ default: module.ShowcasePage })));
 
 export default function App() {
   const [currentView, setCurrentView] = useState<EcosystemView>(() => {
     const hash = window.location.hash.toLowerCase();
-    if (hash.includes("space") || hash.includes("bedroom") || hash.includes("room") || hash.includes("desk")) return "space";
+    if (hash.includes("desk") || hash.includes("setup")) return "desk";
+    if (hash.includes("space") || hash.includes("bedroom") || hash.includes("room")) return "space";
     if (hash.includes("community") || hash.includes("7ynx") || hash.includes("music") || hash.includes("gaming")) return "community";
     if (hash.includes("skills") || hash.includes("arsenal") || hash.includes("tech")) return "skills";
     if (hash.includes("showcase") || hash.includes("index")) return "showcase";
@@ -27,7 +29,9 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.toLowerCase();
-      if (hash.includes("space") || hash.includes("bedroom") || hash.includes("room") || hash.includes("desk")) {
+      if (hash.includes("desk") || hash.includes("setup")) {
+        setCurrentView("desk");
+      } else if (hash.includes("space") || hash.includes("bedroom") || hash.includes("room")) {
         setCurrentView("space");
       } else if (hash.includes("community") || hash.includes("7ynx") || hash.includes("music") || hash.includes("gaming")) {
         setCurrentView("community");
@@ -46,20 +50,22 @@ export default function App() {
 
   const handleNavigate = (view: EcosystemView) => {
     setCurrentView(view);
-    window.location.hash = view === "portfolio" ? "" : view === "space" ? "desk" : view;
+    window.location.hash = view === "portfolio" ? "" : view;
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const isFullScreen3D = currentView === "space" || currentView === "showcase" || currentView === "desk";
 
   return (
     <div className="min-h-screen bg-[#07080d] text-zinc-100 relative selection:bg-cyan-400 selection:text-black">
       {/* Living Cosmic Noir Background & Film Grain Overlay (Replaces flat black) */}
-      {currentView !== "space" && currentView !== "showcase" && <AmbientCosmicCanvas />}
+      {!isFullScreen3D && <AmbientCosmicCanvas />}
 
       {/* Non-intrusive interactive magnetic cursor aura */}
-      {currentView !== "space" && currentView !== "showcase" && <CustomAuraCursor />}
+      {!isFullScreen3D && <CustomAuraCursor />}
 
       {/* Top Universal Navbar & Ecosystem Switcher */}
-      {currentView !== "space" && currentView !== "showcase" && (
+      {currentView !== "showcase" && currentView !== "desk" && (
         <Navbar
           currentView={currentView}
           setCurrentView={handleNavigate}
@@ -101,6 +107,13 @@ export default function App() {
             <BedroomSpacePage
               onNavigatePortfolio={() => handleNavigate("portfolio")}
               onNavigateCommunity={() => handleNavigate("community")}
+            />
+          )}
+
+          {currentView === "desk" && (
+            <DeskSetupPage
+              onNavigatePortfolio={() => handleNavigate("portfolio")}
+              onNavigateSpace={() => handleNavigate("space")}
               onNavigateShowcase={() => handleNavigate("showcase")}
             />
           )}
@@ -115,10 +128,11 @@ export default function App() {
       </main>
 
       {/* Footer (Rendered on standard pages, hidden in full-screen 3D sanctuary) */}
-      {currentView !== "space" && currentView !== "showcase" && (
+      {!isFullScreen3D && (
         <Footer
           onNavigatePortfolio={() => handleNavigate("portfolio")}
           onNavigateSpace={() => handleNavigate("space")}
+          onNavigateDesk={() => handleNavigate("desk")}
           onNavigateCommunity={() => handleNavigate("community")}
           onNavigateSkills={() => handleNavigate("skills")}
           onNavigateShowcase={() => handleNavigate("showcase")}

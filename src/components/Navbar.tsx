@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Terminal, Monitor, Disc3, FileText, Sparkles, Layers, FolderOpen } from "lucide-react";
+import { Terminal, Monitor, Disc3, FileText, Sparkles, Layers, FolderOpen, Laptop } from "lucide-react";
 
-export type EcosystemView = "portfolio" | "skills" | "space" | "community" | "showcase";
+export type EcosystemView = "portfolio" | "skills" | "space" | "desk" | "community" | "showcase";
 
 interface NavbarProps {
   currentView: EcosystemView;
@@ -71,10 +71,17 @@ export const Navbar: React.FC<NavbarProps> = ({
     },
     {
       id: "space",
-      label: "3D Desk",
+      label: "3D Bedroom",
       icon: Monitor,
       color: "text-purple-400",
       activeBg: "bg-purple-500 text-white shadow-lg shadow-purple-500/25",
+    },
+    {
+      id: "desk",
+      label: "3D Desk",
+      icon: Laptop,
+      color: "text-sky-400",
+      activeBg: "bg-sky-400 text-black shadow-lg shadow-sky-400/25",
     },
     {
       id: "community",
