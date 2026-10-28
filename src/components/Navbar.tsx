@@ -71,7 +71,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     },
     {
       id: "space",
-      label: "3D Bedroom",
+      label: "3D Desk",
       icon: Monitor,
       color: "text-purple-400",
       activeBg: "bg-purple-500 text-white shadow-lg shadow-purple-500/25",
