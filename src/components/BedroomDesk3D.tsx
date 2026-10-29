@@ -2039,116 +2039,111 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         </div>
       )}
 
-      {/* Bottom Bar Pills (Exact Navigation from pradiplabs.dev) */}
-      <div className="absolute bottom-6 inset-x-0 z-30 flex items-center justify-center gap-2 px-4 flex-wrap pointer-events-auto">
-        <button
-          onClick={() => {
-            soundFX.playClick();
-            focusObject('laptop');
-            setTimeout(() => {
-              if (onOpenMonitor) onOpenMonitor();
-              else setIsMonitorOpen(true);
-            }, 360);
-          }}
-          className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg ${
-            focusedTarget === 'laptop' || isMonitorOpen
-              ? 'bg-white text-slate-950 font-bold border-white'
-              : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
-          }`}
-        >
-          <span className="font-semibold text-white">Laptop</span>
-          <span className="text-slate-400">My websites</span>
-        </button>
+      {/* Bottom Bar Pills (Exact Navigation from pradiplabs.dev - hidden when inspecting card or device) */}
+      {!isCardHeld && !focusedTarget && !isMonitorOpen && !isPhoneOpen && (
+        <div className="absolute bottom-6 inset-x-0 z-30 flex items-center justify-center gap-2 px-4 flex-wrap pointer-events-auto animate-fade-in">
+          <button
+            onClick={() => {
+              soundFX.playClick();
+              focusObject('laptop');
+              setTimeout(() => {
+                if (onOpenMonitor) onOpenMonitor();
+                else setIsMonitorOpen(true);
+              }, 360);
+            }}
+            className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg ${
+              focusedTarget === 'laptop' || isMonitorOpen
+                ? 'bg-white text-slate-950 font-bold border-white'
+                : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
+            }`}
+          >
+            <span className="font-semibold text-white">Laptop</span>
+            <span className="text-slate-400">My websites</span>
+          </button>
 
-        <button
-          onClick={() => focusObject('tablet')}
-          className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg ${
-            focusedTarget === 'tablet'
-              ? 'bg-white text-slate-950 font-bold border-white'
-              : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
-          }`}
-        >
-          <span className="font-semibold text-white">Tablet</span>
-          <span className="text-slate-400">Docket system</span>
-        </button>
+          <button
+            onClick={() => focusObject('tablet')}
+            className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg ${
+              focusedTarget === 'tablet'
+                ? 'bg-white text-slate-950 font-bold border-white'
+                : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
+            }`}
+          >
+            <span className="font-semibold text-white">Tablet</span>
+            <span className="text-slate-400">Docket system</span>
+          </button>
 
-        <button
-          onClick={() => focusObject('printer')}
-          className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg ${
-            focusedTarget === 'printer'
-              ? 'bg-white text-slate-950 font-bold border-white'
-              : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
-          }`}
-        >
-          <span className="font-semibold text-white">Receipt Printer</span>
-          <span className="text-slate-400">Print docket</span>
-        </button>
+          <button
+            onClick={() => focusObject('printer')}
+            className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg ${
+              focusedTarget === 'printer'
+                ? 'bg-white text-slate-950 font-bold border-white'
+                : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
+            }`}
+          >
+            <span className="font-semibold text-white">Receipt Printer</span>
+            <span className="text-slate-400">Print docket</span>
+          </button>
 
-        <button
-          onClick={() => focusObject('zoro')}
-          className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg ${
-            focusedTarget === 'zoro'
-              ? 'bg-white text-slate-950 font-bold border-white'
-              : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
-          }`}
-        >
-          <span className="font-semibold text-white">Zoro</span>
-          <span className="text-slate-400">Bobblehead</span>
-        </button>
+          <button
+            onClick={() => focusObject('zoro')}
+            className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg ${
+              focusedTarget === 'zoro'
+                ? 'bg-white text-slate-950 font-bold border-white'
+                : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
+            }`}
+          >
+            <span className="font-semibold text-white">Zoro</span>
+            <span className="text-slate-400">Bobblehead</span>
+          </button>
 
-        <button
-          onClick={handleOpenPhone}
-          className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg ${
-            focusedTarget === 'phone' || isPhoneOpen
-              ? 'bg-white text-slate-950 font-bold border-white'
-              : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
-          }`}
-        >
-          <span className="font-semibold text-white">Phone</span>
-          <span className="text-slate-400">7YNX Chat & Audio</span>
-        </button>
+          <button
+            onClick={handleOpenPhone}
+            className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg ${
+              focusedTarget === 'phone' || isPhoneOpen
+                ? 'bg-white text-slate-950 font-bold border-white'
+                : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
+            }`}
+          >
+            <span className="font-semibold text-white">Phone</span>
+            <span className="text-slate-400">7YNX Chat & Audio</span>
+          </button>
 
-        <button
-          onClick={onOpenDiary}
-          className="px-3.5 py-2 rounded-full border border-white/15 bg-black/70 text-xs font-sans text-slate-300 hover:text-white hover:bg-black/90 transition-all flex items-center gap-2 backdrop-blur-md shadow-lg"
-        >
-          <span className="font-semibold text-white">Diary</span>
-          <span className="text-slate-400">Guestbook</span>
-        </button>
+          <button
+            onClick={onOpenDiary}
+            className="px-3.5 py-2 rounded-full border border-white/15 bg-black/70 text-xs font-sans text-slate-300 hover:text-white hover:bg-black/90 transition-all flex items-center gap-2 backdrop-blur-md shadow-lg"
+          >
+            <span className="font-semibold text-white">Diary</span>
+            <span className="text-slate-400">Guestbook</span>
+          </button>
 
-        <button
-          onClick={takeCard}
-          className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg ${
-            isCardHeld
-              ? 'bg-white text-slate-950 font-bold border-white'
-              : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
-          }`}
-        >
-          <span className="font-semibold text-white">Card</span>
-          <span className="text-slate-400">Take my card</span>
-        </button>
+          <button
+            onClick={takeCard}
+            className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg ${
+              isCardHeld
+                ? 'bg-white text-slate-950 font-bold border-white'
+                : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
+            }`}
+          >
+            <span className="font-semibold text-white">Card</span>
+            <span className="text-slate-400">Take my card</span>
+          </button>
 
-        <button
-          onClick={onOpenAnatomy}
-          className="px-4 py-2 rounded-full border border-cyan-400/50 bg-cyan-500/20 text-xs font-mono font-bold text-cyan-300 hover:bg-cyan-500/30 transition-all flex items-center gap-2 backdrop-blur-md shadow-lg shadow-cyan-500/20"
-        >
-          <Layers className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Z Card Anatomy</span>
-        </button>
-      </div>
+          <button
+            onClick={onOpenAnatomy}
+            className="px-4 py-2 rounded-full border border-cyan-400/50 bg-cyan-500/20 text-xs font-mono font-bold text-cyan-300 hover:bg-cyan-500/30 transition-all flex items-center gap-2 backdrop-blur-md shadow-lg shadow-cyan-500/20"
+          >
+            <Layers className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Z Card Anatomy</span>
+          </button>
+        </div>
+      )}
 
-      {/* Interactive Business Card Held Overlay (Matching pradiplabs.dev) */}
+      {/* Interactive Business Card Held Overlay (Matching pradiplabs.dev hC floating action dock) */}
       {isCardHeld && (
-        <div className="absolute bottom-6 inset-x-0 z-40 flex flex-col items-center gap-2.5 pointer-events-auto px-4 animate-fade-in">
-          {/* Micro instruction badge */}
-          <div className="px-3.5 py-1 rounded-full bg-black/85 backdrop-blur-md border border-white/15 text-white/90 text-xs font-sans shadow-lg flex items-center gap-2">
-            <span>Click card to flip</span>
-            <span className="text-white/40">·</span>
-            <span className="text-white/60">Press Esc or click desk to put down</span>
-          </div>
-
+        <div className="fixed inset-x-0 bottom-6 z-40 flex flex-col items-center gap-2.5 pointer-events-none px-4 animate-fade-in">
           {/* Floating Action Dock */}
-          <div className="flex items-center justify-center gap-2 rounded-full bg-white/95 dark:bg-black/85 p-2 shadow-2xl ring-1 ring-black/10 dark:ring-white/15 backdrop-blur-xl flex-wrap">
+          <div className="pointer-events-auto flex items-center justify-center gap-2 rounded-full bg-white/95 dark:bg-black/85 p-2 shadow-2xl ring-1 ring-black/10 dark:ring-white/15 backdrop-blur-xl flex-wrap">
             {/* Social Quick Links */}
             <div className="flex items-center gap-1 px-1">
               <a
@@ -2226,19 +2221,6 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
             >
               <X className="w-3.5 h-3.5" />
               <span>Put it back</span>
-            </button>
-
-            {/* Exploded 3D Anatomy */}
-            <button
-              onClick={() => {
-                soundFX.playClick();
-                onOpenAnatomy();
-              }}
-              className="h-10 px-3 rounded-full bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-cyan-400 text-xs font-mono font-medium flex items-center gap-1.5 transition-all"
-              title="Open Exploded 3D CAD Anatomy Reveal"
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Anatomy 🔬</span>
             </button>
           </div>
         </div>
