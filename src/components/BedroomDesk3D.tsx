@@ -419,6 +419,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     flippedAt: 0,
     glow: 0
   });
+  const hasAutoFlippedRef = useRef(false);
   const cardMeshRef = useRef<THREE.Mesh | null>(null);
   const cardGroupRef = useRef<THREE.Group | null>(null);
   const cardMaterialsRef = useRef<{ front: THREE.MeshStandardMaterial; back: THREE.MeshStandardMaterial } | null>(null);
@@ -464,6 +465,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     w.from = w.out;
     w.to = 1;
     w.movedAt = performance.now();
+    hasAutoFlippedRef.current = false;
     soundFX.playCardPickup();
     setIsCardHeld(true);
   }, []);
@@ -474,6 +476,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     w.from = w.out;
     w.to = 0;
     w.movedAt = performance.now();
+    hasAutoFlippedRef.current = false;
     if (w.side === 1) {
       triggerFlip(0, 1050 * 0.35);
     }
@@ -1513,6 +1516,11 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     };
 
     const onClick = (e: MouseEvent) => {
+      // Ignore clicks on 2D HTML UI elements so they never trigger 3D empty-space putdown
+      if ((e.target as HTMLElement)?.closest('button, a, input, select, textarea, [role="button"]')) {
+        return;
+      }
+
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -1532,6 +1540,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
             takeCard();
           } else {
             const hit = intersects[0];
+            // If on the back face and clicked a contact tile, navigate
             if (hit.face?.materialIndex === 5 && w.side === 1 && hit.uv) {
               const tile = getContactTileAtUV(hit.uv.x, hit.uv.y);
               if (tile) {
@@ -1544,7 +1553,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
                 return;
               }
             }
-            triggerFlip(w.side === 1 ? 0 : 1);
+            // Otherwise, flip card between front and back
+            const nextSide = w.side === 1 ? 0 : 1;
+            triggerFlip(nextSide);
           }
         } else if (name === 'diary') {
           soundFX.playClick();
@@ -1621,10 +1632,11 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           setIsXRayMode(false);
           return;
         }
-      } else if (e.key === ' ' || e.code === 'Space') {
-        if (cardAnimRef.current.out > 0.8) {
+      } else if (e.key === ' ' || e.code === 'Space' || e.key === 'f' || e.key === 'F') {
+        if (cardAnimRef.current.out > 0.5) {
           e.preventDefault();
-          triggerFlip(cardAnimRef.current.side === 1 ? 0 : 1);
+          const nextSide = cardAnimRef.current.side === 1 ? 0 : 1;
+          triggerFlip(nextSide);
         }
       }
     };
@@ -1686,8 +1698,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         const p = diff > 0 ? clamp01((now - w.movedAt) / (1050 * Math.max(0.35, diff))) : 1;
         w.out = w.from + (w.to - w.from) * Ca(p);
 
-        // Auto flip to back face when arriving in front of camera
-        if (w.to === 1 && p >= 1 && w.side === 0 && w.flippedAt < w.movedAt) {
+        // Auto flip to back face once upon arriving in front of camera
+        if (w.to === 1 && p >= 1 && !hasAutoFlippedRef.current) {
+          hasAutoFlippedRef.current = true;
           triggerFlip(1, 120);
         }
 
@@ -2193,11 +2206,13 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
             {/* Save Contact vCard */}
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
                 soundFX.playClick();
                 downloadVCard();
               }}
-              className="h-10 px-4 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 hover:opacity-90 text-xs font-semibold flex items-center gap-2 shadow-md transition-all active:scale-95"
+              className="h-10 px-4 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 hover:opacity-90 text-xs font-semibold flex items-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Save my contact</span>
@@ -2205,9 +2220,15 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
             {/* Flip Button */}
             <button
-              onClick={() => triggerFlip(cardAnimRef.current.side === 1 ? 0 : 1)}
-              className="h-10 px-3.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-zinc-800 dark:text-zinc-200 text-xs font-medium flex items-center gap-1.5 transition-all"
-              title="Flip card (Space)"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                soundFX.playCardFlip();
+                const nextSide = cardAnimRef.current.side === 1 ? 0 : 1;
+                triggerFlip(nextSide);
+              }}
+              className="h-10 px-3.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-zinc-800 dark:text-zinc-200 text-xs font-medium flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+              title="Flip card (Space or F)"
             >
               <RotateCw className="w-3.5 h-3.5" />
               <span>Flip</span>
@@ -2215,8 +2236,12 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
             {/* Put it back */}
             <button
-              onClick={putDownCard}
-              className="h-10 px-3.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-zinc-800 dark:text-zinc-200 text-xs font-medium flex items-center gap-1.5 transition-all"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                putDownCard();
+              }}
+              className="h-10 px-3.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-zinc-800 dark:text-zinc-200 text-xs font-medium flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
               title="Put card back (Esc)"
             >
               <X className="w-3.5 h-3.5" />
