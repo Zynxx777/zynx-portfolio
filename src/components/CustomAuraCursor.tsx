@@ -21,6 +21,7 @@ export const CustomAuraCursor: React.FC = () => {
 
     const dot = container.querySelector<HTMLElement>("[data-cursor-dot]");
     const ring = container.querySelector<HTMLElement>("[data-cursor-ring]");
+    const pointer = container.querySelector<HTMLElement>("[data-cursor-pointer]");
     if (!dot || !ring) return;
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -37,14 +38,14 @@ export const CustomAuraCursor: React.FC = () => {
     const applyRingClass = () => {
       // Direct class manipulation — no React setState
       if (isHovering) {
-        ring.className = "fixed top-0 left-0 rounded-full border will-change-transform w-14 h-14 -ml-7 -mt-7 border-cyan-400/60 bg-cyan-400/10 shadow-[0_0_20px_rgba(0,242,254,0.25)] transition-[width,height,background-color,border-color] duration-200 ease-out";
+        ring.className = "fixed top-0 left-0 rounded-full border will-change-transform w-14 h-14 -ml-7 -mt-7 border-emerald-400/60 bg-emerald-400/10 shadow-[0_0_20px_rgba(16,185,129,0.25)] transition-[width,height,background-color,border-color] duration-200 ease-out";
       } else if (isClicking) {
-        ring.className = "fixed top-0 left-0 rounded-full border will-change-transform w-8 h-8 -ml-4 -mt-4 border-cyan-300 bg-cyan-400/20 transition-[width,height,background-color,border-color] duration-200 ease-out";
+        ring.className = "fixed top-0 left-0 rounded-full border will-change-transform w-8 h-8 -ml-4 -mt-4 border-emerald-300 bg-emerald-400/20 transition-[width,height,background-color,border-color] duration-200 ease-out";
       } else {
         ring.className = "fixed top-0 left-0 rounded-full border will-change-transform w-10 h-10 -ml-5 -mt-5 border-white/25 bg-transparent transition-[width,height,background-color,border-color] duration-200 ease-out";
       }
 
-      dot.className = `fixed top-0 left-0 -ml-1 -mt-1 w-2 h-2 rounded-full will-change-transform transition-transform duration-75 ${isHovering ? "bg-cyan-300 scale-125" : "bg-white"}`;
+      dot.className = `fixed top-0 left-0 -ml-1 -mt-1 w-2 h-2 rounded-full will-change-transform transition-transform duration-75 ${isHovering ? "bg-emerald-300 scale-125" : "bg-white"}`;
     };
 
     const render = () => {
@@ -68,6 +69,9 @@ export const CustomAuraCursor: React.FC = () => {
       }
 
       dot.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0)`;
+      if (pointer) {
+        pointer.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0)`;
+      }
 
       // Check interactive hover
       const target = e.target as HTMLElement | null;
@@ -128,6 +132,20 @@ export const CustomAuraCursor: React.FC = () => {
         data-cursor-dot
         className="fixed top-0 left-0 -ml-1 -mt-1 w-2 h-2 rounded-full will-change-transform bg-white transition-transform duration-75"
       />
+      <div
+        data-cursor-pointer
+        className="fixed top-0 left-0 -ml-0.5 -mt-0.5 will-change-transform pointer-events-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="transform -rotate-6">
+          <path
+            d="M4.5 3.5L10.5 20.5L13.8 13.8L20.5 10.5L4.5 3.5Z"
+            fill="rgba(255, 255, 255, 0.96)"
+            stroke="#10b981"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
     </div>
   );
 };

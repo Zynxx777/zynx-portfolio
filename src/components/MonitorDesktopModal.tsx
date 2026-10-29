@@ -252,6 +252,9 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
     if (!isOpen) return;
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
         if (activeTab === 'browser') {
           setActiveTab('work');
         } else if (activeTab !== null) {
@@ -261,8 +264,8 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
         }
       }
     };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
+    window.addEventListener('keydown', handleKey, true);
+    return () => window.removeEventListener('keydown', handleKey, true);
   }, [isOpen, activeTab, onClose]);
 
   // Handle opening a project into the browser window
@@ -305,8 +308,13 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
 
         <button
           type="button"
-          onClick={onClose}
-          className="inline-flex h-9 items-center gap-1.5 rounded-full bg-black/60 px-3.5 text-xs font-mono text-zinc-300 ring-1 ring-white/15 hover:text-white hover:bg-black/80 transition-all"
+          onClick={() => {
+            if (activeTab === 'browser') setActiveTab('work');
+            else if (activeTab !== null) setActiveTab(null);
+            else onClose();
+          }}
+          title={activeTab !== null ? "Close window (Esc)" : "Back to desk (Esc)"}
+          className="inline-flex h-9 items-center gap-1.5 rounded-full bg-black/60 px-3.5 text-xs font-mono text-zinc-300 ring-1 ring-white/15 hover:text-white hover:bg-black/80 transition-all cursor-pointer"
         >
           <span>Esc</span>
         </button>

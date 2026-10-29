@@ -255,6 +255,77 @@ class SoundFXEngine {
       // Ignore
     }
   }
+
+  // Thermal Receipt Printer feed stepper motor & paper advance sound
+  playPrinterThermalFeed() {
+    if (!this.enabled) return;
+    try {
+      const ctx = this.initCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+
+      // Pulse stepper noise bursts
+      for (let i = 0; i < 6; i++) {
+        const t = now + i * 0.045;
+        const noise = ctx.createBufferSource();
+        noise.buffer = this.getNoiseBuffer(ctx);
+        const filter = ctx.createBiquadFilter();
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime(2200 + i * 80, t);
+        filter.Q.value = 4.0;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.linearRampToValueAtTime(0.09, t + 0.005);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.035);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        noise.start(t);
+        noise.stop(t + 0.04);
+      }
+
+      // Paper tear / slice snap at end
+      const tearTime = now + 0.32;
+      const osc = ctx.createOscillator();
+      const tearGain = ctx.createGain();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(800, tearTime);
+      osc.frequency.exponentialRampToValueAtTime(140, tearTime + 0.08);
+      tearGain.gain.setValueAtTime(0.08, tearTime);
+      tearGain.gain.exponentialRampToValueAtTime(0.0001, tearTime + 0.08);
+      osc.connect(tearGain);
+      tearGain.connect(ctx.destination);
+      osc.start(tearTime);
+      osc.stop(tearTime + 0.09);
+    } catch {
+      // Ignore
+    }
+  }
+
+  // Realistic water droplet plink for succulent plant watering
+  playWaterDrop() {
+    if (!this.enabled) return;
+    try {
+      const ctx = this.initCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(950, now);
+      osc.frequency.exponentialRampToValueAtTime(2200, now + 0.08);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(0.18, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    } catch {
+      // Ignore
+    }
+  }
 }
 
 export const soundFX = new SoundFXEngine();

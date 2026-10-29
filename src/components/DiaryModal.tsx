@@ -412,7 +412,14 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
   const [entries, setEntries] = useState<DiaryEntry[]>(() => {
     try {
       const saved = localStorage.getItem('zynx_diary_entries');
-      return saved ? JSON.parse(saved) : INITIAL_DIARY_ENTRIES;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.map((e: DiaryEntry) => ({
+          ...e,
+          author: typeof e.author === 'string' ? e.author.replace(/Kavya/gi, 'Jeevan') : e.author
+        }));
+      }
+      return INITIAL_DIARY_ENTRIES;
     } catch {
       return INITIAL_DIARY_ENTRIES;
     }

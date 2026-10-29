@@ -7,6 +7,7 @@ class RainAmbienceEngine {
   private dropSource: AudioBufferSourceNode | null = null;
   private oscNode: OscillatorNode | null = null;
   private masterGain: GainNode | null = null;
+  private volume: number = 0.75;
   public isPlaying: boolean = false;
   private listeners: Set<(active: boolean) => void> = new Set();
 
@@ -55,6 +56,15 @@ class RainAmbienceEngine {
       }
     } catch {
       // Ignore
+    }
+  }
+
+  public setVolume(vol: number) {
+    this.volume = Math.max(0, Math.min(1, vol));
+    if (this.masterGain && this.ctx) {
+      try {
+        this.masterGain.gain.setValueAtTime(0.36 * this.volume, this.ctx.currentTime);
+      } catch {}
     }
   }
 
@@ -172,7 +182,7 @@ class RainAmbienceEngine {
 
       // 4. Master Gain & Signal Routing
       const master = this.ctx.createGain();
-      master.gain.value = 0.36;
+      master.gain.value = 0.36 * this.volume;
       this.masterGain = master;
 
       // Connect Pink Noise Layer

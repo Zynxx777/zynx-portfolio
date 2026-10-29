@@ -212,7 +212,7 @@ export const INITIAL_DIARY_ENTRIES: DiaryEntry[] = [
   {
     id: "entry-3",
     date: "27 Oct 2026",
-    author: "Kavya (ECE Colleague)",
+    author: "Jeevan (ECE Colleague)",
     message: "The Z Card hardware breakdown blew me away. 1.4mm prototype with e-paper and biometric sensor is serious engineering discipline."
   }
 ];

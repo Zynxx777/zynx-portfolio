@@ -197,6 +197,7 @@ export interface PlayerState {
   paletteIndex: number;
   currentPalette: PaletteTheme;
   beatPulse: number;
+  volume: number;
 }
 
 class MusicPlayerEngine {
@@ -207,6 +208,7 @@ class MusicPlayerEngine {
   private nowPlaying: string | null = null;
   private paletteIndex: number = 0;
   private beatPulse: number = 0;
+  private volume: number = 0.75;
 
   private bufferWatchdog: ReturnType<typeof setTimeout> | null = null;
   private metaInterval: ReturnType<typeof setInterval> | null = null;
@@ -226,9 +228,13 @@ class MusicPlayerEngine {
     if (!win.__zynxGlobalAudio) {
       const a = new Audio();
       a.preload = "auto";
+      a.volume = this.volume;
       win.__zynxGlobalAudio = a;
     }
     this.audio = win.__zynxGlobalAudio;
+    if (this.audio) {
+      this.audio.volume = this.volume;
+    }
 
     this.setupAudioListeners();
     this.setupMediaSession();
@@ -394,7 +400,22 @@ class MusicPlayerEngine {
       paletteIndex: this.paletteIndex,
       currentPalette: FIFO_PALETTES[this.paletteIndex],
       beatPulse: this.beatPulse,
+      volume: this.volume,
     };
+  }
+
+  public setVolume(vol: number) {
+    const clamped = Math.max(0, Math.min(1, vol));
+    this.volume = clamped;
+    if (this.audio) {
+      this.audio.volume = clamped;
+    }
+    rainAmbience.setVolume(clamped);
+    this.notify();
+  }
+
+  public getVolume(): number {
+    return this.volume;
   }
 
   public triggerBeatPulse(pulse: number) {
