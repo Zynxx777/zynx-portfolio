@@ -780,6 +780,29 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
     setPhoneOpen(true);
   }, []);
 
+  // Universal Esc key listener for page modals & drawers
+  useEffect(() => {
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (selectedProject) {
+          setSelectedProject(null);
+        } else if (isDiaryOpen) {
+          setIsDiaryOpen(false);
+        } else if (phoneOpen) {
+          setPhoneOpen(false);
+        } else if (isAnatomyOpen) {
+          setIsAnatomyOpen(false);
+        } else if (isProfileOpen) {
+          setIsProfileOpen(false);
+        } else if (musicOpen) {
+          setMusicOpen(false);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKey);
+    return () => window.removeEventListener("keydown", handleGlobalKey);
+  }, [selectedProject, isDiaryOpen, phoneOpen, isAnatomyOpen, isProfileOpen, musicOpen]);
+
   const handlePosterClick = useCallback((posterId: RoomPosterId) => {
     soundFX.playClick();
     setActiveZone(null);

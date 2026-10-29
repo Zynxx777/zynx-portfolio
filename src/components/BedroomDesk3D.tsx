@@ -11,7 +11,6 @@ import {
   Moon,
   Printer,
   Sparkles,
-  Eye,
   RotateCw,
   Download,
   MessageSquare,
@@ -44,6 +43,16 @@ const GithubIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' })
 const LinkedinIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.45a1.62 1.62 0 0 0-1.62 1.62c0 .89.73 1.62 1.62 1.62.89 0 1.62-.73 1.62-1.62 0-.89-.73-1.62-1.62-1.62z" />
+  </svg>
+);
+
+export const SpectaclesIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="6" cy="14" r="4" />
+    <circle cx="18" cy="14" r="4" />
+    <path d="M10 13.5a2 2 0 0 1 4 0" />
+    <path d="M2.5 13L4 6" />
+    <path d="M21.5 13L20 6" />
   </svg>
 );
 
@@ -154,6 +163,27 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   const cardMeshRef = useRef<THREE.Mesh | null>(null);
   const cardGroupRef = useRef<THREE.Group | null>(null);
   const cardMaterialsRef = useRef<{ front: THREE.MeshStandardMaterial; back: THREE.MeshStandardMaterial } | null>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+
+  // Wireframe toggle across the desk when wearing X-Ray spectacles
+  useEffect(() => {
+    if (!sceneRef.current) return;
+    sceneRef.current.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach((mat) => {
+            if ('wireframe' in mat && mat !== cardMaterialsRef.current?.front && mat !== cardMaterialsRef.current?.back) {
+              mat.wireframe = isXRayMode;
+            }
+          });
+        } else {
+          if ('wireframe' in child.material && child.material !== cardMaterialsRef.current?.front && child.material !== cardMaterialsRef.current?.back) {
+            child.material.wireframe = isXRayMode;
+          }
+        }
+      }
+    });
+  }, [isXRayMode]);
 
   const triggerFlip = useCallback((side: 0 | 1, delay: number = 0) => {
     const w = cardAnimRef.current;
@@ -252,6 +282,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
     // 1. Scene & Camera Setup
     const scene = new THREE.Scene();
+    sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
     camera.position.set(0.0, 0.95, 1.45);
@@ -696,41 +727,78 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       }).catch(() => {});
     }
 
-    // 7. Laptop Model (Center of Desk)
+    // 7. Realistic Opened Laptop Model (Center of Desk)
     const laptopGroup = new THREE.Group();
     laptopGroup.position.set(0.0, 0.17, -0.04);
 
     const laptopBase = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.012, 0.22), laptopAlu);
     laptopBase.castShadow = true;
+    laptopBase.receiveShadow = true;
     laptopGroup.add(laptopBase);
 
-    const keyboard = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.002, 0.11), blackPlastic);
-    keyboard.position.set(0.0, 0.007, -0.03);
+    // Front thumb groove
+    const frontGroove = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.003, 0.004), blackPlastic);
+    frontGroove.position.set(0.0, 0.005, 0.109);
+    laptopGroup.add(frontGroove);
+
+    // Recessed keyboard well
+    const keyboard = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.002, 0.105), blackPlastic);
+    keyboard.position.set(0.0, 0.007, -0.035);
     laptopGroup.add(keyboard);
 
-    const trackpad = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.001, 0.065), laptopAlu);
+    // Speaker grilles flanking keyboard
+    const speakerL = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.001, 0.105), blackPlastic);
+    speakerL.position.set(-0.136, 0.0068, -0.035);
+    laptopGroup.add(speakerL);
+    const speakerR = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.001, 0.105), blackPlastic);
+    speakerR.position.set(0.136, 0.0068, -0.035);
+    laptopGroup.add(speakerR);
+
+    // Trackpad
+    const trackpad = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.001, 0.065), laptopAlu);
     trackpad.position.set(0.0, 0.007, 0.065);
     laptopGroup.add(trackpad);
 
+    // Black hinge cylinder
+    const hingeCylinder = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0045, 0.26, 16), blackPlastic);
+    hingeCylinder.rotation.z = Math.PI / 2;
+    hingeCylinder.position.set(0.0, 0.006, -0.11);
+    laptopGroup.add(hingeCylinder);
+
+    // Screen Hinge (OPENED: tilted backwards at ~106 degrees from base)
     const screenHinge = new THREE.Group();
     screenHinge.position.set(0.0, 0.006, -0.11);
-    screenHinge.rotation.x = Math.PI / 2 - 0.22;
+    screenHinge.rotation.x = -0.28;
 
     const screenLid = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.22, 0.008), laptopAlu);
     screenLid.position.set(0.0, 0.11, 0.0);
     screenLid.castShadow = true;
     screenHinge.add(screenLid);
 
+    // Black screen bezel border
+    const bezel = new THREE.Mesh(new THREE.PlaneGeometry(0.316, 0.216), blackPlastic);
+    bezel.position.set(0.0, 0.11, 0.0042);
+    screenHinge.add(bezel);
+
+    // FaceTime / WebCam lens dot at top of bezel
+    const camDot = new THREE.Mesh(new THREE.CircleGeometry(0.0015, 12), blackPlastic);
+    camDot.position.set(0.0, 0.212, 0.0045);
+    screenHinge.add(camDot);
+
+    // Active Display Plane
     const screenDisplay = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.29, 0.19),
+      new THREE.PlaneGeometry(0.295, 0.192),
       new THREE.MeshBasicMaterial({ map: laptopTexture })
     );
-    screenDisplay.position.set(0.0, 0.11, 0.005);
+    screenDisplay.position.set(0.0, 0.108, 0.0048);
     screenHinge.add(screenDisplay);
 
     laptopGroup.add(screenHinge);
     scene.add(laptopGroup);
+
     registerClickable(laptopBase, 'laptop');
+    registerClickable(keyboard, 'laptop');
+    registerClickable(trackpad, 'laptop');
     registerClickable(screenLid, 'laptop');
     registerClickable(screenDisplay, 'laptop');
 
@@ -1118,16 +1186,95 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     photoFrame.castShadow = true;
     scene.add(photoFrame);
 
+    // 17. Realistic Acetate Designer Spectacles (X-Ray Glasses from pradiplabs.dev)
     const glassesGroup = new THREE.Group();
-    glassesGroup.position.set(-0.18, 0.175, 0.18);
-    glassesGroup.rotation.y = 0.2;
-    const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.002, 12, 24), blackPlastic);
-    ring1.position.x = -0.024;
-    ring1.rotation.x = Math.PI / 2;
-    const ring2 = ring1.clone();
-    ring2.position.x = 0.024;
-    glassesGroup.add(ring1);
-    glassesGroup.add(ring2);
+    glassesGroup.position.set(-0.20, 0.171, 0.17);
+    glassesGroup.rotation.y = 0.22;
+    glassesGroup.rotation.x = -0.04;
+
+    const spectFrameMat = new THREE.MeshStandardMaterial({
+      color: 0x141416,
+      roughness: 0.22,
+      metalness: 0.18
+    });
+    const spectLensMat = new THREE.MeshPhysicalMaterial({
+      color: 0xb9ccdd,
+      metalness: 0.1,
+      roughness: 0.04,
+      transparent: true,
+      opacity: 0.28,
+      transmission: 0.86,
+      ior: 1.52,
+      depthWrite: false
+    });
+    const spectHingeMat = new THREE.MeshStandardMaterial({
+      color: 0xd4d4d8,
+      roughness: 0.25,
+      metalness: 0.92
+    });
+
+    const sR = 0.016;       // lens radius
+    const sTube = 0.0022;   // acetate rim tube radius
+    const sWide = 1.14;     // wide scale
+    const sTall = 0.92;     // tall scale
+    const sSeparation = sR * sWide + 0.0055; // 0.0237 from center to each eye piece
+    const sCenterY = sR * sTall + sTube;    // vertical offset
+
+    [-1, 1].forEach((side) => {
+      const eyeGroup = new THREE.Group();
+      eyeGroup.position.set(side * sSeparation, sCenterY, 0);
+
+      // Eye-wire rim (torus scaled to pantos/wayfarer rounded-square shape)
+      const rimGeom = new THREE.TorusGeometry(sR, sTube, 16, 48);
+      const rimMesh = new THREE.Mesh(rimGeom, spectFrameMat);
+      rimMesh.scale.set(sWide, sTall, 1.0);
+      rimMesh.castShadow = true;
+      rimMesh.receiveShadow = true;
+      eyeGroup.add(rimMesh);
+      registerClickable(rimMesh, 'glasses');
+
+      // Coated glass lens
+      const lensGeom = new THREE.CircleGeometry(sR, 36);
+      const lensMesh = new THREE.Mesh(lensGeom, spectLensMat);
+      lensMesh.scale.set(sWide, sTall, 1.0);
+      eyeGroup.add(lensMesh);
+      registerClickable(lensMesh, 'glasses');
+
+      // Outer silver titanium hinge block
+      const hingeMesh = new THREE.Mesh(new THREE.BoxGeometry(0.0045, 0.0045, 0.004), spectFrameMat);
+      hingeMesh.position.set(side * (sR * sWide + 0.002), 0.002, -0.002);
+      eyeGroup.add(hingeMesh);
+
+      // Titanium micro-pin
+      const pin1 = new THREE.Mesh(new THREE.CylinderGeometry(0.0006, 0.0006, 0.004, 8), spectHingeMat);
+      pin1.rotation.x = Math.PI / 2;
+      pin1.position.set(side * (sR * sWide + 0.002), 0.0035, 0.001);
+      eyeGroup.add(pin1);
+
+      // Folded Temple Ear Stem (angled back and across the desk)
+      const templeGeom = new THREE.BoxGeometry(0.068, 0.0035, 0.0018);
+      const templeMesh = new THREE.Mesh(templeGeom, spectFrameMat);
+      const templeX = side === -1 ? 0.012 : -0.012;
+      const templeY = side === -1 ? 0.003 : -0.002;
+      const templeZ = side === -1 ? -0.026 : -0.028;
+      templeMesh.position.set(templeX, templeY, templeZ);
+      templeMesh.rotation.y = side * 0.32;
+      templeMesh.rotation.z = side * 0.04;
+      templeMesh.castShadow = true;
+      eyeGroup.add(templeMesh);
+      registerClickable(templeMesh, 'glasses');
+
+      glassesGroup.add(eyeGroup);
+    });
+
+    // Keyhole bridge arch connecting the two rims
+    const bridgeGeom = new THREE.TorusGeometry(0.0055, 0.0018, 12, 24, Math.PI);
+    const bridgeMesh = new THREE.Mesh(bridgeGeom, spectFrameMat);
+    bridgeMesh.position.set(0, sCenterY + 0.003, 0);
+    bridgeMesh.castShadow = true;
+    glassesGroup.add(bridgeMesh);
+    registerClickable(bridgeMesh, 'glasses');
+
     scene.add(glassesGroup);
 
     // Raycasting Interactivity
@@ -1217,8 +1364,14 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           });
         } else if (name === 'laptop') {
           soundFX.playClick();
-          if (onOpenMonitor) onOpenMonitor();
-          else setIsMonitorOpen(true);
+          focusObject('laptop');
+          setTimeout(() => {
+            if (onOpenMonitor) onOpenMonitor();
+            else setIsMonitorOpen(true);
+          }, 360);
+        } else if (name === 'glasses') {
+          soundFX.playClick();
+          setIsXRayMode(prev => !prev);
         } else if (name === 'tablet') {
           soundFX.playClick();
           focusObject('tablet');
@@ -1236,8 +1389,33 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (cardAnimRef.current.out > 0.3) {
+        // Universal Esc button functionality for all desk gadgets
+        if (cardAnimRef.current.out > 0.2) {
+          e.preventDefault();
           putDownCard();
+          return;
+        }
+        if (isPhoneOpen) {
+          e.preventDefault();
+          setIsPhoneOpen(false);
+          focusObject('reset');
+          return;
+        }
+        if (printedReceipt) {
+          e.preventDefault();
+          setPrintedReceipt(false);
+          focusObject('reset');
+          return;
+        }
+        if (focusedTarget !== null) {
+          e.preventDefault();
+          focusObject('reset');
+          return;
+        }
+        if (isXRayMode) {
+          e.preventDefault();
+          setIsXRayMode(false);
+          return;
         }
       } else if (e.key === ' ' || e.code === 'Space') {
         if (cardAnimRef.current.out > 0.8) {
@@ -1376,6 +1554,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       cardMeshRef.current = null;
       cardGroupRef.current = null;
       cardMaterialsRef.current = null;
+      sceneRef.current = null;
     };
   }, [dayMode, takeCard, putDownCard, triggerFlip]);
 
@@ -1387,8 +1566,8 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       targetLookAt.current.set(0.0, 0.32, 0.0);
     } else if (target === 'laptop') {
       setFocusedTarget('laptop');
-      targetCamPos.current.set(0.0, 0.44, 0.38);
-      targetLookAt.current.set(0.0, 0.28, -0.04);
+      targetCamPos.current.set(0.0, 0.36, 0.22);
+      targetLookAt.current.set(0.0, 0.28, -0.15);
     } else if (target === 'tablet') {
       setFocusedTarget('tablet');
       targetCamPos.current.set(-0.32, 0.38, 0.36);
@@ -1455,18 +1634,18 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           </button>
         )}
 
-        {/* X-Ray / Anatomy Inspection Toggle (Matching pradiplabs.dev X-Ray) */}
+        {/* Spectacles (X-Ray Glasses Toggle) */}
         <button
           onClick={() => { soundFX.playClick(); setIsXRayMode(!isXRayMode); }}
-          className={`px-3 py-1.5 rounded-full border text-xs font-mono transition-all flex items-center gap-1.5 shadow-lg backdrop-blur-md ${
+          className={`px-3 py-1.5 rounded-full border text-xs font-mono transition-all flex items-center gap-2 shadow-lg backdrop-blur-md ${
             isXRayMode
-              ? 'bg-cyan-400 text-black font-bold border-cyan-300 shadow-cyan-400/30'
-              : 'bg-black/60 border-white/20 text-cyan-300 hover:text-white'
+              ? 'bg-amber-400 text-black font-bold border-amber-300 shadow-amber-400/40'
+              : 'bg-black/60 border-white/20 text-zinc-300 hover:text-white'
           }`}
-          title="Toggle X-Ray / Anatomy Inspection (PradipLabs Style)"
+          title="X-ray glasses · see how it's all made"
         >
-          <Eye className="w-3.5 h-3.5" />
-          <span>{isXRayMode ? 'X-Ray Active' : 'X-Ray'}</span>
+          <SpectaclesIcon className="w-4 h-4" />
+          <span>{isXRayMode ? 'Glasses On' : 'Spectacles'}</span>
         </button>
 
         {/* Showcase Switcher */}
@@ -1548,6 +1727,24 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         </div>
       )}
 
+      {hoveredObject === 'glasses' && !isCardHeld && (
+        <div className="absolute top-[62%] left-[40%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+          <div className="whitespace-nowrap rounded-full bg-white text-zinc-900 px-3.5 py-1.5 text-[13px] font-medium shadow-xl flex items-center gap-2 ring-1 ring-black/10">
+            <SpectaclesIcon className="w-4 h-4 text-amber-600" />
+            <span>X-ray glasses</span>
+            <span className="text-zinc-500 font-normal">· see how it's all made</span>
+          </div>
+        </div>
+      )}
+
+      {hoveredObject === 'laptop' && !isCardHeld && !isMonitorOpen && (
+        <div className="absolute top-[48%] left-[50%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+          <div className="px-3.5 py-1.5 rounded-full bg-black/90 backdrop-blur-md border border-white/20 text-white text-xs font-sans shadow-xl flex items-center gap-2">
+            <span>Laptop · Eight live projects, open to click through</span>
+          </div>
+        </div>
+      )}
+
       {hoveredObject === 'phone' && !isCardHeld && !isPhoneOpen && (
         <div className="absolute top-[48%] left-[68%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
           <div className="px-3.5 py-1.5 rounded-full bg-black/90 backdrop-blur-md border border-cyan-400/50 text-cyan-300 text-xs font-mono shadow-xl flex items-center gap-2">
@@ -1557,9 +1754,30 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         </div>
       )}
 
-      {/* X-Ray / Anatomy Anatomical Pins (Matching pradiplabs.dev xrayParts.tsx) */}
+      {/* X-Ray / Anatomy Anatomical Pins & Header Banner (Matching pradiplabs.dev frame 80) */}
       {isXRayMode && (
         <div className="absolute inset-0 pointer-events-none z-30">
+          {/* Top Banner */}
+          <div className="absolute top-20 inset-x-0 flex justify-center pointer-events-none animate-fade-in px-4">
+            <div className="rounded-2xl bg-black/85 backdrop-blur-xl border border-amber-400/50 p-3 sm:px-6 shadow-2xl max-w-lg text-center pointer-events-auto">
+              <div className="flex items-center justify-center gap-2 text-amber-400 font-mono text-xs uppercase tracking-wider font-bold">
+                <SpectaclesIcon className="w-4 h-4" />
+                <span>How it's made · X-Ray Blueprint</span>
+              </div>
+              <p className="text-zinc-300 text-xs mt-1 leading-relaxed">
+                No 3D model files here: everything on this desk is built procedurally in code. Tap anything to inspect.
+              </p>
+              <div className="flex items-center justify-center gap-2 mt-2">
+                <button
+                  onClick={() => { soundFX.playClick(); setIsXRayMode(false); }}
+                  className="px-3 py-1 rounded-full bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 border border-amber-400/40 text-[11px] font-mono transition"
+                >
+                  Take off glasses (Esc)
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div className="absolute top-[42%] left-[25%] -translate-x-1/2 px-2.5 py-1 rounded bg-black/85 border border-cyan-400/80 text-cyan-300 font-mono text-[10px] shadow-lg animate-pulse">
             01 // THERMAL POS PRINTER
           </div>
@@ -1605,8 +1823,11 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         <button
           onClick={() => {
             soundFX.playClick();
-            if (onOpenMonitor) onOpenMonitor();
-            else setIsMonitorOpen(true);
+            focusObject('laptop');
+            setTimeout(() => {
+              if (onOpenMonitor) onOpenMonitor();
+              else setIsMonitorOpen(true);
+            }, 360);
           }}
           className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg ${
             focusedTarget === 'laptop' || isMonitorOpen
@@ -1805,7 +2026,10 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       {/* Full Desktop Monitor Experience (pradiplabs.dev replica) */}
       <MonitorDesktopModal
         isOpen={isMonitorOpen}
-        onClose={() => setIsMonitorOpen(false)}
+        onClose={() => {
+          setIsMonitorOpen(false);
+          focusObject('reset');
+        }}
         onOpenAnatomy={onOpenAnatomy}
         onOpenProject={onOpenProject}
       />

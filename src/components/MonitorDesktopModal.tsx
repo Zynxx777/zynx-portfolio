@@ -11,7 +11,8 @@ import {
   Copy,
   Check,
   Clock,
-  Phone
+  Phone,
+  Layers
 } from 'lucide-react';
 import { ZYNX_PROFILE } from '../data/portfolioData';
 
@@ -216,8 +217,8 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
   openResume,
   onOpenAnatomy
 }) => {
-  // Navigation tabs: 'work' | 'about' | 'contact' | 'browser'
-  const [activeTab, setActiveTab] = useState<'work' | 'about' | 'contact' | 'browser'>('work');
+  // Navigation tabs: 'work' | 'about' | 'contact' | 'browser' | null (null = clean desktop OS background)
+  const [activeTab, setActiveTab] = useState<'work' | 'about' | 'contact' | 'browser' | null>('work');
   const [selectedProject, setSelectedProject] = useState<MonitorProject>(MONITOR_PROJECTS[0]);
 
   // Live site iframe loading status
@@ -246,13 +247,15 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Keyboard shortcut: Escape closes modal or active browser window
+  // Keyboard shortcut: Escape closes active window, or exits back to desk if already on clean OS background
   useEffect(() => {
     if (!isOpen) return;
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (activeTab === 'browser') {
           setActiveTab('work');
+        } else if (activeTab !== null) {
+          setActiveTab(null);
         } else {
           onClose();
         }
@@ -446,21 +449,22 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
               </div>
 
               {/* Main Floating MacOS Window */}
-              <div className="relative z-10 w-full max-w-[960px] lg:max-w-[1020px] h-full max-h-[500px] md:max-h-[540px] bg-white rounded-xl shadow-[0_0_0_1px_rgba(0,0,0,0.08),0_25px_60px_-15px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden transition-all duration-300">
-                
-                {/* Window Chrome Titlebar */}
-                <div className="h-11 shrink-0 bg-[#F7F7F8] border-b border-black/[0.06] px-4 flex items-center justify-between text-zinc-800">
-                  {/* Traffic Light Buttons */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (activeTab === 'browser') setActiveTab('work');
-                        else onClose();
-                      }}
-                      title="Close window"
-                      className="h-3 w-3 rounded-full bg-[#FF5F57] ring-1 ring-black/10 hover:opacity-80 transition cursor-pointer"
-                    />
+              {activeTab !== null ? (
+                <div className="relative z-10 w-full max-w-[960px] lg:max-w-[1020px] h-full max-h-[500px] md:max-h-[540px] bg-white rounded-xl shadow-[0_0_0_1px_rgba(0,0,0,0.08),0_25px_60px_-15px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden animate-fade-in transition-all duration-300">
+                  
+                  {/* Window Chrome Titlebar */}
+                  <div className="h-11 shrink-0 bg-[#F7F7F8] border-b border-black/[0.06] px-4 flex items-center justify-between text-zinc-800">
+                    {/* Traffic Light Buttons */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (activeTab === 'browser') setActiveTab('work');
+                          else setActiveTab(null);
+                        }}
+                        title="Close window (stay in desktop OS)"
+                        className="h-3 w-3 rounded-full bg-[#FF5F57] ring-1 ring-black/10 hover:opacity-80 transition cursor-pointer"
+                      />
                     <span className="h-3 w-3 rounded-full bg-[#FEBC2E] ring-1 ring-black/10" />
                     <span className="h-3 w-3 rounded-full bg-[#28C840] ring-1 ring-black/10" />
 
@@ -787,12 +791,70 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
 
                 </div>
               </div>
+            ) : (
+              /* Background OS State: When all windows are closed, user stays in macOS desktop */
+              <div className="relative z-10 flex flex-col items-center justify-center text-center p-6 max-w-md mx-auto animate-fade-in select-none">
+                <div className="w-20 h-20 rounded-3xl bg-white/75 shadow-xl ring-1 ring-black/5 backdrop-blur-2xl flex items-center justify-center mb-4 text-[#2F5BEA]">
+                  <Folder className="w-10 h-10" />
+                </div>
+                <h3 className="text-2xl font-bold tracking-tight text-zinc-900">Joshua OS</h3>
+                <p className="text-[13px] text-zinc-600 mt-1.5 leading-relaxed max-w-sm">
+                  Windows closed. Click any application from the right desktop shortcuts, top menu bar, or dock below.
+                </p>
+                
+                <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('work')}
+                    className="px-4 py-2 rounded-full bg-[#2F5BEA] text-white text-xs font-semibold shadow-md hover:bg-blue-600 transition active:scale-95 flex items-center gap-1.5"
+                  >
+                    <Folder className="w-3.5 h-3.5" />
+                    <span>Open Work</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('about')}
+                    className="px-4 py-2 rounded-full bg-white/85 ring-1 ring-black/10 text-zinc-800 text-xs font-semibold shadow-sm hover:bg-white transition active:scale-95 flex items-center gap-1.5"
+                  >
+                    <User className="w-3.5 h-3.5" />
+                    <span>About Me</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('contact')}
+                    className="px-4 py-2 rounded-full bg-white/85 ring-1 ring-black/10 text-zinc-800 text-xs font-semibold shadow-sm hover:bg-white transition active:scale-95 flex items-center gap-1.5"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>Contact</span>
+                  </button>
+                </div>
+
+                <p className="mt-4 text-[11px] font-mono text-zinc-400">
+                  Press <kbd className="px-1.5 py-0.5 rounded bg-black/10 text-zinc-700 font-bold">Esc</kbd> or click Back to exit to desk
+                </p>
+              </div>
+            )}
 
             </div>
 
             {/* Bottom Floating MacOS Dock */}
             <div className="relative z-20 pb-3 flex justify-center">
               <div className="flex items-end gap-2 rounded-[22px] bg-white/65 p-2 shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_10px_30px_-10px_rgba(0,0,0,0.25)] backdrop-blur-2xl">
+                {/* Work Folder */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('work')}
+                  title="Work (8 Live Projects)"
+                  className="relative flex flex-col items-center transition-transform duration-200 ease-out hover:-translate-y-1.5 hover:scale-115 focus:outline-none"
+                >
+                  <span className="grid h-10 w-10 place-items-center rounded-[20%] bg-[#2F5BEA] text-white shadow-sm ring-1 ring-black/5">
+                    <Folder className="h-5 w-5" />
+                  </span>
+                  {activeTab === 'work' && (
+                    <span className="w-1 h-1 rounded-full bg-zinc-800 mt-1" />
+                  )}
+                </button>
+
                 {MONITOR_PROJECTS.map((p) => (
                   <button
                     key={p.slug}
@@ -813,6 +875,9 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
                         </span>
                       )}
                     </span>
+                    {activeTab === 'browser' && selectedProject.slug === p.slug && (
+                      <span className="w-1 h-1 rounded-full bg-zinc-800 mt-1" />
+                    )}
                   </button>
                 ))}
 
@@ -822,18 +887,57 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
                   type="button"
                   onClick={() => setActiveTab('about')}
                   title="About me"
-                  className="grid h-10 w-10 place-items-center rounded-[20%] bg-white/90 shadow-sm ring-1 ring-black/5 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-115"
+                  className="relative grid h-10 w-10 place-items-center rounded-[20%] bg-white/90 shadow-sm ring-1 ring-black/5 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-115"
                 >
                   <User className="h-5 w-5 text-zinc-800" />
+                  {activeTab === 'about' && (
+                    <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-zinc-800" />
+                  )}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setActiveTab('contact')}
                   title="Contact"
-                  className="grid h-10 w-10 place-items-center rounded-[20%] bg-[#2F5BEA] text-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-115"
+                  className="relative grid h-10 w-10 place-items-center rounded-[20%] bg-[#2F5BEA] text-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-115"
                 >
                   <Mail className="h-5 w-5" />
+                  {activeTab === 'contact' && (
+                    <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-white" />
+                  )}
+                </button>
+
+                {openResume && (
+                  <button
+                    type="button"
+                    onClick={openResume}
+                    title="Open Resume"
+                    className="grid h-10 w-10 place-items-center rounded-[20%] bg-emerald-600 text-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-115"
+                  >
+                    <FileText className="h-5 w-5" />
+                  </button>
+                )}
+
+                {onOpenAnatomy && (
+                  <button
+                    type="button"
+                    onClick={onOpenAnatomy}
+                    title="Anatomy CAD Reveal"
+                    className="grid h-10 w-10 place-items-center rounded-[20%] bg-purple-600 text-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-115"
+                  >
+                    <Layers className="h-5 w-5" />
+                  </button>
+                )}
+
+                <span className="mx-0.5 h-8 w-px self-center bg-black/10" aria-hidden="true" />
+
+                <button
+                  type="button"
+                  onClick={onClose}
+                  title="Back to Desk (Esc)"
+                  className="grid h-10 w-10 place-items-center rounded-[20%] bg-white/95 text-zinc-800 shadow-sm ring-1 ring-black/10 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-115"
+                >
+                  <ArrowLeft className="h-5 w-5" />
                 </button>
               </div>
             </div>

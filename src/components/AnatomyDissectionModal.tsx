@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Layers, Sun, Fingerprint, BatteryCharging, Cpu, ShieldCheck, Box, Sliders } from 'lucide-react';
 
 interface AnatomyDissectionModalProps {
@@ -113,6 +113,15 @@ const PARTS: Part[] = [
 export const AnatomyDissectionModal: React.FC<AnatomyDissectionModalProps> = ({ isOpen, onClose }) => {
   const [explodeFactor, setExplodeFactor] = useState(0.85); // 0 to 1
   const [selectedPart, setSelectedPart] = useState<Part>(PARTS[0]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
