@@ -953,6 +953,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
             onOpenDiary={() => setIsDiaryOpen(true)}
             onSwitchToShowcase={onNavigatePortfolio}
             onOpenAnatomy={() => setIsAnatomyOpen(true)}
+            onOpenPhone={() => setPhoneOpen(true)}
           />
         </div>
       )}

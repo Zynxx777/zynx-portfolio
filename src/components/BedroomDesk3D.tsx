@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { soundFX } from '../utils/audioFX';
 import { MonitorDesktopModal } from './MonitorDesktopModal';
+import PhoneExperience from './PhoneExperience';
 import { 
   drawCardFront, 
   drawCardBack, 
@@ -105,6 +106,7 @@ interface BedroomDesk3DProps {
   onSwitchToShowcase: () => void;
   onOpenAnatomy: () => void;
   onOpenMonitor?: () => void;
+  onOpenPhone?: () => void;
 }
 
 export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
@@ -112,7 +114,8 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   onOpenProject,
   onSwitchToShowcase,
   onOpenAnatomy,
-  onOpenMonitor
+  onOpenMonitor,
+  onOpenPhone
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const [hoveredObject, setHoveredObject] = useState<string | null>(null);
@@ -122,9 +125,19 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [printedReceipt, setPrintedReceipt] = useState(false);
   const [isMonitorOpen, setIsMonitorOpen] = useState(false);
+  const [isPhoneOpen, setIsPhoneOpen] = useState(false);
   const [focusedTarget, setFocusedTarget] = useState<'laptop' | 'tablet' | 'phone' | 'diary' | 'zcard' | 'printer' | 'zoro' | null>(null);
   const [isCardHeld, setIsCardHeld] = useState(false);
   const [, setCardSide] = useState<0 | 1>(0);
+
+  const handleOpenPhone = useCallback(() => {
+    soundFX.playClick();
+    if (onOpenPhone) {
+      onOpenPhone();
+    } else {
+      setIsPhoneOpen(true);
+    }
+  }, [onOpenPhone]);
 
   // Card Animation & Transform References
   const cardAnimRef = useRef({
@@ -894,6 +907,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     scene.add(phoneGroup);
     registerClickable(phoneBody, 'phone');
     registerClickable(phoneScreen, 'phone');
+    registerClickable(phoneStand, 'phone');
 
     // 12. Personal Guestbook Diary (Front Right)
     const diaryGroup = new THREE.Group();
@@ -1210,7 +1224,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           focusObject('tablet');
         } else if (name === 'phone') {
           soundFX.playClick();
-          focusObject('phone');
+          handleOpenPhone();
         }
       } else {
         // Empty space clicked: if card is held, smoothly put it back down
@@ -1391,6 +1405,8 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       setFocusedTarget('phone');
       targetCamPos.current.set(0.27, 0.36, 0.32);
       targetLookAt.current.set(0.27, 0.24, 0.07);
+      if (onOpenPhone) onOpenPhone();
+      else setIsPhoneOpen(true);
     } else if (target === 'zcard') {
       takeCard();
     } else if (target === 'diary') {
@@ -1532,6 +1548,15 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         </div>
       )}
 
+      {hoveredObject === 'phone' && !isCardHeld && !isPhoneOpen && (
+        <div className="absolute top-[48%] left-[68%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+          <div className="px-3.5 py-1.5 rounded-full bg-black/90 backdrop-blur-md border border-cyan-400/50 text-cyan-300 text-xs font-mono shadow-xl flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <span>7YNX Smartphone · Live Audio & AI Chat</span>
+          </div>
+        </div>
+      )}
+
       {/* X-Ray / Anatomy Anatomical Pins (Matching pradiplabs.dev xrayParts.tsx) */}
       {isXRayMode && (
         <div className="absolute inset-0 pointer-events-none z-30">
@@ -1630,9 +1655,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         </button>
 
         <button
-          onClick={() => focusObject('phone')}
+          onClick={handleOpenPhone}
           className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg ${
-            focusedTarget === 'phone'
+            focusedTarget === 'phone' || isPhoneOpen
               ? 'bg-white text-slate-950 font-bold border-white'
               : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
           }`}
@@ -1784,6 +1809,19 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         onOpenAnatomy={onOpenAnatomy}
         onOpenProject={onOpenProject}
       />
+
+      {/* 7YNX Smartphone Experience Modal (Matching pradiplabs.dev phone experience) */}
+      {isPhoneOpen && (
+        <PhoneExperience
+          onClose={() => {
+            soundFX.playClick();
+            setIsPhoneOpen(false);
+            setFocusedTarget(null);
+            targetCamPos.current.set(0.0, 0.95, 1.45);
+            targetLookAt.current.set(0.0, 0.32, 0.0);
+          }}
+        />
+      )}
     </div>
   );
 };
