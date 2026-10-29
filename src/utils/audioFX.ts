@@ -4,6 +4,7 @@
 class SoundFXEngine {
   private ctx: AudioContext | null = null;
   public enabled: boolean = true;
+  private noiseBuffer: AudioBuffer | null = null;
 
   private initCtx(): AudioContext | null {
     if (!this.ctx && typeof window !== "undefined") {
@@ -16,6 +17,129 @@ class SoundFXEngine {
       this.ctx.resume().catch(() => {});
     }
     return this.ctx;
+  }
+
+  private getNoiseBuffer(ctx: AudioContext): AudioBuffer {
+    if (!this.noiseBuffer) {
+      const bufferSize = ctx.sampleRate * 2;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      this.noiseBuffer = buffer;
+    }
+    return this.noiseBuffer;
+  }
+
+  // Card pickup: smooth paper/metal slide whoosh
+  playCardPickup() {
+    if (!this.enabled) return;
+    try {
+      const ctx = this.initCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const noise = ctx.createBufferSource();
+      noise.buffer = this.getNoiseBuffer(ctx);
+      const filter = ctx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime(2600, now);
+      filter.frequency.exponentialRampToValueAtTime(700, now + 0.32);
+      filter.Q.value = 0.8;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(0.28, now + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      noise.start(now);
+      noise.stop(now + 0.35);
+    } catch {
+      // Autoplay policy
+    }
+  }
+
+  // Card flip: crisp mechanical / card flick snap
+  playCardFlip() {
+    if (!this.enabled) return;
+    try {
+      const ctx = this.initCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+
+      // Impulse 1: highpass card cut
+      const noise = ctx.createBufferSource();
+      noise.buffer = this.getNoiseBuffer(ctx);
+      const filter = ctx.createBiquadFilter();
+      filter.type = "highpass";
+      filter.frequency.setValueAtTime(2400, now);
+      filter.frequency.exponentialRampToValueAtTime(3600, now + 0.07);
+      const gain1 = ctx.createGain();
+      gain1.gain.setValueAtTime(0.0001, now);
+      gain1.gain.linearRampToValueAtTime(0.22, now + 0.004);
+      gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+      noise.connect(filter);
+      filter.connect(gain1);
+      gain1.connect(ctx.destination);
+      noise.start(now);
+      noise.stop(now + 0.08);
+
+      // Impulse 2: tactile resonance flick
+      const osc = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(1800, now + 0.06);
+      osc.frequency.exponentialRampToValueAtTime(320, now + 0.12);
+      gain2.gain.setValueAtTime(0.0001, now + 0.06);
+      gain2.gain.linearRampToValueAtTime(0.18, now + 0.063);
+      gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+      osc.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc.start(now + 0.06);
+      osc.stop(now + 0.13);
+    } catch {
+      // Autoplay policy
+    }
+  }
+
+  // Card putdown: tactile wooden desk clack
+  playCardPutdown() {
+    if (!this.enabled) return;
+    try {
+      const ctx = this.initCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(210, now);
+      osc.frequency.exponentialRampToValueAtTime(110, now + 0.09);
+      const gainOsc = ctx.createGain();
+      gainOsc.gain.setValueAtTime(0.22, now);
+      gainOsc.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+      osc.connect(gainOsc);
+      gainOsc.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.1);
+
+      const noise = ctx.createBufferSource();
+      noise.buffer = this.getNoiseBuffer(ctx);
+      const filter = ctx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(1400, now);
+      const gainNoise = ctx.createGain();
+      gainNoise.gain.setValueAtTime(0.0001, now);
+      gainNoise.gain.linearRampToValueAtTime(0.2, now + 0.002);
+      gainNoise.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
+      noise.connect(filter);
+      filter.connect(gainNoise);
+      gainNoise.connect(ctx.destination);
+      noise.start(now);
+      noise.stop(now + 0.05);
+    } catch {
+      // Autoplay policy
+    }
   }
 
   // Subtle metallic UI tick on hover
