@@ -109,6 +109,265 @@ function computeHeldTransform(
   }
 }
 
+// Renders the authentic live Z OS desktop interface onto the 3D laptop screen
+function drawLiveLaptopDisplay(
+  ctx: CanvasRenderingContext2D,
+  timeStr: string,
+  pulse: number
+) {
+  const w = 1280;
+  const h = 800;
+
+  const round = (x: number, y: number, rw: number, rh: number, r: number | number[]) => {
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(x, y, rw, rh, r);
+    } else {
+      ctx.rect(x, y, rw, rh);
+    }
+  };
+
+  // 1. Wallpaper Base & Soft Aura Blurs (Matching Z OS / MacOS)
+  ctx.fillStyle = '#EEF1F7';
+  ctx.fillRect(0, 0, w, h);
+
+  // Aura 1 (Top-Left soft blue)
+  const g1 = ctx.createRadialGradient(240, 160, 40, 240, 160, 440);
+  g1.addColorStop(0, 'rgba(217, 227, 255, 0.85)');
+  g1.addColorStop(1, 'rgba(217, 227, 255, 0)');
+  ctx.fillStyle = g1;
+  ctx.fillRect(0, 0, w, h);
+
+  // Aura 2 (Top-Right soft peach)
+  const g2 = ctx.createRadialGradient(1060, 240, 40, 1060, 240, 420);
+  g2.addColorStop(0, 'rgba(251, 227, 211, 0.85)');
+  g2.addColorStop(1, 'rgba(251, 227, 211, 0)');
+  ctx.fillStyle = g2;
+  ctx.fillRect(0, 0, w, h);
+
+  // Aura 3 (Bottom-Center soft mint)
+  const g3 = ctx.createRadialGradient(520, 720, 50, 520, 720, 460);
+  g3.addColorStop(0, 'rgba(230, 241, 228, 0.85)');
+  g3.addColorStop(1, 'rgba(230, 241, 228, 0)');
+  ctx.fillStyle = g3;
+  ctx.fillRect(0, 0, w, h);
+
+  // 2. Top Menu Bar
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
+  ctx.fillRect(0, 0, w, 36);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+  ctx.fillRect(0, 35, w, 1);
+
+  // Z OS Badge
+  ctx.fillStyle = '#2F5BEA';
+  round(16, 8, 20, 20, 4);
+  ctx.fill();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '900 11px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('Z', 26, 22);
+
+  // Menu Items
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#1D1D1F';
+  ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillText('Z OS', 44, 23);
+
+  ctx.fillStyle = '#2F5BEA';
+  ctx.fillText('Work', 104, 23);
+  ctx.fillStyle = '#55555A';
+  ctx.font = '500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillText('About', 158, 23);
+  ctx.fillText('Contact', 214, 23);
+
+  // Right Menu Status: Live pulse dot + Bengaluru Time
+  ctx.textAlign = 'right';
+  const dotAlpha = 0.4 + 0.6 * Math.abs(Math.sin(pulse * 3));
+  ctx.fillStyle = `rgba(16, 185, 129, ${dotAlpha})`;
+  ctx.beginPath();
+  ctx.arc(1110, 18, 4.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#059669';
+  ctx.font = 'bold 11px monospace';
+  ctx.fillText('LIVE', 1100, 22);
+
+  ctx.fillStyle = '#1D1D1F';
+  ctx.font = '500 12px monospace';
+  ctx.fillText(`Bengaluru ${timeStr || '1:20 am'}`, 1260, 22);
+
+  // 3. Desktop Shortcut Icons on Right
+  const rightIcons = [
+    { label: 'Work', icon: '📁', y: 70 },
+    { label: 'About', icon: '👤', y: 155 },
+    { label: 'Contact', icon: '✉️', y: 240 }
+  ];
+  rightIcons.forEach((item) => {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    round(1190, item.y, 56, 56, 14);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.font = '22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(item.icon, 1218, item.y + 36);
+
+    ctx.fillStyle = '#1D1D1F';
+    ctx.font = '600 11px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.fillText(item.label, 1218, item.y + 72);
+  });
+
+  // 4. Main Floating Window (Work: Eight projects, all running)
+  const wx = 50;
+  const wy = 52;
+  const ww = 1100;
+  const wh = 650;
+
+  // Window Shadow
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+  round(wx + 4, wy + 8, ww, wh, 16);
+  ctx.fill();
+
+  // Window Container
+  ctx.fillStyle = '#FFFFFF';
+  round(wx, wy, ww, wh, 14);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Titlebar
+  ctx.fillStyle = '#F7F7F8';
+  round(wx, wy, ww, 44, [14, 14, 0, 0]);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.06)';
+  ctx.fillRect(wx, wy + 43, ww, 1);
+
+  // Traffic lights
+  ctx.fillStyle = '#FF5F57';
+  ctx.beginPath(); ctx.arc(wx + 22, wy + 22, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#FEBC2E';
+  ctx.beginPath(); ctx.arc(wx + 42, wy + 22, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#28C840';
+  ctx.beginPath(); ctx.arc(wx + 62, wy + 22, 6, 0, Math.PI * 2); ctx.fill();
+
+  // Title in center of titlebar
+  ctx.fillStyle = '#374151';
+  ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Work — Eight live projects', wx + ww / 2, wy + 27);
+
+  // Window Content Header
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#111827';
+  ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.fillText('Eight projects, all running.', wx + 36, wy + 80);
+
+  ctx.fillStyle = '#6B7280';
+  ctx.font = '13px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.fillText('Open one to use the real site. Everything here was built by me alone.', wx + 36, wy + 102);
+
+  // Grid of 8 Project Tiles (2 rows x 4 cols)
+  const tiles = [
+    { title: 'Z Card v0.1', sub: 'Smart Card System', tag: 'HARDWARE', tint: '#EBF1F7', icon: '💳' },
+    { title: 'S.M. School Web', sub: 'School Management', tag: 'LIVE SITE', tint: '#EBF5FB', icon: '🏫' },
+    { title: 'Arch Workstation', sub: 'Hyprland & Kernel', tag: 'SYSTEM', tint: '#F0F4F8', icon: '⚡' },
+    { title: 'Luxoft AAOS', sub: 'Automotive CAN Bus', tag: 'RESEARCH', tint: '#F2EEF9', icon: '🚗' },
+    { title: 'MediVend', sub: 'Verilog FSM Prototype', tag: 'EMBEDDED', tint: '#E7F6EF', icon: '💊' },
+    { title: '7YNX Sound Lab', sub: 'Electronic Soundscapes', tag: 'AUDIO', tint: '#FDF0F3', icon: '🎧' },
+    { title: 'Jesper Wave 3D', sub: 'Curved WebGL Wave', tag: 'CREATIVE', tint: '#E8F0FE', icon: '🌊' },
+    { title: '3D Bedroom', sub: 'Three.js Spatial Web', tag: 'SPATIAL', tint: '#FDF6E2', icon: '🛋️' }
+  ];
+
+  const cols = 4;
+  const tileW = 236;
+  const tileH = 205;
+  const startX = wx + 36;
+  const startY = wy + 128;
+  const gapX = 28;
+  const gapY = 24;
+
+  tiles.forEach((t, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const tx = startX + col * (tileW + gapX);
+    const ty = startY + row * (tileH + gapY);
+
+    // Card background
+    ctx.fillStyle = t.tint;
+    round(tx, ty, tileW, tileH, 10);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Top icon/preview box
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    round(tx + 8, ty + 8, tileW - 16, 110, 8);
+    ctx.fill();
+
+    ctx.font = '36px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(t.icon, tx + tileW / 2, ty + 74);
+
+    // Tag badge
+    ctx.fillStyle = '#2F5BEA';
+    ctx.font = 'bold 9px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(t.tag, tx + 14, ty + 26);
+
+    // Title & Subtitle
+    ctx.fillStyle = '#111827';
+    ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.fillText(t.title, tx + 12, ty + 150);
+
+    ctx.fillStyle = '#6B7280';
+    ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.fillText(t.sub, tx + 12, ty + 172);
+
+    // Live indicator
+    ctx.fillStyle = '#10B981';
+    ctx.beginPath();
+    ctx.arc(tx + tileW - 18, ty + 150, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // 5. Bottom MacOS Glass Dock
+  const dockW = 460;
+  const dockH = 54;
+  const dockX = (w - dockW) / 2;
+  const dockY = h - 68;
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+  round(dockX, dockY, dockW, dockH, 20);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Dock icons
+  const dockIcons = ['📁', '💳', '🏫', '⚡', '🚗', '💊', '🎧', '|', '👤', '✉️'];
+  ctx.textAlign = 'center';
+  dockIcons.forEach((dIcon, di) => {
+    const ix = dockX + 28 + di * 42;
+    if (dIcon === '|') {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.fillRect(ix - 6, dockY + 12, 1, 30);
+    } else {
+      ctx.font = '20px sans-serif';
+      ctx.fillText(dIcon, ix, dockY + 35);
+      if (di === 0) {
+        // Active dot under Work folder
+        ctx.fillStyle = '#1D1D1F';
+        ctx.beginPath();
+        ctx.arc(ix, dockY + 47, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  });
+}
+
 interface BedroomDesk3DProps {
   onOpenDiary: () => void;
   onOpenProject: (projectId: string) => void;
@@ -164,6 +423,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   const cardGroupRef = useRef<THREE.Group | null>(null);
   const cardMaterialsRef = useRef<{ front: THREE.MeshStandardMaterial; back: THREE.MeshStandardMaterial } | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
+  const lastLaptopRefresh = useRef(0);
 
   // Wireframe toggle across the desk when wearing X-Ray spectacles
   useEffect(() => {
@@ -464,83 +724,27 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     });
 
     // 6. Dynamic Canvas Textures
-    // 6a. Laptop Screen Texture: "8 projects, all running"
+    // 6a. Live Laptop Screen Texture: Z OS Live Display
     const laptopCanvas = document.createElement('canvas');
-    laptopCanvas.width = 1024;
-    laptopCanvas.height = 680;
+    laptopCanvas.width = 1280;
+    laptopCanvas.height = 800;
     const lCtx = laptopCanvas.getContext('2d');
     if (lCtx) {
-      lCtx.fillStyle = '#0a0e17';
-      lCtx.fillRect(0, 0, 1024, 680);
-      
-      // Top Browser Bar
-      lCtx.fillStyle = '#1e293b';
-      lCtx.fillRect(0, 0, 1024, 48);
-      // Window dots
-      lCtx.fillStyle = '#ef4444';
-      lCtx.beginPath(); lCtx.arc(24, 24, 8, 0, Math.PI * 2); lCtx.fill();
-      lCtx.fillStyle = '#eab308';
-      lCtx.beginPath(); lCtx.arc(48, 24, 8, 0, Math.PI * 2); lCtx.fill();
-      lCtx.fillStyle = '#22c55e';
-      lCtx.beginPath(); lCtx.arc(72, 24, 8, 0, Math.PI * 2); lCtx.fill();
-      // Search bar
-      lCtx.fillStyle = '#0f172a';
-      lCtx.roundRect(120, 10, 420, 28, 6);
-      lCtx.fill();
-      lCtx.fillStyle = '#64748b';
-      lCtx.font = '14px monospace';
-      lCtx.fillText('https://zynx.systems/active-nodes', 135, 29);
-
-      // Headline
-      lCtx.fillStyle = '#ffffff';
-      lCtx.font = 'bold 28px sans-serif';
-      lCtx.fillText('Eight projects, all running.', 40, 95);
-      lCtx.fillStyle = '#94a3b8';
-      lCtx.font = '15px sans-serif';
-      lCtx.fillText('Active embedded systems, Arch Linux workflows, and digital designs.', 40, 122);
-
-      // Grid of 6 project tiles
-      const mockTiles = [
-        { title: 'Z Card v0.1', sub: 'All-in-One Smart Card', tag: 'HARDWARE' },
-        { title: 'S.M. School Web', sub: 'School Management Portal', tag: 'LIVE' },
-        { title: 'Arch Workstation', sub: 'Hyprland & Kernel 6.12', tag: 'SYSTEM' },
-        { title: 'Luxoft AAOS', sub: 'Automotive CAN Architecture', tag: 'RESEARCH' },
-        { title: 'MediVend Dispenser', sub: 'Verilog & Motor Drivers', tag: 'EMBEDDED' },
-        { title: '7YNX Sound Lab', sub: 'Ambient DSP & Audio Daw', tag: 'AUDIO' }
-      ];
-
-      mockTiles.forEach((tile, i) => {
-        const col = i % 3;
-        const row = Math.floor(i / 3);
-        const tx = 40 + col * 315;
-        const ty = 150 + row * 240;
-
-        lCtx.fillStyle = '#162032';
-        lCtx.roundRect(tx, ty, 295, 215, 12);
-        lCtx.fill();
-        lCtx.strokeStyle = '#2d3f5e';
-        lCtx.lineWidth = 1.5;
-        lCtx.stroke();
-
-        lCtx.fillStyle = '#0b111e';
-        lCtx.roundRect(tx + 12, ty + 12, 271, 110, 8);
-        lCtx.fill();
-
-        lCtx.fillStyle = '#00f0ff';
-        lCtx.font = 'bold 11px monospace';
-        lCtx.fillText(tile.tag, tx + 24, ty + 38);
-
-        lCtx.fillStyle = '#ffffff';
-        lCtx.font = 'bold 18px sans-serif';
-        lCtx.fillText(tile.title, tx + 14, ty + 155);
-
-        lCtx.fillStyle = '#94a3b8';
-        lCtx.font = '13px sans-serif';
-        lCtx.fillText(tile.sub, tx + 14, ty + 180);
-      });
+      let initialTime = '1:20 am';
+      try {
+        initialTime = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'Asia/Kolkata',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        }).format(new Date()).toLowerCase();
+      } catch {}
+      drawLiveLaptopDisplay(lCtx, initialTime, 0);
     }
     const laptopTexture = new THREE.CanvasTexture(laptopCanvas);
     laptopTexture.colorSpace = THREE.SRGBColorSpace;
+    laptopTexture.minFilter = THREE.LinearFilter;
+    laptopTexture.magFilter = THREE.LinearFilter;
 
     // 6b. Tablet Screen Texture: "Docket Telemetry & Print Action"
     const tabletCanvas = document.createElement('canvas');
@@ -785,12 +989,12 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     camDot.position.set(0.0, 0.212, 0.0045);
     screenHinge.add(camDot);
 
-    // Active Display Plane
+    // Active Display Plane (16:10 aspect ratio matching 1280x800 Z OS display)
     const screenDisplay = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.295, 0.192),
+      new THREE.PlaneGeometry(0.295, 0.184),
       new THREE.MeshBasicMaterial({ map: laptopTexture })
     );
-    screenDisplay.position.set(0.0, 0.108, 0.0048);
+    screenDisplay.position.set(0.0, 0.110, 0.0048);
     screenHinge.add(screenDisplay);
 
     laptopGroup.add(screenHinge);
@@ -1527,6 +1731,23 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         }
       }
 
+      // Live Laptop Screen Refresh (Z OS live clock & system pulse)
+      const nowMs = performance.now();
+      if (nowMs - lastLaptopRefresh.current > 1000 && lCtx) {
+        lastLaptopRefresh.current = nowMs;
+        let liveTime = '1:20 am';
+        try {
+          liveTime = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Kolkata',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          }).format(new Date()).toLowerCase();
+        } catch {}
+        drawLiveLaptopDisplay(lCtx, liveTime, nowMs * 0.002);
+        laptopTexture.needsUpdate = true;
+      }
+
       renderer.render(scene, camera);
     };
     animate();
@@ -1947,7 +2168,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
                 <Phone className="w-4 h-4" />
               </a>
               <a
-                href="mailto:joshuajosh3055@gmail.com"
+                href="mailto:joshuadecedbit@gmail.com"
                 className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/10 hover:bg-blue-500/20 text-slate-800 dark:text-zinc-200 hover:text-blue-400 flex items-center justify-center transition-all"
                 title="Email Joshua"
               >

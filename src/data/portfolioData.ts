@@ -29,7 +29,7 @@ export const ZYNX_PROFILE = {
   producerAlias: "7YNX",
   title: "Electronics & Communication Engineer | Linux Systems & Hardware Craftsman",
   bio: "Electronics & Communication Engineering graduate (DBIT 2021–2025) with deep hands-on expertise in Arch Linux system administration, embedded hardware architecture, and cutting-edge 3D WebGL interfaces. Currently building next-generation hardware like Z Card and crafting tactile digital experiences.",
-  email: "joshuajosh3055@gmail.com",
+  email: "joshuadecedbit@gmail.com",
   phone: "+91 72599 87691",
   location: "Channapatna, Karnataka, India",
   education: {

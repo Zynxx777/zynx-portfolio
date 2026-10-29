@@ -273,12 +273,12 @@ export const PhoneExperience: React.FC<PhoneExperienceProps> = ({
       return "7YNX is Joshua's music production and DSP alias. He produces atmospheric melodic techno, synthwave, and lo-fi beats in FL Studio and experiments with Web Audio synthesizers. Check out the '7YNX DSP Player' tab right here on this phone to stream his music live!";
     }
     if (q.includes("hire") || q.includes("job") || q.includes("work") || q.includes("collaborat") || q.includes("contact") || q.includes("reach")) {
-      return "Joshua is actively open for entry-level IT Support, Junior Linux Administration, and Embedded / Web engineering roles! You can email him at joshuajosh3055@gmail.com, call +91 72599 87691, or tap the WhatsApp button below to start a conversation right now.";
+      return "Joshua is actively open for entry-level IT Support, Junior Linux Administration, and Embedded / Web engineering roles! You can email him at joshuadecedbit@gmail.com, call +91 72599 87691, or tap the WhatsApp button below to start a conversation right now.";
     }
     if (q.includes("hello") || q.includes("hi") || q.includes("hey")) {
       return "Hey there! Glad you stopped by Joshua's workspace. Feel free to ask about his hardware projects (like Z Card), Arch Linux setup, music tracks, or how to get in touch!";
     }
-    return `Thanks for asking about "${prompt}". Joshua combines hands-on electronics hardware engineering with deep Linux administration and modern WebGL development. For detailed discussions or project collaborations, reach out directly via WhatsApp (+91 72599 87691) or email joshuajosh3055@gmail.com!`;
+    return `Thanks for asking about "${prompt}". Joshua combines hands-on electronics hardware engineering with deep Linux administration and modern WebGL development. For detailed discussions or project collaborations, reach out directly via WhatsApp (+91 72599 87691) or email joshuadecedbit@gmail.com!`;
   };
 
   const handleSendChat = (textToSend?: string) => {
@@ -947,7 +947,7 @@ export const PhoneExperience: React.FC<PhoneExperienceProps> = ({
                       </a>
 
                       <a
-                        href="mailto:joshuajosh3055@gmail.com"
+                        href="mailto:joshuadecedbit@gmail.com"
                         className="flex items-center justify-center gap-2 p-3 rounded-2xl bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 text-blue-300 font-semibold text-xs shadow-lg transition-all"
                       >
                         <Mail className="w-4 h-4" />

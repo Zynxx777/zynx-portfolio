@@ -378,7 +378,12 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
             {/* MacOS Top Menu Bar */}
             <header className="relative z-20 flex h-8 shrink-0 items-center justify-between bg-white/60 px-4 text-[13px] backdrop-blur-xl border-b border-black/[0.06]">
               <div className="flex items-center gap-5">
-                <span className="font-semibold tracking-tight text-zinc-900">Joshua D</span>
+                <span className="font-semibold tracking-tight text-zinc-900 flex items-center gap-1.5">
+                  <span className="inline-grid h-4.5 w-4.5 place-items-center rounded bg-[#2F5BEA] text-white text-[10px] font-black font-mono shadow-sm">
+                    Z
+                  </span>
+                  <span>Z OS</span>
+                </span>
                 <button
                   type="button"
                   onClick={() => setActiveTab('work')}
@@ -795,11 +800,11 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
               /* Background OS State: When all windows are closed, user stays in macOS desktop */
               <div className="relative z-10 flex flex-col items-center justify-center text-center p-6 max-w-md mx-auto animate-fade-in select-none">
                 <div className="w-20 h-20 rounded-3xl bg-white/75 shadow-xl ring-1 ring-black/5 backdrop-blur-2xl flex items-center justify-center mb-4 text-[#2F5BEA]">
-                  <Folder className="w-10 h-10" />
+                  <span className="text-3xl font-black font-mono tracking-tight text-[#2F5BEA]">Z</span>
                 </div>
-                <h3 className="text-2xl font-bold tracking-tight text-zinc-900">Joshua OS</h3>
+                <h3 className="text-2xl font-bold tracking-tight text-zinc-900">Z OS</h3>
                 <p className="text-[13px] text-zinc-600 mt-1.5 leading-relaxed max-w-sm">
-                  Windows closed. Click any application from the right desktop shortcuts, top menu bar, or dock below.
+                  Personal workstation of Joshua D · <span className="font-mono text-zinc-700 font-semibold">joshuadecedbit@gmail.com</span>
                 </p>
                 
                 <div className="flex flex-wrap items-center justify-center gap-2 mt-5">

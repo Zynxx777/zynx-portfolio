@@ -463,7 +463,7 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = () => {
         </div>
 
         <a
-          href="mailto:joshuajosh3055@gmail.com?subject=7YNX%20Music%20Collaboration"
+          href="mailto:joshuadecedbit@gmail.com?subject=7YNX%20Music%20Collaboration"
           className="px-7 py-3.5 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-mono text-xs font-bold flex items-center gap-2.5 transition-all shadow-xl shadow-pink-500/25 hover:scale-105 whitespace-nowrap"
         >
           <Send size={14} />
