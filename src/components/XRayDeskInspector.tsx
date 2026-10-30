@@ -287,66 +287,75 @@ export const XRayDeskInspector: React.FC<XRayDeskInspectorProps> = ({
   if (!selectedItem) return null;
 
   return (
-    <div className="absolute top-16 right-4 sm:right-8 z-40 w-full max-w-[400px] pointer-events-auto animate-fadeIn select-text">
+    <div className="fixed inset-x-2 bottom-3 sm:inset-x-auto sm:bottom-auto sm:top-16 sm:right-6 sm:w-[410px] sm:max-w-[410px] z-40 pointer-events-auto animate-fadeIn select-text">
       {/* Floating Card Styled Exactly like v2_10.png */}
-      <div className="rounded-3xl bg-white/95 backdrop-blur-2xl border border-zinc-200/90 shadow-2xl p-5 sm:p-6 text-zinc-900 transition-all">
+      <div className="rounded-3xl bg-white/95 backdrop-blur-2xl border border-zinc-200/90 shadow-2xl p-4 sm:p-6 text-zinc-900 transition-all max-h-[80vh] sm:max-h-[86vh] overflow-y-auto">
         
+        {/* Mobile Swipe / Drag Indicator Handle */}
+        <div className="w-12 h-1 rounded-full bg-zinc-300 mx-auto mb-3 sm:hidden" />
+
         {/* Header: Badge Number + Title + Close Button */}
-        <div className="flex items-center justify-between pb-3">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#2563eb] text-white font-bold flex items-center justify-center text-sm shadow-md shadow-blue-500/25">
+        <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#2563eb] text-white font-bold flex items-center justify-center text-xs sm:text-sm shadow-md shadow-blue-500/25 shrink-0">
               {selectedItem.id}
             </div>
-            <h3 className="text-lg font-bold tracking-tight text-zinc-900">
+            <h3 className="text-base sm:text-lg font-bold tracking-tight text-zinc-900 leading-tight">
               {selectedItem.name}
             </h3>
           </div>
           <button
-            onClick={() => { soundFX.playClick(); onClose(); }}
-            className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-500 hover:text-zinc-900 flex items-center justify-center transition"
-            title="Close inspector"
+            onClick={() => {
+              soundFX.playClick();
+              if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                try { navigator.vibrate(8); } catch {}
+              }
+              onClose();
+            }}
+            className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-500 hover:text-zinc-900 flex items-center justify-center transition shrink-0 active:scale-95"
+            title="Close inspector (Esc)"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Description */}
-        <p className="text-xs text-zinc-600 leading-relaxed mt-1">
+        <p className="text-xs text-zinc-600 leading-relaxed mt-2.5">
           {selectedItem.description}
         </p>
 
         {/* 3 Metric Cards (Matching v2_10.png) */}
-        <div className="grid grid-cols-3 gap-2 mt-4">
-          <div className="p-3 rounded-2xl bg-zinc-100/90 border border-zinc-200/60">
-            <p className="text-base font-bold font-mono text-zinc-900 leading-none">
+        <div className="grid grid-cols-3 gap-2 mt-3.5">
+          <div className="p-2.5 sm:p-3 rounded-2xl bg-zinc-100/90 border border-zinc-200/60 text-center sm:text-left">
+            <p className="text-sm sm:text-base font-bold font-mono text-zinc-900 leading-none">
               {selectedItem.pieces}
             </p>
             <p className="text-[10px] text-zinc-500 mt-1">pieces</p>
           </div>
-          <div className="p-3 rounded-2xl bg-zinc-100/90 border border-zinc-200/60">
-            <p className="text-base font-bold font-mono text-zinc-900 leading-none">
+          <div className="p-2.5 sm:p-3 rounded-2xl bg-zinc-100/90 border border-zinc-200/60 text-center sm:text-left">
+            <p className="text-sm sm:text-base font-bold font-mono text-zinc-900 leading-none">
               {selectedItem.triangles}
             </p>
             <p className="text-[10px] text-zinc-500 mt-1">triangles</p>
           </div>
-          <div className="p-3 rounded-2xl bg-zinc-100/90 border border-zinc-200/60">
-            <p className="text-base font-bold font-mono text-zinc-900 leading-none">
+          <div className="p-2.5 sm:p-3 rounded-2xl bg-zinc-100/90 border border-zinc-200/60 text-center sm:text-left">
+            <p className="text-sm sm:text-base font-bold font-mono text-zinc-900 leading-none">
               {selectedItem.lines}
             </p>
             <p className="text-[10px] text-zinc-500 mt-1 truncate">
-              lines in code
+              lines of code
             </p>
           </div>
         </div>
 
         {/* File and Lines Metadata */}
-        <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400 mt-4 px-1">
-          <span className="truncate">{selectedItem.filePath}</span>
+        <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-mono text-zinc-400 mt-3.5 px-1">
+          <span className="truncate max-w-[200px]">{selectedItem.filePath}</span>
           <span className="shrink-0">{selectedItem.lineRange}</span>
         </div>
 
         {/* Syntax-Highlighted Code Box */}
-        <div className="mt-2 rounded-2xl bg-[#0f141f] text-zinc-200 p-3.5 font-mono text-[11px] leading-relaxed overflow-x-auto max-h-[220px] shadow-inner border border-zinc-800">
+        <div className="mt-2 rounded-2xl bg-[#0f141f] text-zinc-200 p-3 sm:p-3.5 font-mono text-[10px] sm:text-[11px] leading-relaxed overflow-x-auto max-h-[160px] sm:max-h-[220px] shadow-inner border border-zinc-800">
           <pre className="text-emerald-300 font-mono whitespace-pre-wrap">
             <code>{selectedItem.codeSnippet}</code>
           </pre>
@@ -359,7 +368,7 @@ export const XRayDeskInspector: React.FC<XRayDeskInspectorProps> = ({
               soundFX.playClick();
               onOpenAnatomy();
             }}
-            className="w-full mt-4 py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-mono font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition active:scale-95"
+            className="w-full mt-3.5 py-2.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-mono font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 transition active:scale-95"
           >
             <Layers className="w-4 h-4" />
             <span>Open 3D Layer Dissection</span>

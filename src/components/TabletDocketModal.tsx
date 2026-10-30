@@ -144,17 +144,43 @@ export const TabletDocketModal: React.FC<TabletDocketModalProps> = ({
       </div>
 
       {/* Realistic Tablet Hardware Bezel & Enclosure */}
-      <div className="relative w-full max-w-5xl h-[88vh] max-h-[720px] rounded-[32px] bg-[#121620] p-3 sm:p-4 shadow-2xl border border-white/20 ring-1 ring-black/80 flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-5xl h-[94vh] sm:h-[88vh] max-h-[760px] rounded-[24px] sm:rounded-[32px] bg-[#121620] p-2 sm:p-4 shadow-2xl border border-white/20 ring-1 ring-black/80 flex flex-col overflow-hidden">
         {/* Tablet Top Camera Dot */}
         <div className="absolute top-2 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-black border border-white/10 flex items-center justify-center pointer-events-none">
           <div className="w-1 h-1 rounded-full bg-blue-900/60" />
         </div>
 
         {/* Tablet Screen Container */}
-        <div className="relative w-full h-full rounded-[22px] bg-slate-900 overflow-hidden flex flex-col md:flex-row text-slate-800 shadow-inner">
+        <div className="relative w-full h-full rounded-[18px] sm:rounded-[22px] bg-slate-900 overflow-hidden flex flex-col md:flex-row text-slate-800 shadow-inner">
           
-          {/* ── Left Sidebar Navigation (Matching v2_02.png) ── */}
-          <div className="w-full md:w-60 bg-[#0d1527] text-white flex flex-col justify-between p-4 border-r border-slate-800 shrink-0 select-none">
+          {/* ── Mobile Compact Top Strip (visible on mobile only) ── */}
+          <div className="flex md:hidden items-center justify-between px-3 py-2 bg-[#0d1527] border-b border-slate-800 text-white shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-[#2563eb] text-white font-bold flex items-center justify-center text-xs shadow-md">
+                DM
+              </div>
+              <div>
+                <h2 className="text-xs font-bold leading-tight">Demo Metals</h2>
+                <p className="text-[9px] text-slate-400 font-mono">Docket #044813</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  setDocketItems([]);
+                }}
+                className="py-1 px-2.5 rounded-lg bg-[#2563eb] text-white text-[11px] font-semibold flex items-center gap-1 active:scale-95"
+              >
+                <Plus className="w-3 h-3" />
+                <span>New</span>
+              </button>
+            </div>
+          </div>
+
+          {/* ── Left Sidebar Navigation (Matching v2_02.png, desktop and tablet) ── */}
+          <div className="hidden md:flex w-60 bg-[#0d1527] text-white flex-col justify-between p-4 border-r border-slate-800 shrink-0 select-none">
             <div className="space-y-4">
               {/* App Brand Header */}
               <div className="flex items-center gap-2.5 px-2 pt-1">
@@ -173,7 +199,7 @@ export const TabletDocketModal: React.FC<TabletDocketModalProps> = ({
                   soundFX.playClick();
                   setDocketItems([]);
                 }}
-                className="w-full py-2.5 px-3 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/30 transition active:scale-95"
+                className="w-full py-2.5 px-3 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/30 transition active:scale-95 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>New purchase</span>
@@ -244,21 +270,21 @@ export const TabletDocketModal: React.FC<TabletDocketModalProps> = ({
           <div className="flex-1 bg-[#f8fafc] flex flex-col overflow-y-auto">
             
             {/* Top Workspace Bar */}
-            <div className="px-6 py-4 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
+            <div className="px-4 sm:px-6 py-3 sm:py-4 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-tight">New purchase</h1>
-                <p className="text-xs font-mono text-slate-500 mt-0.5">
+                <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 leading-tight">New purchase</h1>
+                <p className="text-[11px] sm:text-xs font-mono text-slate-500 mt-0.5">
                   Docket #044813 · Riverbend Demolition
                 </p>
               </div>
 
               {/* Hardware Status Chips */}
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-mono border border-emerald-200">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] sm:text-[11px] font-mono border border-emerald-200">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   Printer ready
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-mono border border-emerald-200">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] sm:text-[11px] font-mono border border-emerald-200">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   Xero connected
                 </span>

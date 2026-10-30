@@ -10,12 +10,7 @@ import React, { useEffect, useRef } from "react";
 export const CustomAuraCursor: React.FC = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Skip on touch/coarse pointer devices
-  const isTouch = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
-
   useEffect(() => {
-    if (isTouch) return;
-
     const container = containerRef.current;
     if (!container) return;
 
@@ -59,7 +54,16 @@ export const CustomAuraCursor: React.FC = () => {
       }
     };
 
-    const onMouseMove = (e: MouseEvent) => {
+    const onPointerMove = (e: PointerEvent) => {
+      // Only show custom aura cursor when controlled by a mouse or pen/stylus
+      if (e.pointerType === "touch") {
+        if (isVisible) {
+          isVisible = false;
+          container.style.opacity = "0";
+        }
+        return;
+      }
+
       mouseX = e.clientX;
       mouseY = e.clientY;
 
@@ -90,6 +94,14 @@ export const CustomAuraCursor: React.FC = () => {
       }
     };
 
+    const onTouchStart = () => {
+      // Hide cursor immediately on touch devices
+      isVisible = false;
+      container.style.opacity = "0";
+      cancelAnimationFrame(animId);
+      animId = 0;
+    };
+
     const onMouseDown = () => { isClicking = true; applyRingClass(); };
     const onMouseUp = () => { isClicking = false; applyRingClass(); };
     const onMouseLeave = () => {
@@ -99,7 +111,8 @@ export const CustomAuraCursor: React.FC = () => {
       animId = 0;
     };
 
-    window.addEventListener("mousemove", onMouseMove, { passive: true });
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mouseup", onMouseUp);
     document.addEventListener("mouseleave", onMouseLeave);
@@ -107,15 +120,14 @@ export const CustomAuraCursor: React.FC = () => {
 
     return () => {
       cancelAnimationFrame(animId);
-      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mouseup", onMouseUp);
       document.removeEventListener("mouseleave", onMouseLeave);
       document.removeEventListener("visibilitychange", onMouseLeave);
     };
-  }, [isTouch]);
-
-  if (isTouch) return null;
+  }, []);
 
   return (
     <div

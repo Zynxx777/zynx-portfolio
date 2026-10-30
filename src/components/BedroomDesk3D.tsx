@@ -17,7 +17,8 @@ import {
   X,
   Droplets,
   Volume2,
-  VolumeX
+  VolumeX,
+  StickyNote
 } from 'lucide-react';
 import { soundFX } from '../utils/audioFX';
 import { MonitorDesktopModal } from './MonitorDesktopModal';
@@ -25,6 +26,7 @@ import PhoneExperience from './PhoneExperience';
 import { TabletDocketModal, type DocketOrder } from './TabletDocketModal';
 import { ThermalReceiptModal } from './ThermalReceiptModal';
 import { XRayDeskInspector, XRAY_DESK_ITEMS, type XRayDeskItem } from './XRayDeskInspector';
+import { StickyNotesModal } from './StickyNotesModal';
 import { 
   drawCardFront, 
   drawCardBack, 
@@ -85,6 +87,47 @@ const bezierCurve = new THREE.CubicBezierCurve3(
   new THREE.Vector3()
 );
 
+function getResponsiveCameraFrame(w: number, h: number): { pos: THREE.Vector3; lookAt: THREE.Vector3 } {
+  const aspect = w / Math.max(1, h);
+  if (h < 500 && aspect > 1.4) {
+    // Mobile landscape (e.g. phone held sideways: 844x390)
+    return {
+      pos: new THREE.Vector3(0.0, 0.78, 1.70),
+      lookAt: new THREE.Vector3(0.0, 0.22, 0.0)
+    };
+  } else if (aspect < 0.75) {
+    // Tall mobile portrait (e.g. modern iPhone / Android: 390x844)
+    return {
+      pos: new THREE.Vector3(0.0, 1.35, 2.45),
+      lookAt: new THREE.Vector3(0.0, 0.28, 0.0)
+    };
+  } else if (aspect < 1.0) {
+    // Standard mobile portrait
+    return {
+      pos: new THREE.Vector3(0.0, 1.25, 2.20),
+      lookAt: new THREE.Vector3(0.0, 0.30, 0.0)
+    };
+  } else if (aspect < 1.35) {
+    // Tablet / iPad / Foldable screens
+    return {
+      pos: new THREE.Vector3(0.0, 1.08, 1.75),
+      lookAt: new THREE.Vector3(0.0, 0.30, 0.0)
+    };
+  } else if (aspect > 2.0) {
+    // Ultra-wide displays (21:9 / 32:9)
+    return {
+      pos: new THREE.Vector3(0.0, 0.90, 1.35),
+      lookAt: new THREE.Vector3(0.0, 0.32, 0.0)
+    };
+  } else {
+    // Standard desktop (16:9 / 16:10)
+    return {
+      pos: new THREE.Vector3(0.0, 0.95, 1.45),
+      lookAt: new THREE.Vector3(0.0, 0.32, 0.0)
+    };
+  }
+}
+
 function computeHeldTransform(
   camera: THREE.PerspectiveCamera,
   size: { width: number; height: number },
@@ -94,12 +137,17 @@ function computeHeldTransform(
   const fovRad = THREE.MathUtils.degToRad(camera.fov);
   const c = Math.tan(fovRad / 2);
   const aspect = size.width / Math.max(1, size.height);
+  const isMobile = size.width < 640 || aspect < 1.0;
+  const layoutWidth = isMobile ? 0.78 : CARD_LAYOUT.width;
+  const layoutHeight = isMobile ? 0.42 : CARD_LAYOUT.height;
   const dist = Math.max(
-    CARD_DIM.h / (2 * c * CARD_LAYOUT.height),
-    CARD_DIM.w / (2 * c * aspect * CARD_LAYOUT.width)
+    CARD_DIM.h / (2 * c * layoutHeight),
+    CARD_DIM.w / (2 * c * aspect * layoutWidth)
   );
 
-  V_held.set(0, -0.02, 0.5).unproject(camera);
+  // On mobile portrait, raise card slightly so it never collides with bottom floating action dock
+  const yOffset = isMobile ? 0.08 : -0.02;
+  V_held.set(0, yOffset, 0.5).unproject(camera);
   W_held.copy(V_held).sub(camera.position).normalize();
   heldTarget.p.copy(camera.position).addScaledVector(W_held, dist);
 
@@ -490,6 +538,8 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
   const [isDocketOpen, setIsDocketOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [isStickyNotesOpen, setIsStickyNotesOpen] = useState(false);
+  const [activeStickyNoteId, setActiveStickyNoteId] = useState<number | undefined>(undefined);
   const [currentDocketOrder, setCurrentDocketOrder] = useState<DocketOrder | null>(null);
   const [selectedXRayItem, setSelectedXRayItem] = useState<XRayDeskItem | null>(null);
   const [plantWaterCount, setPlantWaterCount] = useState<number>(() => {
@@ -570,6 +620,11 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     isReceiptModalOpenRef.current = isReceiptModalOpen;
   }, [isReceiptModalOpen]);
 
+  const isStickyNotesOpenRef = useRef(isStickyNotesOpen);
+  useEffect(() => {
+    isStickyNotesOpenRef.current = isStickyNotesOpen;
+  }, [isStickyNotesOpen]);
+
   const selectedXRayItemRef = useRef(selectedXRayItem);
   useEffect(() => {
     selectedXRayItemRef.current = selectedXRayItem;
@@ -642,6 +697,10 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   const zoroWobbleRef = useRef<number>(0.15);
   const zoroHeadRef = useRef<THREE.Group | null>(null);
 
+  // Succulent plant bounce & leaf sway references
+  const plantBounceRef = useRef<number>(0);
+  const succulentLeavesRef = useRef<THREE.Mesh[]>([]);
+
   // Receipt paper mesh reference
   const receiptPaperMeshRef = useRef<THREE.Mesh | null>(null);
   const receiptAnimRef = useRef<number>(0);
@@ -660,12 +719,16 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     const width = container.clientWidth;
     const height = container.clientHeight || window.innerHeight;
 
-    // 1. Scene & Camera Setup
+    // 1. Scene & Camera Setup (Responsive framing)
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
+    const initialFrame = getResponsiveCameraFrame(width, height);
     const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
-    camera.position.set(0.0, 0.95, 1.45);
+    camera.position.copy(initialFrame.pos);
+    camera.lookAt(initialFrame.lookAt);
+    targetCamPos.current.copy(initialFrame.pos);
+    targetLookAt.current.copy(initialFrame.lookAt);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
@@ -683,8 +746,8 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     controls.dampingFactor = 0.05;
     controls.maxPolarAngle = Math.PI / 2.05;
     controls.minDistance = 0.55;
-    controls.maxDistance = 2.8;
-    controls.target.set(0.0, 0.32, 0.0);
+    controls.maxDistance = 3.6;
+    controls.target.copy(initialFrame.lookAt);
     controlsRef.current = controls;
 
     // 2. Lighting System
@@ -809,8 +872,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       );
       note.position.set(sx, sy, sz);
       note.rotation.z = (idx % 2 === 0 ? 0.05 : -0.06);
+      note.userData = { clickableName: 'notes', noteId: idx + 1 };
+      interactiveObjects.push(note);
       scene.add(note);
-      registerClickable(note, 'notes');
     });
 
     // 5. Desk Top & Chamfers
@@ -1474,19 +1538,22 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     scene.add(steamParticles);
     steamParticlesRef.current = steamParticles;
 
-    // 16. Succulent Plant in Terracotta Pot
+    // 16. Succulent Plant in Terracotta Pot (Interactive rosette with leaf sway)
     const plantGroup = new THREE.Group();
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.032, 0.07, 16), terracottaMat);
     pot.position.set(0.44, 0.20, -0.22);
     pot.castShadow = true;
     plantGroup.add(pot);
 
-    for (let i = 0; i < 6; i++) {
+    succulentLeavesRef.current = [];
+    for (let i = 0; i < 8; i++) {
       const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.09, 8), plantGreen);
-      leaf.position.set(0.44 + (Math.cos(i * 1.05) * 0.016), 0.27, -0.22 + (Math.sin(i * 1.05) * 0.016));
-      leaf.rotation.set((Math.sin(i) * 0.25), i * 1.05, (Math.cos(i) * 0.25));
+      leaf.position.set(0.44 + (Math.cos(i * 0.785) * 0.018), 0.265, -0.22 + (Math.sin(i * 0.785) * 0.018));
+      leaf.rotation.set((Math.sin(i) * 0.28), i * 0.785, (Math.cos(i) * 0.28));
       leaf.castShadow = true;
+      leaf.userData = { initialRot: leaf.rotation.clone(), leafIndex: i };
       plantGroup.add(leaf);
+      succulentLeavesRef.current.push(leaf);
     }
     scene.add(plantGroup);
     registerClickable(pot, 'plant');
@@ -1595,7 +1662,10 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
-    const onPointerMove = (e: MouseEvent) => {
+    const onPointerMove = (e: MouseEvent | PointerEvent) => {
+      // Avoid running raycaster on touch drag to keep mobile orbit butter-smooth at 60/120fps
+      if ('pointerType' in e && e.pointerType === 'touch') return;
+
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -1624,15 +1694,16 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       }
     };
 
-    const onClick = (e: MouseEvent) => {
+    // Unified Touch & Click Interaction Handler
+    const handleInteraction = (clientX: number, clientY: number, targetElem?: HTMLElement) => {
       // Ignore clicks on 2D HTML UI elements so they never trigger 3D empty-space putdown
-      if ((e.target as HTMLElement)?.closest('button, a, input, select, textarea, [role="button"]')) {
+      if (targetElem?.closest('button, a, input, select, textarea, [role="button"], [data-no-orbit]')) {
         return;
       }
 
       const rect = renderer.domElement.getBoundingClientRect();
-      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(interactiveObjects, true);
@@ -1643,6 +1714,11 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           rootClickable = rootClickable.parent;
         }
         const name = rootClickable?.userData?.clickableName;
+
+        // Subtle mobile haptic feedback on interactive item hit
+        try {
+          if (navigator.vibrate) navigator.vibrate(8);
+        } catch {}
 
         // In X-Ray mode, clicking any 3D object directly selects that item in the Inspector!
         if (isXRayModeRef.current && name) {
@@ -1685,7 +1761,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           setIsReceiptModalOpen(true);
         } else if (name === 'zoro') {
           soundFX.playClick();
-          zoroWobbleRef.current = 0.55;
+          zoroWobbleRef.current = 0.65;
           focusObject('zoro');
         } else if (name === 'lamp') {
           soundFX.playClick();
@@ -1721,6 +1797,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           handleOpenPhone();
         } else if (name === 'plant') {
           soundFX.playWaterDrop();
+          plantBounceRef.current = 1.0;
           setPlantWaterCount(prev => {
             const next = prev + 1;
             try { localStorage.setItem('zynx_plant_water_count', next.toString()); } catch {}
@@ -1730,8 +1807,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           setTimeout(() => setWaterDropAnim(false), 1400);
         } else if (name === 'notes') {
           soundFX.playClick();
-          setIsXRayMode(true);
-          setSelectedXRayItem(XRAY_DESK_ITEMS[4]);
+          const noteId = rootClickable?.userData?.noteId || 1;
+          setActiveStickyNoteId(noteId);
+          setIsStickyNotesOpen(true);
         } else if (name === 'mug') {
           soundFX.playClick();
         } else if (name === 'photo') {
@@ -1745,9 +1823,52 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       }
     };
 
+    // Track pointer movement & duration to separate intentional taps from camera orbit gestures
+    let pointerStartX = 0;
+    let pointerStartY = 0;
+    let pointerStartTime = 0;
+    let lastTapTime = 0;
+    let lastTapX = 0;
+    let lastTapY = 0;
+
+    const onPointerDown = (e: PointerEvent) => {
+      pointerStartX = e.clientX;
+      pointerStartY = e.clientY;
+      pointerStartTime = performance.now();
+    };
+
+    const onPointerUp = (e: PointerEvent) => {
+      const dist = Math.hypot(e.clientX - pointerStartX, e.clientY - pointerStartY);
+      const duration = performance.now() - pointerStartTime;
+
+      // Reliable tap threshold (< 14px displacement, < 480ms hold)
+      if (dist < 14 && duration < 480) {
+        const now = performance.now();
+        // Double-tap detected: trigger smooth camera reset to responsive framing
+        if (now - lastTapTime < 320 && Math.hypot(e.clientX - lastTapX, e.clientY - lastTapY) < 22) {
+          lastTapTime = 0;
+          try {
+            if (navigator.vibrate) navigator.vibrate(12);
+          } catch {}
+          focusObject('reset');
+          return;
+        }
+        lastTapTime = now;
+        lastTapX = e.clientX;
+        lastTapY = e.clientY;
+
+        handleInteraction(e.clientX, e.clientY, e.target as HTMLElement);
+      }
+    };
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         // Close modals in priority order
+        if (isStickyNotesOpenRef.current) {
+          e.preventDefault();
+          setIsStickyNotesOpen(false);
+          return;
+        }
         if (isReceiptModalOpenRef.current) {
           e.preventDefault();
           setIsReceiptModalOpen(false);
@@ -1806,8 +1927,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       }
     };
 
-    window.addEventListener('mousemove', onPointerMove);
-    window.addEventListener('click', onClick);
+    renderer.domElement.addEventListener('pointerdown', onPointerDown);
+    renderer.domElement.addEventListener('pointerup', onPointerUp);
+    renderer.domElement.addEventListener('pointermove', onPointerMove);
     window.addEventListener('keydown', onKeyDown);
 
     // Animation Render Loop
@@ -1852,12 +1974,32 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         setBadgePositions(newCoords);
       }
 
-      // Zoro Spring Wobble Physics
+      // Zoro Spring Wobble Physics (Harmonic multi-axis wobble + bounce)
       if (zoroHeadRef.current) {
-        zoroWobbleRef.current *= 0.965; // Damped harmonic decay
+        zoroWobbleRef.current *= 0.972; // Damped harmonic decay
         const wobble = zoroWobbleRef.current;
-        zoroHeadRef.current.rotation.x = Math.sin(elapsedTime * 8.5) * wobble;
-        zoroHeadRef.current.rotation.z = Math.cos(elapsedTime * 6.8) * wobble;
+        zoroHeadRef.current.rotation.x = Math.sin(elapsedTime * 9.2) * wobble;
+        zoroHeadRef.current.rotation.z = Math.cos(elapsedTime * 7.4) * wobble;
+        zoroHeadRef.current.rotation.y = Math.sin(elapsedTime * 5.1) * (wobble * 0.4);
+        zoroHeadRef.current.position.y = 0.09 + Math.abs(Math.sin(elapsedTime * 14.0)) * (wobble * 0.012);
+      }
+
+      // Succulent Plant Organic Leaf Sway & Water Drop Bounce
+      if (succulentLeavesRef.current.length > 0) {
+        if (plantBounceRef.current > 0.005) {
+          plantBounceRef.current *= 0.94; // Spring recovery
+        }
+        const bounce = plantBounceRef.current;
+        const swayBase = Math.sin(elapsedTime * 1.8) * 0.03;
+        succulentLeavesRef.current.forEach((leaf, idx) => {
+          const initRot = leaf.userData.initialRot as THREE.Euler;
+          if (initRot) {
+            const phase = idx * 0.785;
+            const bounceAmt = Math.sin(elapsedTime * 14.0 + phase) * bounce * 0.15;
+            leaf.rotation.x = initRot.x + swayBase + bounceAmt;
+            leaf.rotation.z = initRot.z + Math.cos(elapsedTime * 2.2 + phase) * 0.02 + bounceAmt * 0.4;
+          }
+        });
       }
 
       // Receipt Paper Feed Animation
@@ -1866,12 +2008,14 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         receiptPaperMeshRef.current.scale.y = THREE.MathUtils.lerp(curScale, 1.0, 0.08);
       }
 
-      // Steam Particle Motion
+      // Steam Particle Motion with Rising Drift & Curl Turbulence
       if (steamParticlesRef.current) {
         const posAttr = steamParticlesRef.current.geometry.attributes.position;
         const arr = posAttr.array as Float32Array;
         for (let s = 0; s < steamCount; s++) {
-          arr[s * 3 + 1] += 0.0006;
+          arr[s * 3 + 1] += 0.00065;
+          arr[s * 3] += Math.sin(elapsedTime * 2.5 + s) * 0.00025;
+          arr[s * 3 + 2] += Math.cos(elapsedTime * 2.1 + s) * 0.00025;
           if (arr[s * 3 + 1] > 0.35) {
             arr[s * 3 + 1] = 0.255;
             arr[s * 3] = 0.31 + (Math.random() - 0.5) * 0.025;
@@ -1966,19 +2110,10 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       camera.aspect = w / h;
 
       // Adapt camera FOV / distance based on viewport aspect ratio (Mobile & ultrawide compatibility)
-      const aspect = w / h;
-      if (aspect < 1.0) {
-        // Mobile portrait: pull camera back so the full desk remains centered
-        targetCamPos.current.z = 2.15;
-        targetCamPos.current.y = 1.25;
-      } else if (aspect < 1.4) {
-        // Medium tablet screen
-        targetCamPos.current.z = 1.75;
-        targetCamPos.current.y = 1.08;
-      } else {
-        // Desktop widescreen
-        targetCamPos.current.z = 1.45;
-        targetCamPos.current.y = 0.95;
+      const frame = getResponsiveCameraFrame(w, h);
+      if (!focusedTargetRef.current && cardAnimRef.current.out < 0.1 && !isXRayModeRef.current) {
+        targetCamPos.current.copy(frame.pos);
+        targetLookAt.current.copy(frame.lookAt);
       }
 
       camera.updateProjectionMatrix();
@@ -1988,8 +2123,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     window.addEventListener('resize', handleResize);
 
     return () => {
-      window.removeEventListener('mousemove', onPointerMove);
-      window.removeEventListener('click', onClick);
+      renderer.domElement.removeEventListener('pointerdown', onPointerDown);
+      renderer.domElement.removeEventListener('pointerup', onPointerUp);
+      renderer.domElement.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('keydown', onKeyDown);
       cancelAnimationFrame(animationFrameId);
@@ -2000,6 +2136,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       cardMeshRef.current = null;
       cardGroupRef.current = null;
       cardMaterialsRef.current = null;
+      succulentLeavesRef.current = [];
       sceneRef.current = null;
     };
   }, [dayMode, takeCard, putDownCard, triggerFlip]);
@@ -2008,8 +2145,12 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     soundFX.playClick();
     if (target === 'reset') {
       setFocusedTarget(null);
-      targetCamPos.current.set(0.0, 0.95, 1.45);
-      targetLookAt.current.set(0.0, 0.32, 0.0);
+      const container = mountRef.current;
+      const w = container?.clientWidth || window.innerWidth;
+      const h = container?.clientHeight || window.innerHeight;
+      const frame = getResponsiveCameraFrame(w, h);
+      targetCamPos.current.copy(frame.pos);
+      targetLookAt.current.copy(frame.lookAt);
     } else if (target === 'laptop') {
       setFocusedTarget('laptop');
       targetCamPos.current.set(0.0, 0.36, 0.22);
@@ -2045,62 +2186,67 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         ? 'bg-[radial-gradient(120%_90%_at_50%_45%,#FFFFFF_0%,#F4F4F6_55%,#E8E8EC_100%)] text-slate-900' 
         : 'bg-[#090b10] text-white'
     }`}>
-      {/* Top Banner Headline (Matching pradiplabs.dev) */}
-      <div className="absolute top-6 inset-x-0 z-20 pointer-events-none text-center px-4">
-        <h1 className={`text-3xl md:text-5xl font-extrabold tracking-tight drop-shadow-md font-display ${
-          dayMode ? 'text-slate-900' : 'text-white'
-        }`}>
-          Hi, I'm Joshua (ZYNX).
-        </h1>
-        <p className={`mt-2 text-xs md:text-sm max-w-xl mx-auto drop-shadow-sm font-sans ${
-          dayMode ? 'text-slate-600' : 'text-slate-300'
-        }`}>
-          I build embedded systems, Arch Linux environments, and modern web applications. 
-          Everything on this desk is real and running.
-        </p>
-      </div>
+      {/* Top Banner Headline (Matching pradiplabs.dev - cleanly hidden in X-Ray mode or when inspecting card) */}
+      {!isXRayMode && !isCardHeld && (
+        <div className="absolute top-14 sm:top-6 inset-x-0 z-20 pointer-events-none text-center px-4 max-w-2xl mx-auto transition-opacity duration-300">
+          <h1 className={`text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight drop-shadow-md font-display ${
+            dayMode ? 'text-slate-900' : 'text-white'
+          }`}>
+            Hi, I'm Joshua (ZYNX).
+          </h1>
+          <p className={`mt-1.5 sm:mt-2 text-[11px] sm:text-xs md:text-sm max-w-xl mx-auto drop-shadow-sm font-sans ${
+            dayMode ? 'text-slate-600' : 'text-slate-300'
+          }`}>
+            I build embedded systems, Arch Linux environments, and modern web applications. 
+            Everything on this desk is real and running.
+          </p>
+        </div>
+      )}
 
       {/* Top HUD Controls: Day/Night, X-Ray, Reset, Music, Showcase */}
-      <div className="absolute top-6 right-6 z-30 flex items-center gap-2">
+      <div className="absolute top-3 right-3 sm:top-6 sm:right-6 z-30 flex items-center gap-1.5 sm:gap-2">
         {(focusedTarget === 'laptop' || isMonitorOpen) && (
           <button
             onClick={() => { soundFX.playClick(); if (onOpenMonitor) onOpenMonitor(); else setIsMonitorOpen(true); }}
-            className="px-3 py-1.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400 text-xs font-mono text-cyan-200 flex items-center gap-1.5 shadow-lg backdrop-blur-md transition-all"
+            className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400 text-[11px] sm:text-xs font-mono text-cyan-200 flex items-center gap-1.5 shadow-lg backdrop-blur-md transition-all"
           >
-            <ExternalLink className="w-3.5 h-3.5" /> Open Desktop
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Open Desktop</span>
+            <span className="sm:hidden">OS</span>
           </button>
         )}
 
         {focusedTarget && (
           <button
             onClick={() => focusObject('reset')}
-            className="px-3 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-white/20 text-xs font-mono text-cyan-300 flex items-center gap-1.5 shadow-lg backdrop-blur-md transition-all"
+            className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-white/20 text-[11px] sm:text-xs font-mono text-cyan-300 flex items-center gap-1.5 shadow-lg backdrop-blur-md transition-all"
           >
-            <RotateCcw className="w-3.5 h-3.5" /> Reset View
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Reset View</span>
           </button>
         )}
 
         {/* Spectacles (X-Ray Glasses Toggle) */}
         <button
           onClick={() => { soundFX.playClick(); setIsXRayMode(!isXRayMode); }}
-          className={`px-3 py-1.5 rounded-full border text-xs font-mono transition-all flex items-center gap-2 shadow-lg backdrop-blur-md ${
+          className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full border text-[11px] sm:text-xs font-mono transition-all flex items-center gap-1.5 sm:gap-2 shadow-lg backdrop-blur-md ${
             isXRayMode
               ? 'bg-amber-400 text-black font-bold border-amber-300 shadow-amber-400/40'
               : 'bg-black/60 border-white/20 text-zinc-300 hover:text-white'
           }`}
           title="X-ray glasses · see how it's all made"
         >
-          <SpectaclesIcon className="w-4 h-4" />
-          <span>{isXRayMode ? 'Glasses On' : 'Spectacles'}</span>
+          <SpectaclesIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span className="hidden sm:inline">{isXRayMode ? 'Glasses On' : 'Spectacles'}</span>
         </button>
 
         {/* Showcase Switcher */}
         <button
           onClick={() => { soundFX.playClick(); onSwitchToShowcase(); }}
-          className="px-3 py-1.5 rounded-full border border-white/20 bg-black/60 hover:bg-black/90 text-xs font-mono text-zinc-200 transition-all flex items-center gap-1.5 shadow-lg backdrop-blur-md"
+          className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full border border-white/20 bg-black/60 hover:bg-black/90 text-[11px] sm:text-xs font-mono text-zinc-200 transition-all flex items-center gap-1.5 shadow-lg backdrop-blur-md"
           title="Switch to Showcase Carousel (jesperlandberg.com replica)"
         >
-          <span>Showcase</span>
+          <span className="hidden sm:inline">Showcase</span>
           <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
         </button>
 
@@ -2110,23 +2256,23 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
             soundFX.playClick();
             if (onToggleMusic) onToggleMusic();
           }}
-          className={`p-2.5 rounded-full border transition-all shadow-lg backdrop-blur-md ${
+          className={`p-2 sm:p-2.5 rounded-full border transition-all shadow-lg backdrop-blur-md ${
             isMusicPlaying
               ? 'bg-cyan-500/25 border-cyan-400 text-cyan-300 shadow-cyan-500/30'
               : 'border-white/15 bg-black/60 text-slate-300 hover:text-white'
           }`}
           title={isMusicPlaying ? 'Mute 7YNX Audio' : 'Play 7YNX Audio'}
         >
-          {isMusicPlaying ? <Volume2 className="w-4 h-4 text-cyan-400" /> : <VolumeX className="w-4 h-4" />}
+          {isMusicPlaying ? <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400" /> : <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
         </button>
 
         {/* Day Studio vs Cozy Night Toggle */}
         <button
           onClick={() => { soundFX.playClick(); setDayMode(!dayMode); }}
-          className="p-2.5 rounded-full border border-white/15 bg-black/60 backdrop-blur-md text-amber-300 hover:text-white transition-all shadow-lg"
+          className="p-2 sm:p-2.5 rounded-full border border-white/15 bg-black/60 backdrop-blur-md text-amber-300 hover:text-white transition-all shadow-lg"
           title={dayMode ? 'Switch to Night Cozy Mode' : 'Switch to Day Studio Mode'}
         >
-          {dayMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+          {dayMode ? <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
         </button>
       </div>
 
@@ -2323,9 +2469,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         }}
       />
 
-      {/* Bottom Bar Pills (Exact Navigation from pradiplabs.dev - hidden when inspecting card or device) */}
+      {/* Bottom Bar Pills (Exact Navigation from pradiplabs.dev - scrollable on mobile, centered on desktop) */}
       {!isCardHeld && !focusedTarget && !isMonitorOpen && !isPhoneOpen && (
-        <div className="absolute bottom-6 inset-x-0 z-30 flex items-center justify-center gap-2 px-4 flex-wrap pointer-events-auto animate-fade-in overflow-x-auto no-scrollbar py-1">
+        <div className="absolute bottom-3 sm:bottom-6 inset-x-0 z-30 flex items-center justify-start sm:justify-center gap-2 px-3 sm:px-4 pointer-events-auto animate-fade-in overflow-x-auto no-scrollbar py-1 scroll-smooth pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <button
             onClick={() => {
               soundFX.playClick();
@@ -2342,7 +2488,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
             }`}
           >
             <span className="font-semibold text-white">Laptop</span>
-            <span className="text-slate-400">My websites</span>
+            <span className="hidden sm:inline text-slate-400">My websites</span>
           </button>
 
           <button
@@ -2357,7 +2503,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
             }`}
           >
             <span className="font-semibold text-white">Tablet</span>
-            <span className="text-slate-400">Docket system</span>
+            <span className="hidden sm:inline text-slate-400">Docket system</span>
           </button>
 
           <button
@@ -2369,7 +2515,23 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
             }`}
           >
             <span className="font-semibold text-white">Phone</span>
-            <span className="text-slate-400">7YNX Chat & Audio</span>
+            <span className="hidden sm:inline text-slate-400">7YNX Chat & Audio</span>
+          </button>
+
+          <button
+            onClick={() => {
+              soundFX.playClick();
+              setIsStickyNotesOpen(true);
+            }}
+            className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg shrink-0 ${
+              isStickyNotesOpen
+                ? 'bg-yellow-400 text-slate-950 font-bold border-yellow-300'
+                : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
+            }`}
+          >
+            <StickyNote className="w-3.5 h-3.5 text-yellow-300" />
+            <span className="font-semibold text-white">Notes</span>
+            <span className="hidden sm:inline text-slate-400">Sticky notes</span>
           </button>
 
           <button
@@ -2377,7 +2539,8 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
             className="px-3.5 py-2 rounded-full border border-white/15 bg-black/70 text-xs font-sans text-slate-300 hover:text-white hover:bg-black/90 transition-all flex items-center gap-2 backdrop-blur-md shadow-lg shrink-0"
           >
             <span className="text-amber-300">✎</span>
-            <span className="font-semibold text-white">Write in my diary</span>
+            <span className="font-semibold text-white">Diary</span>
+            <span className="hidden sm:inline text-slate-400">Guestbook</span>
           </button>
 
           <button
@@ -2409,7 +2572,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
             }`}
           >
             <span className="font-semibold text-white">Card</span>
-            <span className="text-slate-400">Take my card</span>
+            <span className="hidden sm:inline text-slate-400">Take my card</span>
           </button>
 
           <button
@@ -2424,55 +2587,55 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
       {/* Interactive Business Card Held Overlay (Matching pradiplabs.dev hC floating action dock) */}
       {isCardHeld && (
-        <div className="fixed inset-x-0 bottom-6 z-40 flex flex-col items-center gap-2.5 pointer-events-none px-4 animate-fade-in">
+        <div className="fixed inset-x-0 bottom-3 sm:bottom-6 z-40 flex flex-col items-center gap-2 pointer-events-none px-2 sm:px-4 animate-fade-in pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           {/* Floating Action Dock */}
-          <div className="pointer-events-auto flex items-center justify-center gap-2 rounded-full bg-white/95 dark:bg-black/85 p-2 shadow-2xl ring-1 ring-black/10 dark:ring-white/15 backdrop-blur-xl flex-wrap">
+          <div className="pointer-events-auto flex items-center justify-center gap-1 sm:gap-2 rounded-full bg-white/95 dark:bg-black/85 p-1.5 sm:p-2 shadow-2xl ring-1 ring-black/10 dark:ring-white/15 backdrop-blur-xl max-w-full overflow-x-auto no-scrollbar">
             {/* Social Quick Links */}
-            <div className="flex items-center gap-1 px-1">
+            <div className="flex items-center gap-0.5 sm:gap-1 px-0.5 sm:px-1 shrink-0">
               <a
                 href="https://wa.me/917259987691"
                 target="_blank"
                 rel="noreferrer"
-                className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/10 hover:bg-emerald-500/20 text-slate-800 dark:text-zinc-200 hover:text-emerald-500 flex items-center justify-center transition-all"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/5 dark:bg-white/10 hover:bg-emerald-500/20 text-slate-800 dark:text-zinc-200 hover:text-emerald-500 flex items-center justify-center transition-all shrink-0"
                 title="WhatsApp"
               >
-                <MessageSquare className="w-4 h-4" />
+                <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </a>
               <a
                 href="tel:+917259987691"
-                className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/10 hover:bg-cyan-500/20 text-slate-800 dark:text-zinc-200 hover:text-cyan-400 flex items-center justify-center transition-all"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/5 dark:bg-white/10 hover:bg-cyan-500/20 text-slate-800 dark:text-zinc-200 hover:text-cyan-400 flex items-center justify-center transition-all shrink-0"
                 title="Call Joshua"
               >
-                <Phone className="w-4 h-4" />
+                <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </a>
               <a
                 href="mailto:joshuadecedbit@gmail.com"
-                className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/10 hover:bg-blue-500/20 text-slate-800 dark:text-zinc-200 hover:text-blue-400 flex items-center justify-center transition-all"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/5 dark:bg-white/10 hover:bg-blue-500/20 text-slate-800 dark:text-zinc-200 hover:text-blue-400 flex items-center justify-center transition-all shrink-0"
                 title="Email Joshua"
               >
-                <Mail className="w-4 h-4" />
+                <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </a>
               <a
                 href="https://linkedin.com/in/Zynx"
                 target="_blank"
                 rel="noreferrer"
-                className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/10 hover:bg-blue-600/20 text-slate-800 dark:text-zinc-200 hover:text-blue-500 flex items-center justify-center transition-all"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/5 dark:bg-white/10 hover:bg-blue-600/20 text-slate-800 dark:text-zinc-200 hover:text-blue-500 flex items-center justify-center transition-all shrink-0"
                 title="LinkedIn"
               >
-                <LinkedinIcon className="w-4 h-4" />
+                <LinkedinIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </a>
               <a
                 href="https://github.com/Zynxx777"
                 target="_blank"
                 rel="noreferrer"
-                className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/10 hover:bg-zinc-500/20 text-slate-800 dark:text-zinc-200 hover:text-white flex items-center justify-center transition-all"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/5 dark:bg-white/10 hover:bg-zinc-500/20 text-slate-800 dark:text-zinc-200 hover:text-white flex items-center justify-center transition-all shrink-0"
                 title="GitHub"
               >
-                <GithubIcon className="w-4 h-4" />
+                <GithubIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </a>
             </div>
 
-            <div className="h-6 w-px bg-black/10 dark:bg-white/15 mx-1" />
+            <div className="h-5 sm:h-6 w-px bg-black/10 dark:bg-white/15 mx-0.5 sm:mx-1 shrink-0" />
 
             {/* Save Contact vCard */}
             <button
@@ -2482,10 +2645,11 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
                 soundFX.playClick();
                 downloadVCard();
               }}
-              className="h-10 px-4 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 hover:opacity-90 text-xs font-semibold flex items-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer"
+              className="h-8 sm:h-10 px-3 sm:px-4 rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 hover:opacity-90 text-[11px] sm:text-xs font-semibold flex items-center gap-1.5 sm:gap-2 shadow-md transition-all active:scale-95 cursor-pointer shrink-0"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>Save my contact</span>
+              <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span className="hidden sm:inline">Save my contact</span>
+              <span className="sm:hidden">Save</span>
             </button>
 
             {/* Flip Button */}
@@ -2497,10 +2661,10 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
                 const nextSide = cardAnimRef.current.side === 1 ? 0 : 1;
                 triggerFlip(nextSide);
               }}
-              className="h-10 px-3.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-zinc-800 dark:text-zinc-200 text-xs font-medium flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+              className="h-8 sm:h-10 px-2.5 sm:px-3.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-zinc-800 dark:text-zinc-200 text-[11px] sm:text-xs font-medium flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shrink-0"
               title="Flip card (Space or F)"
             >
-              <RotateCw className="w-3.5 h-3.5" />
+              <RotateCw className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               <span>Flip</span>
             </button>
 
@@ -2511,15 +2675,23 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
                 e.preventDefault();
                 putDownCard();
               }}
-              className="h-10 px-3.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-zinc-800 dark:text-zinc-200 text-xs font-medium flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+              className="h-8 sm:h-10 px-2.5 sm:px-3.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-zinc-800 dark:text-zinc-200 text-[11px] sm:text-xs font-medium flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shrink-0"
               title="Put card back (Esc)"
             >
-              <X className="w-3.5 h-3.5" />
-              <span>Put it back</span>
+              <X className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span className="hidden sm:inline">Put it back</span>
+              <span className="sm:hidden">Back</span>
             </button>
           </div>
         </div>
       )}
+
+      {/* Interactive Sticky Notes Modal */}
+      <StickyNotesModal
+        isOpen={isStickyNotesOpen}
+        onClose={() => setIsStickyNotesOpen(false)}
+        initialNoteId={activeStickyNoteId}
+      />
 
       {/* Full Desktop Monitor Experience (pradiplabs.dev replica) */}
       <MonitorDesktopModal
@@ -2539,8 +2711,12 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
             soundFX.playClick();
             setIsPhoneOpen(false);
             setFocusedTarget(null);
-            targetCamPos.current.set(0.0, 0.95, 1.45);
-            targetLookAt.current.set(0.0, 0.32, 0.0);
+            const container = mountRef.current;
+            const w = container?.clientWidth || window.innerWidth;
+            const h = container?.clientHeight || window.innerHeight;
+            const frame = getResponsiveCameraFrame(w, h);
+            targetCamPos.current.copy(frame.pos);
+            targetLookAt.current.copy(frame.lookAt);
           }}
         />
       )}
