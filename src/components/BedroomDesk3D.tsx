@@ -499,10 +499,10 @@ const XRAY_TARGETS: { id: number; key: string; pos: THREE.Vector3 }[] = [
   { id: 6, key: 'card', pos: new THREE.Vector3(0.0, 0.19, 0.01) },       // 6: Z Business Card
   { id: 7, key: 'diary', pos: new THREE.Vector3(0.24, 0.18, 0.14) },     // 7: Guestbook Diary & Stylus
   { id: 8, key: 'photo', pos: new THREE.Vector3(0.14, 0.23, -0.20) },    // 8: Picture Frame
-  { id: 9, key: 'mug', pos: new THREE.Vector3(0.31, 0.21, -0.16) },      // 9: Coffee Mug
+  { id: 9, key: 'mug', pos: new THREE.Vector3(0.38, 0.21, -0.16) },      // 9: Coffee Mug
   { id: 10, key: 'lamp', pos: new THREE.Vector3(0.42, 0.28, -0.08) },    // 10: Mushroom Desk Lamp
   { id: 11, key: 'phone', pos: new THREE.Vector3(0.27, 0.24, 0.05) },    // 11: Smartphone & Stand
-  { id: 12, key: 'plant', pos: new THREE.Vector3(0.44, 0.28, -0.22) },   // 12: Succulent Plant
+  { id: 12, key: 'plant', pos: new THREE.Vector3(0.52, 0.28, -0.22) },   // 12: Succulent Plant
 ];
 
 interface BedroomDesk3DProps {
@@ -750,10 +750,10 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     controlsRef.current = controls;
 
     // 2. Lighting System
-    const ambientLight = new THREE.AmbientLight(0xffffff, dayMode ? 1.6 : 0.7);
+    const ambientLight = new THREE.AmbientLight(0xffffff, dayMode ? 1.15 : 0.7);
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0xfffaed, dayMode ? 2.4 : 1.2);
+    const keyLight = new THREE.DirectionalLight(0xfffaed, dayMode ? 1.85 : 1.2);
     keyLight.position.set(1.5, 3.5, 2.0);
     keyLight.castShadow = true;
     keyLight.shadow.mapSize.width = 2048;
@@ -838,8 +838,8 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     });
 
     const wallMat = new THREE.MeshStandardMaterial({
-      color: dayMode ? 0xf0f0f4 : 0x242220,
-      roughness: 0.85,
+      color: dayMode ? 0xd6dae2 : 0x242220,
+      roughness: 0.88,
       metalness: 0.0,
     });
 
@@ -856,24 +856,55 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     wallMesh.receiveShadow = true;
     scene.add(wallMesh);
 
-    // Wall Sticky Notes
-    const stickyColors = [0xfef08a, 0xfbcfe8, 0xbae6fd, 0xbbf7d0];
+    // Wall Sticky Notes (High-contrast post-it notes with drop shadow & tape strip)
+    const stickyColors = [0xffd500, 0xf43f5e, 0x0284c7, 0x10b981];
     const stickyPositions = [
-      [-0.20, 0.52, -0.335],
-      [-0.13, 0.47, -0.335],
-      [0.16, 0.53, -0.335],
-      [0.23, 0.48, -0.335]
+      [-0.20, 0.52, -0.334],
+      [-0.13, 0.47, -0.334],
+      [0.16, 0.53, -0.334],
+      [0.23, 0.48, -0.334]
     ];
     stickyPositions.forEach(([sx, sy, sz], idx) => {
+      const rotZ = idx % 2 === 0 ? 0.05 : -0.06;
+
+      // Soft drop shadow backing for clear contrast in light mode
+      const shadowBacking = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.064, 0.064),
+        new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: dayMode ? 0.28 : 0.45 })
+      );
+      shadowBacking.position.set(sx + 0.002, sy - 0.002, sz - 0.003);
+      shadowBacking.rotation.z = rotZ;
+      scene.add(shadowBacking);
+
+      // Note body (thin box for realistic edge definition)
       const note = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.058, 0.058),
-        new THREE.MeshStandardMaterial({ color: stickyColors[idx % stickyColors.length], roughness: 0.7 })
+        new THREE.BoxGeometry(0.06, 0.06, 0.002),
+        new THREE.MeshStandardMaterial({
+          color: stickyColors[idx % stickyColors.length],
+          roughness: 0.55,
+          metalness: 0.02
+        })
       );
       note.position.set(sx, sy, sz);
-      note.rotation.z = (idx % 2 === 0 ? 0.05 : -0.06);
+      note.rotation.z = rotZ;
+      note.castShadow = true;
       note.userData = { clickableName: 'notes', noteId: idx + 1 };
       interactiveObjects.push(note);
       scene.add(note);
+
+      // Top frosted adhesive tape strip
+      const tape = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.024, 0.008),
+        new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.65,
+          roughness: 0.3
+        })
+      );
+      tape.position.set(sx, sy + 0.028, sz + 0.002);
+      tape.rotation.z = rotZ - 0.02;
+      scene.add(tape);
     });
 
     // 5. Desk Top & Chamfers
@@ -1501,9 +1532,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     registerClickable(lampDome, 'lamp');
     registerClickable(lampBase, 'lamp');
 
-    // 15. Ceramic Coffee Mug with Rising Steam
+    // 15. Ceramic Coffee Mug with Rising Steam (Shifted to the right)
     const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.035, 0.085, 20), ceramicMat);
-    mug.position.set(0.31, 0.21, -0.16);
+    mug.position.set(0.38, 0.21, -0.16);
     mug.castShadow = true;
     scene.add(mug);
     registerClickable(mug, 'mug');
@@ -1512,7 +1543,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       new THREE.CircleGeometry(0.034, 16),
       new THREE.MeshBasicMaterial({ color: 0x3d2314 })
     );
-    coffeeSurface.position.set(0.31, 0.25, -0.16);
+    coffeeSurface.position.set(0.38, 0.25, -0.16);
     coffeeSurface.rotation.x = -Math.PI / 2;
     scene.add(coffeeSurface);
 
@@ -1521,7 +1552,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     const steamGeo = new THREE.BufferGeometry();
     const steamPositions = new Float32Array(steamCount * 3);
     for (let s = 0; s < steamCount; s++) {
-      steamPositions[s * 3] = 0.31 + (Math.random() - 0.5) * 0.03;
+      steamPositions[s * 3] = 0.38 + (Math.random() - 0.5) * 0.03;
       steamPositions[s * 3 + 1] = 0.26 + Math.random() * 0.08;
       steamPositions[s * 3 + 2] = -0.16 + (Math.random() - 0.5) * 0.03;
     }
@@ -1537,17 +1568,17 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     scene.add(steamParticles);
     steamParticlesRef.current = steamParticles;
 
-    // 16. Succulent Plant in Terracotta Pot (Interactive rosette with leaf sway)
+    // 16. Succulent Plant in Terracotta Pot (Shifted to the right)
     const plantGroup = new THREE.Group();
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.032, 0.07, 16), terracottaMat);
-    pot.position.set(0.44, 0.20, -0.22);
+    pot.position.set(0.52, 0.20, -0.22);
     pot.castShadow = true;
     plantGroup.add(pot);
 
     succulentLeavesRef.current = [];
     for (let i = 0; i < 8; i++) {
       const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.09, 8), plantGreen);
-      leaf.position.set(0.44 + (Math.cos(i * 0.785) * 0.018), 0.265, -0.22 + (Math.sin(i * 0.785) * 0.018));
+      leaf.position.set(0.52 + (Math.cos(i * 0.785) * 0.018), 0.265, -0.22 + (Math.sin(i * 0.785) * 0.018));
       leaf.rotation.set((Math.sin(i) * 0.28), i * 0.785, (Math.cos(i) * 0.28));
       leaf.castShadow = true;
       leaf.userData = { initialRot: leaf.rotation.clone(), leafIndex: i };
@@ -2017,7 +2048,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           arr[s * 3 + 2] += Math.cos(elapsedTime * 2.1 + s) * 0.00025;
           if (arr[s * 3 + 1] > 0.35) {
             arr[s * 3 + 1] = 0.255;
-            arr[s * 3] = 0.31 + (Math.random() - 0.5) * 0.025;
+            arr[s * 3] = 0.38 + (Math.random() - 0.5) * 0.025;
             arr[s * 3 + 2] = -0.16 + (Math.random() - 0.5) * 0.025;
           }
         }

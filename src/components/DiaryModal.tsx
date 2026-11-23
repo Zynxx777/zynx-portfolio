@@ -795,22 +795,22 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
       aria-label="My desk diary"
       className="fixed inset-0 z-[60] flex flex-col items-center bg-[#2A211B]/55 backdrop-blur-[2px] animate-fade-in"
     >
-      {/* Top Header Bar — safely below the navbar logo on mobile */}
-      <div className="flex w-full items-center justify-between gap-3 px-4 pt-16 pb-3 sm:py-4 sm:px-6">
+      {/* Top Header Bar — aligned right so it never overlaps the left logo/hamburger */}
+      <div className="flex w-full items-center justify-end gap-3 px-4 py-3 sm:py-4 sm:px-6 z-20">
+        <p className="hidden font-hand text-[22px] text-white/85 sm:block mr-auto">
+          {entries.length} {entries.length === 1 ? 'page' : 'pages'} written
+        </p>
+
         <button
           type="button"
           autoFocus
           onClick={onClose}
-          className="inline-flex h-9 sm:h-10 items-center gap-1.5 sm:gap-2 rounded-full bg-white/90 px-3 sm:px-4 text-[13px] sm:text-[15px] font-medium text-[#1D1D1F] shadow-sm ring-1 ring-black/5 backdrop-blur-xl transition-colors hover:bg-white active:scale-95"
+          className="inline-flex h-9 sm:h-10 items-center gap-1.5 sm:gap-2 rounded-full bg-white/95 px-3.5 sm:px-4 text-[13px] sm:text-[15px] font-medium text-[#1D1D1F] shadow-sm ring-1 ring-black/10 backdrop-blur-xl transition-colors hover:bg-white active:scale-95"
+          title="Back to desk (Esc)"
         >
           <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
-          <span className="hidden sm:inline">Back to the desk</span>
-          <span className="sm:hidden">Back</span>
+          <span className="font-bold">Back to Desk</span>
         </button>
-
-        <p className="hidden font-hand text-[22px] text-white/85 sm:block">
-          {entries.length} {entries.length === 1 ? 'page' : 'pages'} written
-        </p>
       </div>
 
       {/* Main Book Viewing Stage */}

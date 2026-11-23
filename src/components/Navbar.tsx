@@ -93,7 +93,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header ref={drawerRef} className="fixed top-0 left-0 right-0 z-50 px-4 py-3 pointer-events-none sm:px-8">
+    <header ref={drawerRef} className="fixed top-0 left-0 right-0 z-50 px-2 py-3 pointer-events-none sm:px-8">
       <div className="relative mx-auto flex max-w-[1600px] items-center justify-between">
         {/* Left: Brand Identity Pill + Merged Mobile Ecosystem Switcher ('>' icon) */}
         <div className="pointer-events-auto flex items-center rounded-full backdrop-blur-2xl bg-[#0a0d18]/85 border border-white/10 hover:border-cyan-400/40 shadow-xl transition-all duration-300 p-1 sm:p-1.5">

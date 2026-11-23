@@ -295,16 +295,16 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
       aria-label="Laptop Monitor Workstation"
       className="fixed inset-0 z-[60] flex flex-col items-center justify-between pt-16 px-3 pb-3 sm:p-5 md:p-6 bg-[#161210]/65 backdrop-blur-[3px] animate-fade-in select-none overflow-hidden"
     >
-      {/* Top Outer Header Bar */}
-      <div className="w-full flex items-center justify-between z-20">
+      {/* Top Outer Header Bar — aligned right so it never overlaps the left logo/hamburger */}
+      <div className="w-full flex items-center justify-end gap-2 z-20">
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex h-9 sm:h-10 items-center gap-1.5 sm:gap-2 rounded-full bg-white/95 px-3 sm:px-4 text-[13px] sm:text-[14px] font-medium text-[#1D1D1F] shadow-md ring-1 ring-black/10 backdrop-blur-xl transition-all hover:bg-white active:scale-95"
+          className="inline-flex h-9 sm:h-10 items-center gap-1.5 sm:gap-2 rounded-full bg-white/95 px-3.5 sm:px-4 text-[13px] sm:text-[14px] font-medium text-[#1D1D1F] shadow-md ring-1 ring-black/10 backdrop-blur-xl transition-all hover:bg-white active:scale-95"
+          title="Back to desk (Esc)"
         >
           <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          <span className="hidden sm:inline">Back to the desk</span>
-          <span className="sm:hidden">Back</span>
+          <span className="font-bold">Back to Desk</span>
         </button>
 
         <button

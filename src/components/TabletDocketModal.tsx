@@ -131,8 +131,8 @@ export const TabletDocketModal: React.FC<TabletDocketModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-fadeIn">
-      {/* Top Bar Navigation — safely below the navbar logo on mobile */}
-      <div className="absolute top-16 sm:top-4 left-4 z-10 flex items-center gap-3 pt-[env(safe-area-inset-top,0px)]">
+      {/* Top Bar Navigation — aligned right so it never overlaps the left logo/hamburger */}
+      <div className="absolute top-3 sm:top-4 right-4 z-20 flex items-center gap-3 pt-[env(safe-area-inset-top,0px)]">
         <button
           onClick={() => { soundFX.playClick(); onClose(); }}
           className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-mono backdrop-blur-md border border-white/15 transition shadow-lg active:scale-95"

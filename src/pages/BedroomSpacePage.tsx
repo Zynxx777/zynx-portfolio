@@ -863,9 +863,9 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
         }
       `}</style>
 
-      {/* Small corner controls keep the room as the main event — placed below the top navbar logo on mobile */}
-      <header className="absolute top-14 sm:top-3 left-3 right-3 z-30 flex items-start justify-between gap-2 pointer-events-none pt-[env(safe-area-inset-top,0px)]">
-        <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
+      {/* Header controls aligned right so the top-left logo and hamburger menu are completely clear */}
+      <header className="absolute top-3 right-2 sm:right-6 z-30 flex items-center justify-end gap-1.5 sm:gap-2 pointer-events-none pt-[env(safe-area-inset-top,0px)]">
+        <div className="flex items-center gap-1 sm:gap-2 pointer-events-auto">
           <button
             onClick={() => { soundFX.playClick(); onNavigatePortfolio(); }}
             className="hidden sm:flex h-8 sm:h-9 items-center gap-1.5 sm:gap-2 rounded-full border border-white/10 bg-black/60 px-2.5 sm:px-3 text-[11px] font-mono text-zinc-200 shadow-lg backdrop-blur-xl transition hover:border-cyan-300/60 hover:text-white"
@@ -915,43 +915,41 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
               <span className="hidden sm:inline">Catalog</span>
             </button>
           </div>
-        </div>
 
-        {viewMode === "3d" && (
-          <button
-            onClick={() => {
-              soundFX.playClick();
-              const nextTheme = roomTheme === "cyberpunk" ? "anime-bedroom" : "cyberpunk";
-              setRoomTheme(nextTheme);
-              try { window.localStorage.setItem("zynx-bedroom-theme-v1", nextTheme); } catch {}
-              setTargetZone("overview");
-              setActiveZone(null);
-              setEditMode(false);
-              setSelectedFurniture(null);
-            }}
-            className={`pointer-events-auto flex h-7 sm:h-8 items-center gap-1.5 rounded-full px-2.5 sm:px-3 text-[10px] sm:text-[11px] font-mono border shadow-lg backdrop-blur-xl transition active:scale-95 ${
-              roomTheme === "cyberpunk"
-                ? "bg-cyan-500/20 border-cyan-400/40 text-cyan-200 hover:bg-cyan-500/30"
-                : "bg-rose-500/20 border-rose-400/40 text-rose-200 hover:bg-rose-500/30"
-            }`}
-            title="Switch 3D room theme"
-            aria-label={`Current theme: ${roomTheme === "cyberpunk" ? "Cyberpunk Space" : "Anime Bedroom"}. Click to toggle.`}
-          >
-            {roomTheme === "cyberpunk" ? (
-              <>
-                <Sparkles size={12} className="text-cyan-400" />
-                <span className="font-semibold">Cyberpunk</span>
-                <span className="text-[9px] text-cyan-300/70 hidden sm:inline">(Switch)</span>
-              </>
-            ) : (
-              <>
-                <BedDouble size={12} className="text-rose-400" />
-                <span className="font-semibold">Anime Room</span>
-                <span className="text-[9px] text-rose-300/70 hidden sm:inline">(Switch)</span>
-              </>
-            )}
-          </button>
-        )}
+          {viewMode === "3d" && (
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                const nextTheme = roomTheme === "cyberpunk" ? "anime-bedroom" : "cyberpunk";
+                setRoomTheme(nextTheme);
+                try { window.localStorage.setItem("zynx-bedroom-theme-v1", nextTheme); } catch {}
+                setTargetZone("overview");
+                setActiveZone(null);
+                setEditMode(false);
+                setSelectedFurniture(null);
+              }}
+              className={`pointer-events-auto flex h-7 items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-2.5 text-[10px] font-mono border shadow-lg backdrop-blur-xl transition active:scale-95 ${
+                roomTheme === "cyberpunk"
+                  ? "bg-cyan-500/20 border-cyan-400/40 text-cyan-200 hover:bg-cyan-500/30"
+                  : "bg-rose-500/20 border-rose-400/40 text-rose-200 hover:bg-rose-500/30"
+              }`}
+              title="Switch 3D room theme"
+              aria-label={`Current theme: ${roomTheme === "cyberpunk" ? "Cyberpunk Space" : "Anime Bedroom"}. Click to toggle.`}
+            >
+              {roomTheme === "cyberpunk" ? (
+                <>
+                  <Sparkles size={11} className="text-cyan-400" />
+                  <span className="font-semibold">Space</span>
+                </>
+              ) : (
+                <>
+                  <BedDouble size={11} className="text-rose-400" />
+                  <span className="font-semibold">Room</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Mobile Gesture Helper Badge (Bottom-left, non-overlapping) */}
