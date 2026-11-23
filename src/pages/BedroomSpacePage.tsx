@@ -24,7 +24,7 @@ import {
   Terminal, Cpu, Music, Layers, Shield, ChevronRight,
   Monitor, Zap, BookOpen, Headphones, Save,
   Grid, Eye, BedDouble, Sparkles, Move, RotateCcw, Check, Laptop,
-  Sun, Moon,
+  Sun, Moon, Clock,
 } from "lucide-react";
 
 interface BedroomSpacePageProps {
@@ -537,22 +537,44 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
     </div>
   ),
 
-  // 11. Zoro Bobblehead Figurine
+  // 11. Precision Analog Chronometer Watch
   zoro: (
     <div className="space-y-8 animate-fadeIn">
-      <div className="relative p-7 rounded-3xl bg-gradient-to-br from-emerald-950/60 via-black/80 to-green-950/40 border border-emerald-500/30 overflow-hidden shadow-2xl">
+      <div className="relative p-7 rounded-3xl bg-gradient-to-br from-cyan-950/60 via-black/80 to-blue-950/40 border border-cyan-500/30 overflow-hidden shadow-2xl">
         <div className="relative z-10 space-y-3">
           <div className="flex items-center gap-2">
-            <Sparkles size={15} className="text-emerald-400" />
-            <span className="text-[11px] font-mono text-emerald-400 uppercase tracking-widest">
-              [ 11 // DESK COMPANION ]
+            <Clock size={15} className="text-cyan-400" />
+            <span className="text-[11px] font-mono text-cyan-400 uppercase tracking-widest">
+              [ 11 // TIMEPIECE ]
             </span>
           </div>
           <h2 className="text-3xl sm:text-2xl font-display font-extrabold text-white">
-            Roronoa Zoro Bobblehead
+            Precision Chronometer Watch
           </h2>
           <p className="text-xs sm:text-[11px] text-zinc-300 font-sans leading-relaxed">
-            Action figure on a harmonic damped spring. Features triple katanas, emerald hair, and physics wobble when hovered or touched.
+            Titanium mechanical chronometer mounted on an ergonomic desk display stand. Features live sweeping mechanical seconds, sapphire crystal, ceramic tachymeter bezel, dual pushers, and luminescent dial indices updating in real-time.
+          </p>
+        </div>
+      </div>
+    </div>
+  ),
+
+  // 12. Designer Wardrobe & Sneakers
+  wardrobe: (
+    <div className="space-y-8 animate-fadeIn">
+      <div className="relative p-7 rounded-3xl bg-gradient-to-br from-amber-950/60 via-black/80 to-zinc-950/50 border border-amber-500/30 overflow-hidden shadow-2xl">
+        <div className="relative z-10 space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles size={15} className="text-amber-400" />
+            <span className="text-[11px] font-mono text-amber-400 uppercase tracking-widest">
+              [ 12 // ATTIRE & SNEAKERS ]
+            </span>
+          </div>
+          <h2 className="text-3xl sm:text-2xl font-display font-extrabold text-white">
+            Designer Wardrobe & Sneaker Collection
+          </h2>
+          <p className="text-xs sm:text-[11px] text-zinc-300 font-sans leading-relaxed">
+            Modern open-concept boutique wardrobe with ambient LED strip lighting. Features a tailored black wool suit and relaxed streetwear hoodie on stainless steel hanging rails, with lighted display shelving showcasing classic white Nike runners and high-top Air Jordan sneakers in the iconic Chicago colorway.
           </p>
         </div>
       </div>
@@ -903,8 +925,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
               className={`flex h-6 sm:h-7 items-center gap-1 rounded-full px-2 sm:px-2.5 text-[10px] font-mono transition ${viewMode === "3d" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
             >
               <BedDouble size={11} />
-              <span className="hidden sm:inline">Room 3D</span>
-              <span className="sm:hidden">Room</span>
+              <span>Bedroom</span>
             </button>
             <button
               onClick={() => {

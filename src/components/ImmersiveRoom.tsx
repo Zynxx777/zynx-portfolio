@@ -439,6 +439,15 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       return mesh;
     };
 
+    const makeGroupClickable = (grp: THREE.Group, zone: ZoneId) => {
+      grp.traverse(child => {
+        if ((child as THREE.Mesh).isMesh) {
+          registerZone(child as THREE.Mesh, zone);
+        }
+      });
+      return grp;
+    };
+
     // ── 3D Zone Label Overlay Anchor Positions ──────────────────────────────
     const labelPositions: Record<ZoneId, THREE.Vector3> = {
       monitor_left:  new THREE.Vector3(-0.88, 3.1, -0.75),
@@ -452,6 +461,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       zoro:          new THREE.Vector3( 0,    0.60, 0   ),
       zcard:         new THREE.Vector3( 0,    0.20, 0   ),
       diary:         new THREE.Vector3( 0,    0.20, 0   ),
+      wardrobe:      new THREE.Vector3( 0,    2.8,  0   ),
     };
 
     // ── Room Shell Architecture ─────────────────────────────────────────────
@@ -562,11 +572,13 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     backTrim.position.set(0, 0.12, -4.84);
     scene.add(backTrim);
 
-    [-7.84, 7.84].forEach(x => {
-      const sideTrim = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.22, 10), trimMat.clone());
-      sideTrim.position.set(x, 0.12, 0);
-      scene.add(sideTrim);
-    });
+    const sideTrimLeft = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.22, 10), trimMat.clone());
+    sideTrimLeft.position.set(-7.84, 0.12, 0);
+    scene.add(sideTrimLeft);
+
+    const sideTrimRight = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.22, 10), trimMat.clone());
+    sideTrimRight.position.set(7.84, 0.12, 0);
+    scene.add(sideTrimRight);
 
     let bedroomDoor: THREE.Group | null = null;
     let bedsideLamp: THREE.Group | null = null;
@@ -638,12 +650,15 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     ];
 
     // ── City Bokeh Window ───────────────────────────────────────────────────
+    const windowGroup = new THREE.Group();
+    windowGroup.name = "bedroom-window-group";
+
     const winFrame = new THREE.Mesh(
       new THREE.BoxGeometry(0.2, 3.2, 4.8),
       new THREE.MeshStandardMaterial({ color: isBedroomTheme ? "#f7f2ec" : "#111130", metalness: isBedroomTheme ? 0.05 : 0.8, roughness: isBedroomTheme ? 0.55 : 0.3 })
     );
     winFrame.position.set(-7.9, 3.5, 1);
-    scene.add(winFrame);
+    windowGroup.add(winFrame);
 
     if (nightWindowTexture) {
       const nightSky = new THREE.Mesh(
@@ -652,7 +667,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       );
       nightSky.rotation.y = Math.PI / 2;
       nightSky.position.set(-7.79, 3.5, 1);
-      scene.add(nightSky);
+      windowGroup.add(nightSky);
     }
 
     const winGlass = new THREE.Mesh(
@@ -661,7 +676,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     );
     winGlass.rotation.y = Math.PI / 2;
     winGlass.position.set(-7.75, 3.5, 1);
-    scene.add(winGlass);
+    windowGroup.add(winGlass);
 
     // City bokeh lights
     const bokeColors = ["#ffaa44", "#00F2FE", "#ff4466", "#9D4EDD", "#ffee44", "#44ffaa"];
@@ -678,12 +693,13 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         })
       );
       bMesh.position.set(-8.2, 1.8 + stableRandom() * 3, -0.5 + stableRandom() * 3.2);
-      scene.add(bMesh);
+      windowGroup.add(bMesh);
     }
 
     const curtainPivots: { pivot: THREE.Group; phase: number }[] = [];
-    let zoroHeadGroup: THREE.Group | null = null;
-    let zoroWobble = 0.15;
+    let watchSecondHand: THREE.Mesh | null = null;
+    let watchMinuteHand: THREE.Mesh | null = null;
+    let watchHourHand: THREE.Mesh | null = null;
     let receiptPaperMesh: THREE.Mesh | null = null;
     let receiptAnimProgress = 0;
     if (isBedroomTheme) {
@@ -695,18 +711,20 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         const curtain = new THREE.Mesh(new THREE.BoxGeometry(0.24, 3.4, 0.9), curtainMat);
         curtain.position.y = -1.7;
         pivot.add(curtain);
-        scene.add(pivot);
+        windowGroup.add(pivot);
         curtainPivots.push({ pivot, phase: side < 0 ? 0 : Math.PI * 0.72 });
       });
       const sill = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 4.95), new THREE.MeshStandardMaterial({ color: "#f7f2ec", roughness: 0.55 }));
       sill.position.set(-7.78, 1.85, 1);
-      scene.add(sill);
+      windowGroup.add(sill);
       [-0.5, 1, 2.5].forEach(z => {
         const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.0, 0.08), new THREE.MeshStandardMaterial({ color: "#f7f2ec", roughness: 0.5 }));
         mullion.position.set(-7.78, 3.5, z);
-        scene.add(mullion);
+        windowGroup.add(mullion);
       });
     }
+
+    scene.add(windowGroup);
 
     const winLight = new THREE.PointLight(nightMode ? "#87baff" : isBedroomTheme ? "#c9ddf1" : "#4466ff", nightMode ? 1.7 : isBedroomTheme ? 2.3 : 1.5, 8);
     winLight.position.set(-6.5, 3.5, 1);
@@ -1380,65 +1398,153 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     scene.add(plantMesh);
 
     // ── Newly Integrated PradipLabs Desk Artifacts ──────────────────────────
-    // 1. Roronoa Zoro Bobblehead Figurine on Spring
+    // 1. Precision Analog Chronometer Watch on Ergonomic Display Stand
     const zoroGroup = new THREE.Group();
-    zoroGroup.name = "movable-zoro-bobblehead";
+    zoroGroup.name = "movable-chrono-watch";
     zoroGroup.position.set(-3.65, DESK_TOP_Y, 0.42);
 
-    const zoroBase = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.12, 0.14, 0.03, 16),
-      new THREE.MeshStandardMaterial({ color: "#161922", roughness: 0.5 })
+    // Ergonomic Midnight Display Stand Base
+    const chronoStandMat = new THREE.MeshStandardMaterial({
+      color: "#18181b",
+      roughness: 0.45,
+      metalness: 0.25
+    });
+    const standBase = addClickable(
+      new THREE.CylinderGeometry(0.18, 0.22, 0.04, 24),
+      chronoStandMat,
+      "zoro"
     );
-    zoroBase.position.y = 0.015;
-    zoroGroup.add(zoroBase);
+    standBase.position.y = 0.02;
+    standBase.castShadow = true;
+    zoroGroup.add(standBase);
 
-    const zoroBody = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.11, 0.22, 16),
-      new THREE.MeshStandardMaterial({ color: "#14532d", roughness: 0.5 })
+    // Curved Ergonomic Neck holding watch at 35-degree angle towards user
+    const neckMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.06, 0.26, 0.08),
+      chronoStandMat
     );
-    zoroBody.position.y = 0.14;
-    zoroGroup.add(zoroBody);
+    neckMesh.position.set(0, 0.15, -0.04);
+    neckMesh.rotation.x = -0.32;
+    zoroGroup.add(neckMesh);
 
-    for (let k = 0; k < 3; k++) {
-      const sword = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.008, 0.008, 0.28, 8),
-        new THREE.MeshStandardMaterial({ color: k === 0 ? "#ffffff" : k === 1 ? "#9333ea" : "#dc2626", metalness: 0.8 })
+    // Watch Head Group angled forward
+    const watchHead = new THREE.Group();
+    watchHead.position.set(0, 0.26, 0.02);
+    watchHead.rotation.x = -0.32;
+
+    // Titanium Watch Case with Knurled Bezel
+    const titaniumMat = new THREE.MeshStandardMaterial({
+      color: "#d4d4d8",
+      roughness: 0.22,
+      metalness: 0.88
+    });
+    const watchCase = addClickable(
+      new THREE.CylinderGeometry(0.19, 0.19, 0.045, 32),
+      titaniumMat,
+      "zoro"
+    );
+    watchCase.rotation.x = Math.PI / 2;
+    watchCase.castShadow = true;
+    watchHead.add(watchCase);
+
+    // Bezel ring with dark ceramic inlay
+    const chronoBezelMat = new THREE.MeshStandardMaterial({
+      color: "#09090b",
+      roughness: 0.15,
+      metalness: 0.4
+    });
+    const bezel = new THREE.Mesh(
+      new THREE.TorusGeometry(0.18, 0.016, 16, 36),
+      chronoBezelMat
+    );
+    bezel.position.z = 0.024;
+    watchHead.add(bezel);
+
+    // Dual Chronometer Pushers & Crown
+    const crownMat = new THREE.MeshStandardMaterial({ color: "#e4e4e7", metalness: 0.9, roughness: 0.2 });
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.035, 16), crownMat);
+    crown.rotation.z = Math.PI / 2;
+    crown.position.set(0.20, 0, 0);
+    watchHead.add(crown);
+
+    const pusher1 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.028, 12), crownMat);
+    pusher1.rotation.z = Math.PI / 2;
+    pusher1.position.set(0.19, 0.09, 0);
+    watchHead.add(pusher1);
+
+    const pusher2 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.028, 12), crownMat);
+    pusher2.rotation.z = Math.PI / 2;
+    pusher2.position.set(0.19, -0.09, 0);
+    watchHead.add(pusher2);
+
+    // Dial Surface (High-contrast Sunburst with luminescent indices)
+    const dialMat = new THREE.MeshStandardMaterial({
+      color: "#0f172a",
+      roughness: 0.35,
+      metalness: 0.1
+    });
+    const dial = new THREE.Mesh(new THREE.CircleGeometry(0.165, 32), dialMat);
+    dial.position.z = 0.025;
+    watchHead.add(dial);
+
+    // 12 Glowing Luminescent Hour Markers
+    const markerMat = new THREE.MeshStandardMaterial({
+      color: "#38bdf8",
+      emissive: "#38bdf8",
+      emissiveIntensity: 0.4
+    });
+    for (let i = 0; i < 12; i++) {
+      const angle = (i * Math.PI) / 6;
+      const isCard = i % 3 === 0;
+      const marker = new THREE.Mesh(
+        new THREE.BoxGeometry(isCard ? 0.015 : 0.009, isCard ? 0.032 : 0.020, 0.004),
+        markerMat
       );
-      sword.position.set(0.1, 0.12 + k * 0.018, -0.02 + k * 0.02);
-      sword.rotation.set(0.4, 0.1, -0.6);
-      zoroGroup.add(sword);
+      marker.position.set(Math.sin(angle) * 0.138, Math.cos(angle) * 0.138, 0.027);
+      marker.rotation.z = -angle;
+      watchHead.add(marker);
     }
 
-    const zoroSpring = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.025, 0.025, 0.09, 12),
-      new THREE.MeshStandardMaterial({ color: "#d1d5db", metalness: 0.9, roughness: 0.2 })
-    );
-    zoroSpring.position.y = 0.28;
-    zoroGroup.add(zoroSpring);
+    // Live Moving Hands
+    const hourHandMat = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.2 });
+    const hourHand = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.08, 0.003), hourHandMat);
+    hourHand.geometry.translate(0, 0.035, 0);
+    hourHand.position.z = 0.028;
+    watchHead.add(hourHand);
+    watchHourHand = hourHand;
 
-    const zoroHead = new THREE.Group();
-    zoroHead.position.set(0, 0.38, 0);
+    const minuteHand = new THREE.Mesh(new THREE.BoxGeometry(0.009, 0.12, 0.003), hourHandMat);
+    minuteHand.geometry.translate(0, 0.055, 0);
+    minuteHand.position.z = 0.030;
+    watchHead.add(minuteHand);
+    watchMinuteHand = minuteHand;
 
-    const zoroFace = addClickable(new THREE.SphereGeometry(0.11, 16, 16), new THREE.MeshStandardMaterial({ color: "#fbd2b8", roughness: 0.4 }), "zoro");
-    zoroHead.add(zoroFace);
+    const secondHandMat = new THREE.MeshStandardMaterial({
+      color: "#ef4444",
+      emissive: "#ef4444",
+      emissiveIntensity: 0.5
+    });
+    const secondHand = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.135, 0.003), secondHandMat);
+    secondHand.geometry.translate(0, 0.058, 0);
+    secondHand.position.z = 0.032;
+    watchHead.add(secondHand);
+    watchSecondHand = secondHand;
 
-    const zoroHair = new THREE.Mesh(
-      new THREE.SphereGeometry(0.115, 16, 16, 0, Math.PI * 2, 0, Math.PI / 1.7),
-      new THREE.MeshStandardMaterial({ color: "#22c55e", roughness: 0.6 })
-    );
-    zoroHair.position.y = 0.02;
-    zoroHead.add(zoroHair);
+    // Sapphire Crystal Glass Cover
+    const crystalMat = new THREE.MeshPhysicalMaterial({
+      color: "#b0c4de",
+      roughness: 0.04,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.22,
+      transmission: 0.9,
+      ior: 1.5
+    });
+    const crystal = new THREE.Mesh(new THREE.CircleGeometry(0.17, 32), crystalMat);
+    crystal.position.z = 0.034;
+    watchHead.add(crystal);
 
-    const bandana = new THREE.Mesh(
-      new THREE.TorusGeometry(0.11, 0.02, 10, 24),
-      new THREE.MeshStandardMaterial({ color: "#09090b", roughness: 0.7 })
-    );
-    bandana.rotation.x = Math.PI / 2;
-    bandana.position.y = 0.025;
-    zoroHead.add(bandana);
-
-    zoroHeadGroup = zoroHead;
-    zoroGroup.add(zoroHead);
+    zoroGroup.add(watchHead);
     scene.add(zoroGroup);
 
     // 2. Thermal POS Receipt Printer with paper
@@ -1538,8 +1644,8 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     registerFurniture("printer", "Thermal POS printer", printerGroup, "table", { x: -2.55, z: 0.42 }, DESK_BOUNDS, {
       halfX: 0.32, halfZ: 0.35, centerZ: 0
     });
-    registerFurniture("zoro", "Zoro bobblehead", zoroGroup, "table", { x: -3.65, z: 0.42 }, DESK_BOUNDS, {
-      halfX: 0.18, halfZ: 0.18, centerZ: 0
+    registerFurniture("zoro", "Precision Chrono Watch", zoroGroup, "table", { x: -3.65, z: 0.42 }, DESK_BOUNDS, {
+      halfX: 0.22, halfZ: 0.22, centerZ: 0
     });
     registerFurniture("zcard", "Z Card v0.1", zcardGroup, "table", { x: -0.85, z: 0.65 }, DESK_BOUNDS, {
       halfX: 0.26, halfZ: 0.18, centerZ: 0
@@ -1917,6 +2023,330 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         minX: -7.9, maxX: 7.9, minZ: -4.9, maxZ: 4.9,
       }, { halfX: 2.45, halfZ: 2.85, centerZ: 0.08 });
     }
+
+    // ── 3D Designer Wardrobe with Black Suit, Hoodie, Nike & Jordan Sneakers ───
+    const wardrobeGroup = new THREE.Group();
+    wardrobeGroup.name = "bedroom-designer-wardrobe";
+    wardrobeGroup.position.set(-6.8, 0, 1.8);
+    wardrobeGroup.rotation.y = Math.PI / 2; // Facing towards +X into the bedroom
+
+    // Cabinet Frame Materials
+    const wardrobeOakMat = new THREE.MeshStandardMaterial({
+      color: isBedroomTheme ? "#785b46" : "#1a161f",
+      roughness: 0.65,
+      metalness: 0.08,
+    });
+    const hangerWoodMat = new THREE.MeshStandardMaterial({
+      color: "#b48c68",
+      roughness: 0.55,
+    });
+    const hangerMetalMat = new THREE.MeshStandardMaterial({
+      color: "#e2e8f0",
+      metalness: 0.9,
+      roughness: 0.2,
+    });
+
+    // Wardrobe Structure Dimensions: width 2.4 (along Z), depth 0.9 (along X), height 4.4
+    const wWidth = 2.4;
+    const wDepth = 0.9;
+    const wHeight = 4.4;
+
+    // Plinth Base & Top Canopy
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(wDepth, 0.12, wWidth), wardrobeOakMat);
+    plinth.position.set(0, 0.06, 0);
+    plinth.castShadow = true;
+    wardrobeGroup.add(plinth);
+
+    const canopy = new THREE.Mesh(new THREE.BoxGeometry(wDepth, 0.08, wWidth), wardrobeOakMat);
+    canopy.position.set(0, wHeight - 0.04, 0);
+    canopy.castShadow = true;
+    wardrobeGroup.add(canopy);
+
+    // Back Panel
+    const backWallPanel = new THREE.Mesh(new THREE.BoxGeometry(0.04, wHeight - 0.2, wWidth - 0.04), wardrobeOakMat);
+    backWallPanel.position.set(-wDepth / 2 + 0.02, wHeight / 2, 0);
+    wardrobeGroup.add(backWallPanel);
+
+    // Vertical Uprights (Left, Right, Center Divider)
+    const uprightGeo = new THREE.BoxGeometry(wDepth - 0.04, wHeight - 0.2, 0.04);
+    const leftUpright = new THREE.Mesh(uprightGeo, wardrobeOakMat);
+    leftUpright.position.set(0.01, wHeight / 2, -wWidth / 2 + 0.02);
+    wardrobeGroup.add(leftUpright);
+
+    const rightUpright = new THREE.Mesh(uprightGeo, wardrobeOakMat);
+    rightUpright.position.set(0.01, wHeight / 2, wWidth / 2 - 0.02);
+    wardrobeGroup.add(rightUpright);
+
+    const centerDivider = new THREE.Mesh(new THREE.BoxGeometry(wDepth - 0.08, wHeight - 0.2, 0.04), wardrobeOakMat);
+    centerDivider.position.set(0.01, wHeight / 2, 0);
+    wardrobeGroup.add(centerDivider);
+
+    // Warm Interior Boutique LED Lighting
+    const wardrobeGlow1 = new THREE.PointLight("#ffedd5", 1.2, 3.8);
+    wardrobeGlow1.position.set(0.1, 4.0, -0.6);
+    wardrobeGroup.add(wardrobeGlow1);
+
+    const wardrobeGlow2 = new THREE.PointLight("#ffedd5", 1.2, 3.8);
+    wardrobeGlow2.position.set(0.1, 4.0, 0.6);
+    wardrobeGroup.add(wardrobeGlow2);
+
+    // ── SECTION 1: HANGING BAY (Left Bay: z from -1.18 to 0) ──────────────────
+    // Stainless Steel Hanging Rail
+    const rail = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.018, 0.018, 1.14, 16),
+      hangerMetalMat
+    );
+    rail.rotation.x = Math.PI / 2;
+    rail.position.set(0, 3.75, -0.58);
+    wardrobeGroup.add(rail);
+
+    // 1. TAILORED BLACK SUIT ON HANGER (z = -0.82)
+    const suitGroup = new THREE.Group();
+    suitGroup.position.set(0, 3.75, -0.82);
+
+    const hanger1 = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.025, 0.44), hangerWoodMat);
+    hanger1.position.y = -0.06;
+    hanger1.rotation.y = 0.05;
+    suitGroup.add(hanger1);
+
+    const suitMat = new THREE.MeshStandardMaterial({
+      color: "#0a0a0c",
+      roughness: 0.85,
+      metalness: 0.05,
+    });
+    const suitSatinMat = new THREE.MeshStandardMaterial({
+      color: "#18181b",
+      roughness: 0.35,
+      metalness: 0.15,
+    });
+
+    const suitTorso = addClickable(
+      new THREE.BoxGeometry(0.24, 0.82, 0.42),
+      suitMat,
+      "wardrobe"
+    );
+    suitTorso.position.set(0, -0.48, 0);
+    suitTorso.castShadow = true;
+    suitGroup.add(suitTorso);
+
+    const leftLapel = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.38, 0.08), suitSatinMat);
+    leftLapel.position.set(0.125, -0.32, -0.09);
+    leftLapel.rotation.y = -0.12;
+    suitGroup.add(leftLapel);
+
+    const rightLapel = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.38, 0.08), suitSatinMat);
+    rightLapel.position.set(0.125, -0.32, 0.09);
+    rightLapel.rotation.y = 0.12;
+    suitGroup.add(rightLapel);
+
+    const pocketSquare = new THREE.Mesh(
+      new THREE.BoxGeometry(0.015, 0.035, 0.06),
+      new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.3 })
+    );
+    pocketSquare.position.set(0.125, -0.28, -0.12);
+    suitGroup.add(pocketSquare);
+
+    const trousers = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 0.95, 0.34),
+      suitMat
+    );
+    trousers.position.set(0, -1.25, 0);
+    trousers.castShadow = true;
+    suitGroup.add(trousers);
+
+    wardrobeGroup.add(suitGroup);
+
+    // 2. STREETWEAR HOODIE ON HANGER (z = -0.36)
+    const hoodieGroup = new THREE.Group();
+    hoodieGroup.position.set(0, 3.75, -0.36);
+
+    const hanger2 = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.025, 0.44), hangerWoodMat);
+    hanger2.position.y = -0.06;
+    hanger2.rotation.y = -0.04;
+    hoodieGroup.add(hanger2);
+
+    const hoodieMat = new THREE.MeshStandardMaterial({
+      color: "#27272a",
+      roughness: 0.95,
+      metalness: 0.0,
+    });
+
+    const hoodieBody = addClickable(
+      new THREE.BoxGeometry(0.28, 0.75, 0.46),
+      hoodieMat,
+      "wardrobe"
+    );
+    hoodieBody.position.set(0, -0.45, 0);
+    hoodieBody.castShadow = true;
+    hoodieGroup.add(hoodieBody);
+
+    const pouch = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.22, 0.32), hoodieMat);
+    pouch.position.set(0.15, -0.52, 0);
+    hoodieGroup.add(pouch);
+
+    const hoodMesh = new THREE.Mesh(
+      new THREE.TorusGeometry(0.14, 0.05, 12, 24, Math.PI * 1.2),
+      hoodieMat
+    );
+    hoodMesh.position.set(-0.06, -0.10, 0);
+    hoodMesh.rotation.y = Math.PI / 2;
+    hoodMesh.rotation.x = 0.2;
+    hoodieGroup.add(hoodMesh);
+
+    const stringMat = new THREE.MeshStandardMaterial({ color: "#f4f4f5", roughness: 0.6 });
+    [-0.04, 0.04].forEach(dz => {
+      const dstring = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.22, 8), stringMat);
+      dstring.position.set(0.145, -0.25, dz);
+      hoodieGroup.add(dstring);
+    });
+
+    wardrobeGroup.add(hoodieGroup);
+
+    // ── SECTION 2: SNEAKER DISPLAY SHELVES (Right Bay: z from 0 to 1.18) ─────
+    const sneakerShelfMat = new THREE.MeshStandardMaterial({
+      color: "#0f172a",
+      roughness: 0.25,
+      metalness: 0.3,
+    });
+
+    [1.0, 2.0, 3.0].forEach(y => {
+      const sMesh = new THREE.Mesh(new THREE.BoxGeometry(wDepth - 0.08, 0.04, 1.14), sneakerShelfMat);
+      sMesh.position.set(0.01, y, 0.58);
+      sMesh.castShadow = true;
+      sMesh.receiveShadow = true;
+      wardrobeGroup.add(sMesh);
+
+      const ledUnder = new THREE.Mesh(
+        new THREE.BoxGeometry(0.02, 0.01, 1.10),
+        new THREE.MeshStandardMaterial({ color: "#38bdf8", emissive: "#38bdf8", emissiveIntensity: 0.6 })
+      );
+      ledUnder.position.set(0.25, y - 0.022, 0.58);
+      wardrobeGroup.add(ledUnder);
+    });
+
+    // Helper: Build Nike Sneaker
+    const buildNike = (isRight: boolean) => {
+      const shoe = new THREE.Group();
+      const whiteLeather = new THREE.MeshStandardMaterial({ color: "#f8fafc", roughness: 0.45 });
+      const greyLeather = new THREE.MeshStandardMaterial({ color: "#cbd5e1", roughness: 0.5 });
+      const blackSwooshMat = new THREE.MeshStandardMaterial({ color: "#09090b", roughness: 0.25 });
+      const outsoleMat = new THREE.MeshStandardMaterial({ color: "#1e293b", roughness: 0.8 });
+
+      const sole = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.05, 0.13), whiteLeather);
+      sole.position.y = 0.025;
+      shoe.add(sole);
+
+      const outsole = new THREE.Mesh(new THREE.BoxGeometry(0.322, 0.015, 0.132), outsoleMat);
+      outsole.position.y = 0.007;
+      shoe.add(outsole);
+
+      const upper = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.075, 0.12), whiteLeather);
+      upper.position.set(0, 0.08, 0);
+      shoe.add(upper);
+
+      const toe = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.055, 0.118), greyLeather);
+      toe.position.set(0.09, 0.065, 0);
+      shoe.add(toe);
+
+      const heel = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.095, 0.118), greyLeather);
+      heel.position.set(-0.10, 0.09, 0);
+      shoe.add(heel);
+
+      const tongue = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.07, 0.08), whiteLeather);
+      tongue.position.set(0.02, 0.12, 0);
+      tongue.rotation.z = -0.2;
+      shoe.add(tongue);
+
+      const swooshSide = isRight ? 0.062 : -0.062;
+      const swoosh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.022, 0.006), blackSwooshMat);
+      swoosh.position.set(-0.01, 0.082, swooshSide);
+      swoosh.rotation.z = 0.15;
+      shoe.add(swoosh);
+
+      return shoe;
+    };
+
+    // Helper: Build Air Jordan 1 High (Chicago Colorway)
+    const buildJordan = (isRight: boolean) => {
+      const shoe = new THREE.Group();
+      const whiteLeather = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.4 });
+      const redChicagoMat = new THREE.MeshStandardMaterial({ color: "#dc2626", roughness: 0.45 });
+      const blackLeather = new THREE.MeshStandardMaterial({ color: "#18181b", roughness: 0.35 });
+
+      const sole = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.055, 0.13), whiteLeather);
+      sole.position.y = 0.027;
+      shoe.add(sole);
+
+      const outsole = new THREE.Mesh(new THREE.BoxGeometry(0.322, 0.018, 0.132), redChicagoMat);
+      outsole.position.y = 0.009;
+      shoe.add(outsole);
+
+      const quarter = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.12), whiteLeather);
+      quarter.position.set(0, 0.08, 0);
+      shoe.add(quarter);
+
+      const toeMudguard = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 0.125), redChicagoMat);
+      toeMudguard.position.set(0.09, 0.07, 0);
+      shoe.add(toeMudguard);
+
+      const heelOverlay = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.11, 0.125), redChicagoMat);
+      heelOverlay.position.set(-0.10, 0.10, 0);
+      shoe.add(heelOverlay);
+
+      const highCollar = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.15, 0.115), blackLeather);
+      highCollar.position.set(-0.06, 0.17, 0);
+      shoe.add(highCollar);
+
+      const ankleFlap = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.07, 0.128), redChicagoMat);
+      ankleFlap.position.set(-0.06, 0.20, 0);
+      shoe.add(ankleFlap);
+
+      const swooshSide = isRight ? 0.064 : -0.064;
+      const swoosh = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.026, 0.006), blackLeather);
+      swoosh.position.set(-0.02, 0.095, swooshSide);
+      swoosh.rotation.z = 0.18;
+      shoe.add(swoosh);
+
+      const laces = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.09, 0.06), blackLeather);
+      laces.position.set(0.01, 0.13, 0);
+      laces.rotation.z = -0.3;
+      shoe.add(laces);
+
+      return shoe;
+    };
+
+    // Pair of Nike Sneakers on Lower Shelf (y = 1.02)
+    const nikeShelfGroup = new THREE.Group();
+    nikeShelfGroup.position.set(0.05, 1.02, 0.58);
+    const leftNike = makeGroupClickable(buildNike(false), "wardrobe");
+    leftNike.position.set(0, 0, -0.22);
+    leftNike.rotation.y = 0.12;
+    nikeShelfGroup.add(leftNike);
+
+    const rightNike = makeGroupClickable(buildNike(true), "wardrobe");
+    rightNike.position.set(0, 0, 0.22);
+    rightNike.rotation.y = -0.08;
+    nikeShelfGroup.add(rightNike);
+    wardrobeGroup.add(nikeShelfGroup);
+
+    // Pair of Air Jordan High Sneakers on Upper Shelf (y = 2.02)
+    const jordanShelfGroup = new THREE.Group();
+    jordanShelfGroup.position.set(0.05, 2.02, 0.58);
+    const leftJordan = makeGroupClickable(buildJordan(false), "wardrobe");
+    leftJordan.position.set(0, 0, -0.22);
+    leftJordan.rotation.y = 0.15;
+    jordanShelfGroup.add(leftJordan);
+
+    const rightJordan = makeGroupClickable(buildJordan(true), "wardrobe");
+    rightJordan.position.set(0, 0, 0.22);
+    rightJordan.rotation.y = -0.10;
+    jordanShelfGroup.add(rightJordan);
+    wardrobeGroup.add(jordanShelfGroup);
+
+    scene.add(wardrobeGroup);
+    registerFurniture("wardrobe", "Wardrobe & Sneakers", wardrobeGroup, "floor", { x: -6.8, z: 1.8 }, {
+      minX: -7.9, maxX: 7.9, minZ: -4.9, maxZ: 4.9,
+    }, { halfX: 0.6, halfZ: 1.3, centerZ: 0 });
     if (shiftLegacyWorkspace) {
       furniture.forEach(item => {
         if (item.id === "studio" || item.id === "chair") {
@@ -2276,11 +2706,6 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       if (zone === "diary") {
         soundFX.playClick();
         onOpenDiaryRef.current?.();
-        return;
-      }
-      if (zone === "zoro") {
-        soundFX.playClick();
-        zoroWobble = 0.65;
         return;
       }
       if (zone === "printer") {
@@ -2668,12 +3093,14 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         pivot.rotation.z = Math.sin(t * 0.34 + phase) * 0.012;
       });
 
-      // Zoro bobblehead spring wobble
-      if (zoroHeadGroup) {
-        zoroWobble *= 0.975;
-        zoroHeadGroup.rotation.x = Math.sin(t * 8.5) * zoroWobble;
-        zoroHeadGroup.rotation.z = Math.cos(t * 7.2) * zoroWobble;
-      }
+      // Real-time sweeping hands for Analog Chronometer Watch
+      const dateNow = new Date();
+      const sec = dateNow.getSeconds() + dateNow.getMilliseconds() / 1000;
+      const min = dateNow.getMinutes() + sec / 60;
+      const hr = (dateNow.getHours() % 12) + min / 60;
+      if (watchSecondHand) watchSecondHand.rotation.z = -sec * (Math.PI / 30);
+      if (watchMinuteHand) watchMinuteHand.rotation.z = -min * (Math.PI / 30);
+      if (watchHourHand) watchHourHand.rotation.z = -hr * (Math.PI / 6);
       if (receiptPaperMesh && receiptAnimProgress > 0.01) {
         receiptPaperMesh.scale.y = THREE.MathUtils.lerp(receiptPaperMesh.scale.y, 1.0, 0.08);
       }
@@ -2730,11 +3157,42 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       const viewVector = camera.position.clone().sub(targetLookAt.current);
       const viewingFromSide = Math.abs(viewVector.x) > Math.abs(viewVector.z) * 0.9;
       const focusedOnOverview = targetLookAt.current.distanceToSquared(roomOverviewLookAt) < 0.01;
+
+      // Dynamic 360° Architectural Cutaway:
+      // Cull walls that are positioned between the camera and room interior so items are never blocked
+      const viewDirX = targetLookAt.current.x - camera.position.x;
+      const viewDirZ = targetLookAt.current.z - camera.position.z;
+
+      // Left Wall & Window: Cull when camera is to the left and looking towards center
+      const isCameraOutsideLeft = camera.position.x < -3.0 && viewDirX > 0;
+      leftWall.visible = !isCameraOutsideLeft;
+      sideTrimLeft.visible = !isCameraOutsideLeft;
+      windowGroup.visible = !isCameraOutsideLeft;
+
+      // Right Wall: Cull when camera is to the right and looking towards center
+      const isCameraOutsideRight = camera.position.x > 3.0 && viewDirX < 0;
+      rightWall.visible = !isCameraOutsideRight;
+      sideTrimRight.visible = !isCameraOutsideRight;
+
+      // Back Wall, Gallery Art, Neon Sign & Back Trim: Cull when camera is behind and looking towards center
+      const isCameraOutsideBack = camera.position.z < -1.8 && viewDirZ > 0;
+      backWall.visible = !isCameraOutsideBack;
+      backTrim.visible = !isCameraOutsideBack;
+      sign.visible = !isCameraOutsideBack;
+      galleryGroup.visible = !isCameraOutsideBack;
+      if (bedroomDoor) bedroomDoor.visible = !isCameraOutsideBack;
+
+      // Front Glazed Facade: Cull when camera is in front looking toward interior
+      const isCameraInFront = camera.position.z > 1.0 && viewDirZ < 0;
       fourthWall.visible = !editModeRef.current
+        && !isCameraInFront
         && (!activeZoneIdRef.current || activeZoneIdRef.current === "overview")
         && focusedOnOverview
         && viewVector.length() > 13
         && viewingFromSide;
+
+      // Keep ceiling hidden in dollhouse cutaway view so high angle or top orbit never blocks interior
+      ceil.visible = false;
 
       // 5. Spin the visible PC fan rotors and vary each RGB ring.
       fanMeshes.forEach(f => {

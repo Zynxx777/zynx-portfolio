@@ -9,7 +9,8 @@ export const ROOM_ZONES = {
   zcard: { label: "Z Card v0.1 Anatomy", color: "#00F2FE", dot: "💳", code: "08 // HARDWARE REVEAL" },
   diary: { label: "Personal Guestbook", color: "#FFB347", dot: "📖", code: "09 // DIARY" },
   printer: { label: "Thermal Docket Printer", color: "#38BDF8", dot: "🖨️", code: "10 // DOCKET" },
-  zoro: { label: "Zoro Bobblehead", color: "#10B981", dot: "⚔️", code: "11 // COLLECTIBLE" },
+  zoro: { label: "Precision Chrono Watch", color: "#00F2FE", dot: "⌚", code: "11 // CHRONOMETER" },
+  wardrobe: { label: "Wardrobe & Sneakers", color: "#F59E0B", dot: "👔", code: "12 // ATTIRE" },
 } as const;
 
 export type ZoneId = keyof typeof ROOM_ZONES;
@@ -22,7 +23,7 @@ export const ROOM_POSTERS = [
 ] as const;
 export type RoomPosterId = typeof ROOM_POSTERS[number]["id"];
 
-export type FurnitureId = "studio" | "cpu" | "phone" | "shelf" | "gallery" | "chair" | "bed" | "door" | "lamp" | "printer" | "zoro" | "zcard" | "diary";
+export type FurnitureId = "studio" | "cpu" | "phone" | "shelf" | "gallery" | "chair" | "bed" | "door" | "lamp" | "printer" | "zoro" | "zcard" | "diary" | "wardrobe";
 export type FurniturePlacement = { x: number; z: number; y?: number; rotation?: number };
 export type FurnitureEditRequest =
   | { sequence: number; action: "rotate"; degrees: number }
@@ -70,9 +71,10 @@ export const ROOM_FURNITURE_CATALOG: Array<{
   { id: "door", label: "Bedroom door", shortLabel: "Door", icon: "🚪", themes: ["anime-bedroom"] },
   { id: "gallery", label: "Anime art wall", shortLabel: "Art Wall", icon: "🖼️", themes: ["cyberpunk", "anime-bedroom"] },
   { id: "printer", label: "Thermal POS printer", shortLabel: "Printer", icon: "🖨️", themes: ["cyberpunk", "anime-bedroom"] },
-  { id: "zoro", label: "Zoro bobblehead", shortLabel: "Zoro", icon: "⚔️", themes: ["cyberpunk", "anime-bedroom"] },
+  { id: "zoro", label: "Precision chrono watch", shortLabel: "Watch", icon: "⌚", themes: ["cyberpunk", "anime-bedroom"] },
   { id: "zcard", label: "Z Card v0.1 hardware", shortLabel: "Z Card", icon: "💳", themes: ["cyberpunk", "anime-bedroom"] },
   { id: "diary", label: "Guestbook diary", shortLabel: "Diary", icon: "📖", themes: ["cyberpunk", "anime-bedroom"] },
+  { id: "wardrobe", label: "Wardrobe & sneakers", shortLabel: "Wardrobe", icon: "👔", themes: ["cyberpunk", "anime-bedroom"] },
 ];
 
 export const HARDCODED_DEFAULT_ROOM_LAYOUT: Partial<Record<FurnitureId, FurniturePlacement>> = {
@@ -88,6 +90,7 @@ export const HARDCODED_DEFAULT_ROOM_LAYOUT: Partial<Record<FurnitureId, Furnitur
   zoro: { x: -3.65, y: 1.49, z: 0.42, rotation: 0 },
   zcard: { x: -0.85, y: 1.49, z: 0.65, rotation: 0.15 },
   diary: { x: 2.45, y: 1.49, z: 0.55, rotation: -0.2 },
+  wardrobe: { x: -6.8, z: 1.8, rotation: 1.5707963267948966 },
 };
 
 export const ZONE_FURNITURE: Partial<Record<ZoneId, FurnitureId>> = {
@@ -102,6 +105,7 @@ export const ZONE_FURNITURE: Partial<Record<ZoneId, FurnitureId>> = {
   diary: "diary",
   printer: "printer",
   zoro: "zoro",
+  wardrobe: "wardrobe",
 };
 
 const transformCameraForFurniture = (coords: number[], placement: FurniturePlacement) => {
@@ -149,4 +153,5 @@ export const ZONE_CAMS: Record<ZoneId | "overview", number[]> = {
   diary: [2.45, 2.2, 1.8, 2.45, 1.52, 0.55],
   printer: [-2.55, 2.3, 1.8, -2.55, 1.6, 0.42],
   zoro: [-3.65, 2.3, 1.8, -3.65, 1.62, 0.42],
+  wardrobe: [-4.2, 2.5, 1.8, -6.8, 2.2, 1.8],
 };
