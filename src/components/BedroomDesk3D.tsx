@@ -500,10 +500,10 @@ const XRAY_TARGETS: { id: number; key: string; pos: THREE.Vector3 }[] = [
   { id: 6, key: 'card', pos: new THREE.Vector3(0.0, 0.19, 0.01) },       // 6: Z Business Card
   { id: 7, key: 'diary', pos: new THREE.Vector3(0.24, 0.18, 0.14) },     // 7: Guestbook Diary & Stylus
   { id: 8, key: 'photo', pos: new THREE.Vector3(0.14, 0.23, -0.20) },    // 8: Picture Frame
-  { id: 9, key: 'mug', pos: new THREE.Vector3(0.38, 0.21, -0.16) },      // 9: Coffee Mug
-  { id: 10, key: 'lamp', pos: new THREE.Vector3(0.42, 0.28, -0.08) },    // 10: Mushroom Desk Lamp
+  { id: 9, key: 'mug', pos: new THREE.Vector3(0.38, 0.21, -0.08) },      // 9: Coffee Mug
+  { id: 10, key: 'lamp', pos: new THREE.Vector3(0.58, 0.28, -0.04) },    // 10: Mushroom Desk Lamp
   { id: 11, key: 'phone', pos: new THREE.Vector3(0.27, 0.24, 0.05) },    // 11: Smartphone & Stand
-  { id: 12, key: 'plant', pos: new THREE.Vector3(0.52, 0.28, -0.22) },   // 12: Succulent Plant
+  { id: 12, key: 'plant', pos: new THREE.Vector3(0.48, 0.28, -0.20) },   // 12: Succulent Plant
 ];
 
 interface BedroomDesk3DProps {
@@ -819,7 +819,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
     // Warm Mushroom Desk Lamp Point Light
     const lampLight = new THREE.PointLight(0xffaa55, lampOn ? 3.6 : 0.0, 1.8, 1.8);
-    lampLight.position.set(0.42, 0.34, -0.05);
+    lampLight.position.set(0.58, 0.34, -0.04);
     lampLight.castShadow = true;
     lampLight.shadow.bias = -0.001;
     scene.add(lampLight);
@@ -1628,9 +1628,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
     scene.add(cardHolderGroup);
 
-    // 14. Mushroom Desk Lamp (Right rear)
+    // 14. Mushroom Desk Lamp (Moved to the far right, illuminating the desk)
     const lampGroup = new THREE.Group();
-    lampGroup.position.set(0.42, 0.17, -0.05);
+    lampGroup.position.set(0.58, 0.17, -0.04);
 
     const lampBase = new THREE.Mesh(
       new THREE.CylinderGeometry(0.05, 0.055, 0.012, 24),
@@ -1654,9 +1654,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     registerClickable(lampDome, 'lamp');
     registerClickable(lampBase, 'lamp');
 
-    // 15. Ceramic Coffee Mug with Rising Steam (Shifted to the right)
+    // 15. Ceramic Coffee Mug with Rising Steam (Unobstructed between smartphone & lamp)
     const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.035, 0.085, 20), ceramicMat);
-    mug.position.set(0.38, 0.21, -0.16);
+    mug.position.set(0.38, 0.21, -0.08);
     mug.castShadow = true;
     scene.add(mug);
     registerClickable(mug, 'mug');
@@ -1665,7 +1665,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       new THREE.CircleGeometry(0.034, 16),
       new THREE.MeshBasicMaterial({ color: 0x3d2314 })
     );
-    coffeeSurface.position.set(0.38, 0.25, -0.16);
+    coffeeSurface.position.set(0.38, 0.25, -0.08);
     coffeeSurface.rotation.x = -Math.PI / 2;
     scene.add(coffeeSurface);
 
@@ -1676,7 +1676,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     for (let s = 0; s < steamCount; s++) {
       steamPositions[s * 3] = 0.38 + (Math.random() - 0.5) * 0.03;
       steamPositions[s * 3 + 1] = 0.26 + Math.random() * 0.08;
-      steamPositions[s * 3 + 2] = -0.16 + (Math.random() - 0.5) * 0.03;
+      steamPositions[s * 3 + 2] = -0.08 + (Math.random() - 0.5) * 0.03;
     }
     steamGeo.setAttribute('position', new THREE.BufferAttribute(steamPositions, 3));
     const steamMat = new THREE.PointsMaterial({
@@ -1690,17 +1690,17 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     scene.add(steamParticles);
     steamParticlesRef.current = steamParticles;
 
-    // 16. Succulent Plant in Terracotta Pot (Shifted to the right)
+    // 16. Succulent Plant in Terracotta Pot (Unobstructed behind coffee mug)
     const plantGroup = new THREE.Group();
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.032, 0.07, 16), terracottaMat);
-    pot.position.set(0.52, 0.20, -0.22);
+    pot.position.set(0.48, 0.20, -0.20);
     pot.castShadow = true;
     plantGroup.add(pot);
 
     succulentLeavesRef.current = [];
     for (let i = 0; i < 8; i++) {
       const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.09, 8), plantGreen);
-      leaf.position.set(0.52 + (Math.cos(i * 0.785) * 0.018), 0.265, -0.22 + (Math.sin(i * 0.785) * 0.018));
+      leaf.position.set(0.48 + (Math.cos(i * 0.785) * 0.018), 0.265, -0.20 + (Math.sin(i * 0.785) * 0.018));
       leaf.rotation.set((Math.sin(i) * 0.28), i * 0.785, (Math.cos(i) * 0.28));
       leaf.castShadow = true;
       leaf.userData = { initialRot: leaf.rotation.clone(), leafIndex: i };
@@ -2227,7 +2227,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           if (arr[s * 3 + 1] > 0.35) {
             arr[s * 3 + 1] = 0.255;
             arr[s * 3] = 0.38 + (Math.random() - 0.5) * 0.025;
-            arr[s * 3 + 2] = -0.16 + (Math.random() - 0.5) * 0.025;
+            arr[s * 3 + 2] = -0.08 + (Math.random() - 0.5) * 0.025;
           }
         }
         posAttr.needsUpdate = true;
@@ -2526,8 +2526,16 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         </div>
       )}
 
+      {hoveredObject === 'mug' && (
+        <div className="absolute top-[52%] left-[62%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+          <div className="px-3.5 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-amber-500/40 text-amber-200 text-xs font-sans shadow-xl flex items-center gap-2">
+            <span>☕ Hot Brew Coffee · Fresh & Steaming</span>
+          </div>
+        </div>
+      )}
+
       {hoveredObject === 'lamp' && (
-        <div className="absolute top-[48%] left-[72%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+        <div className="absolute top-[48%] left-[80%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
           <div className="px-3 py-1 rounded-full bg-black/80 backdrop-blur-md border border-amber-400/40 text-amber-300 text-xs font-sans shadow-xl">
             Click to toggle desk lamp {lampOn ? 'OFF' : 'ON'}
           </div>
@@ -2563,7 +2571,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
       {/* Plant Hover Tooltip (Matching v2_03.png) */}
       {hoveredObject === 'plant' && (
-        <div className="absolute top-[48%] left-[76%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+        <div className="absolute top-[48%] left-[72%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
           <div className="px-3.5 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-emerald-400/50 text-emerald-300 text-xs font-sans shadow-xl flex items-center gap-2">
             <Droplets className="w-3.5 h-3.5 text-emerald-400" />
             <span>Water the plant · watered {plantWaterCount} times</span>
@@ -2573,7 +2581,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
       {/* Plant Watering Floating Drop Animation */}
       {waterDropAnim && (
-        <div className="absolute top-[45%] left-[75%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-bounce">
+        <div className="absolute top-[45%] left-[72%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-bounce">
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500 text-white font-mono font-bold text-xs shadow-xl shadow-emerald-500/40">
             <Droplets className="w-3.5 h-3.5" />
             <span>+1 Hydrated! ({plantWaterCount})</span>

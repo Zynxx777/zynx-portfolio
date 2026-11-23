@@ -891,7 +891,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
               className={`flex h-6 sm:h-7 items-center gap-1 rounded-full px-2 sm:px-2.5 text-[10px] font-mono transition ${viewMode === "desk" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
             >
               <Laptop size={11} />
-              <span>Desk</span>
+              <span>Work Desk</span>
             </button>
             <button
               onClick={() => {
