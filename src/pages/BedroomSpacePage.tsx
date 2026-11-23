@@ -12,7 +12,7 @@ import {
 import { SoundLab } from "../components/SoundLab";
 import { BedroomAudioPlayer } from "../components/BedroomAudioPlayer";
 import PhoneExperience from "../components/PhoneExperience";
-import { BedroomDesk3D, SpectaclesIcon } from "../components/BedroomDesk3D";
+import { BedroomDesk3D } from "../components/BedroomDesk3D";
 import { ProjectDetailModal } from "../components/ProjectDetailModal";
 import { ProfileSphereModal } from "../components/ProfileSphereModal";
 import { DiaryModal } from "../components/DiaryModal";
@@ -723,7 +723,6 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
   const [targetZone, setTargetZone] = useState<ZoneId | "overview">("overview");
   const [viewMode, setViewMode] = useState<"desk" | "3d" | "catalog">("desk");
   const [deskDayMode, setDeskDayMode] = useState(false);
-  const [deskXRayMode, setDeskXRayMode] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isDiaryOpen, setIsDiaryOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -921,36 +920,18 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
             </button>
           </div>
 
-          {/* Desk Mode specific controls: X-Ray & Day/Night */}
+          {/* Desk Mode specific controls: Day/Night */}
           {viewMode === "desk" && (
-            <div className="flex items-center gap-0.5 sm:gap-1 bg-black/60 border border-white/10 rounded-full p-0.5 shadow-md backdrop-blur-xl">
-              <button
-                onClick={() => {
-                  soundFX.playClick();
-                  setDeskXRayMode((prev) => !prev);
-                }}
-                className={`flex h-6 sm:h-7 items-center gap-1 rounded-full px-2 sm:px-2.5 text-[10px] font-mono transition-all ${
-                  deskXRayMode
-                    ? "bg-amber-400 text-black font-bold shadow-md shadow-amber-400/40"
-                    : "text-zinc-300 hover:text-white hover:bg-white/10"
-                }`}
-                title="Toggle X-Ray Anatomy Mode"
-              >
-                <SpectaclesIcon className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{deskXRayMode ? "Glasses On" : "X-Ray"}</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  soundFX.playClick();
-                  setDeskDayMode((prev) => !prev);
-                }}
-                className="flex h-6 sm:h-7 w-6 sm:w-7 items-center justify-center rounded-full text-amber-300 hover:text-white hover:bg-white/10 transition-all"
-                title={deskDayMode ? "Switch to Night Cozy Mode" : "Switch to Day Studio Mode"}
-              >
-                {deskDayMode ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                setDeskDayMode((prev) => !prev);
+              }}
+              className="flex h-7 sm:h-8 w-7 sm:w-8 items-center justify-center rounded-full border border-white/10 bg-black/60 text-amber-300 hover:text-white hover:bg-white/10 shadow-md backdrop-blur-xl transition-all"
+              title={deskDayMode ? "Switch to Night Cozy Mode" : "Switch to Day Studio Mode"}
+            >
+              {deskDayMode ? <Moon size={13} /> : <Sun size={13} />}
+            </button>
           )}
 
           {/* Room 3D Mode specific controls: Theme Switcher */}
@@ -1004,8 +985,6 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
       {viewMode === "desk" && (
         <div className="w-full h-full relative">
           <BedroomDesk3D
-            isXRayMode={deskXRayMode}
-            onSetXRayMode={setDeskXRayMode}
             dayMode={deskDayMode}
             onSetDayMode={setDeskDayMode}
             onOpenProject={(projectId) => {

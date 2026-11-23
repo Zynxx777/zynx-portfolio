@@ -13,7 +13,8 @@ import {
   Phone,
   Mail,
   X,
-  Droplets
+  Droplets,
+  Clock
 } from 'lucide-react';
 import { soundFX } from '../utils/audioFX';
 import { MonitorDesktopModal } from './MonitorDesktopModal';
@@ -492,7 +493,7 @@ function drawReceiptOnCanvas(ctx: CanvasRenderingContext2D, order?: DocketOrder 
 // 12 Target Coordinates for Isometric X-Ray Blueprint Badges (Matching v2_10.png)
 const XRAY_TARGETS: { id: number; key: string; pos: THREE.Vector3 }[] = [
   { id: 1, key: 'printer', pos: new THREE.Vector3(-0.52, 0.22, -0.06) },  // 1: Thermal POS Printer
-  { id: 2, key: 'zoro', pos: new THREE.Vector3(-0.54, 0.32, 0.15) },     // 2: Zoro Bobblehead
+  { id: 2, key: 'watch', pos: new THREE.Vector3(-0.50, 0.20, 0.14) },    // 2: Precision Chronometer Watch
   { id: 3, key: 'tablet', pos: new THREE.Vector3(-0.32, 0.28, 0.04) },   // 3: Tablet (Docket system)
   { id: 4, key: 'laptop', pos: new THREE.Vector3(0.0, 0.35, -0.10) },    // 4: Laptop (MacBook)
   { id: 5, key: 'notes', pos: new THREE.Vector3(-0.16, 0.36, -0.09) },   // 5: Sticky Notes
@@ -514,8 +515,6 @@ interface BedroomDesk3DProps {
   onOpenPhone?: () => void;
   onToggleMusic?: () => void;
   isMusicPlaying?: boolean;
-  isXRayMode?: boolean;
-  onSetXRayMode?: (val: boolean | ((prev: boolean) => boolean)) => void;
   dayMode?: boolean;
   onSetDayMode?: (val: boolean | ((prev: boolean) => boolean)) => void;
 }
@@ -526,8 +525,6 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   onOpenAnatomy,
   onOpenMonitor,
   onOpenPhone,
-  isXRayMode: controlledXRayMode,
-  onSetXRayMode,
   dayMode: controlledDayMode,
   onSetDayMode,
 }) => {
@@ -535,7 +532,8 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   const [hoveredObject, setHoveredObject] = useState<string | null>(null);
   const [lampOn, setLampOn] = useState(true);
   const [internalDayMode, setInternalDayMode] = useState(false); // Day Studio vs Cozy Night
-  const [internalXRayMode, setInternalXRayMode] = useState(false); // Matching pradiplabs X-Ray mode
+  const [isXRayMode, setIsXRayMode] = useState(false); // X-Ray mode activated exclusively when wearing specs
+  const [isWearingSpecs, setIsWearingSpecs] = useState(false); // Wearable specs animation state
 
   const dayMode = controlledDayMode !== undefined ? controlledDayMode : internalDayMode;
   const setDayMode = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
@@ -545,19 +543,10 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       setInternalDayMode(val);
     }
   }, [onSetDayMode]);
-
-  const isXRayMode = controlledXRayMode !== undefined ? controlledXRayMode : internalXRayMode;
-  const setIsXRayMode = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
-    if (onSetXRayMode) {
-      onSetXRayMode(val);
-    } else {
-      setInternalXRayMode(val);
-    }
-  }, [onSetXRayMode]);
   const [printedReceipt, setPrintedReceipt] = useState(false);
   const [isMonitorOpen, setIsMonitorOpen] = useState(false);
   const [isPhoneOpen, setIsPhoneOpen] = useState(false);
-  const [focusedTarget, setFocusedTarget] = useState<'laptop' | 'tablet' | 'phone' | 'diary' | 'zcard' | 'printer' | 'zoro' | null>(null);
+  const [focusedTarget, setFocusedTarget] = useState<'laptop' | 'tablet' | 'phone' | 'diary' | 'zcard' | 'printer' | 'watch' | null>(null);
   const [isCardHeld, setIsCardHeld] = useState(false);
   const [, setCardSide] = useState<0 | 1>(0);
 
@@ -634,6 +623,19 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   useEffect(() => {
     isXRayModeRef.current = isXRayMode;
   }, [isXRayMode]);
+
+  const isWearingSpecsRef = useRef(isWearingSpecs);
+  useEffect(() => {
+    isWearingSpecsRef.current = isWearingSpecs;
+  }, [isWearingSpecs]);
+
+  const takeOffSpecs = useCallback(() => {
+    soundFX.playClick();
+    soundFX.playZoom();
+    setIsWearingSpecs(false);
+    setIsXRayMode(false);
+    setSelectedXRayItem(null);
+  }, []);
 
   const isDocketOpenRef = useRef(isDocketOpen);
   useEffect(() => {
@@ -718,9 +720,18 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   const lampLightRef = useRef<THREE.PointLight | null>(null);
   const daySunLightRef = useRef<THREE.DirectionalLight | null>(null);
 
-  // Zoro spring wobble reference
-  const zoroWobbleRef = useRef<number>(0.15);
-  const zoroHeadRef = useRef<THREE.Group | null>(null);
+  // Precision Chronometer Watch hands reference
+  const watchHourHandRef = useRef<THREE.Mesh | null>(null);
+  const watchMinuteHandRef = useRef<THREE.Mesh | null>(null);
+  const watchSecondHandRef = useRef<THREE.Mesh | null>(null);
+
+  // Wearable Spectacles Animation References
+  const specsWearProgressRef = useRef<number>(0.0);
+  const isWireframeOnRef = useRef<boolean>(false);
+  const glassesGroupRef = useRef<THREE.Group | null>(null);
+  const leftTempleRef = useRef<THREE.Mesh | null>(null);
+  const rightTempleRef = useRef<THREE.Mesh | null>(null);
+  const isCameraTransitioningRef = useRef<boolean>(false);
 
   // Succulent plant bounce & leaf sway references
   const plantBounceRef = useRef<number>(0);
@@ -765,15 +776,29 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     renderer.toneMappingExposure = 1.15;
     container.appendChild(renderer.domElement);
 
-    // Controls
+    // Controls - Fully Free-Size Movable (No sticking, no snap-back, free zoom & full 360 orbit)
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.maxPolarAngle = Math.PI / 2.05;
-    controls.minDistance = 0.55;
-    controls.maxDistance = 3.6;
+    controls.dampingFactor = 0.06;
+    controls.enableRotate = true;
+    controls.rotateSpeed = 0.85;
+    controls.enableZoom = true;
+    controls.zoomSpeed = 1.0;
+    controls.enablePan = true;
+    controls.panSpeed = 0.85;
+    controls.screenSpacePanning = true;
+    // Free-size zoom range: inspect close-up to wide full-room overview
+    controls.minDistance = 0.12;
+    controls.maxDistance = 5.5;
+    controls.minPolarAngle = 0.02;
+    controls.maxPolarAngle = Math.PI * 0.95;
     controls.target.copy(initialFrame.lookAt);
     controlsRef.current = controls;
+
+    // Release programmatic camera transitions immediately upon user manual interaction
+    controls.addEventListener('start', () => {
+      isCameraTransitioningRef.current = false;
+    });
 
     // 2. Lighting System
     const ambientLight = new THREE.AmbientLight(0xffffff, dayMode ? 1.15 : 0.7);
@@ -1303,78 +1328,149 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     registerClickable(printerBody, 'printer');
     registerClickable(receiptPaper, 'printer');
 
-    // 10. Zoro Bobblehead Figurine on a Spring (Left desk edge, matching pradiplabs.dev)
-    const zoroGroup = new THREE.Group();
-    zoroGroup.position.set(-0.54, 0.17, 0.15);
+    // 10. Precision Chronometer Watch on Display Stand (Left desk edge, live time)
+    const watchGroup = new THREE.Group();
+    watchGroup.position.set(-0.50, 0.17, 0.14);
+    watchGroup.rotation.y = 0.28;
+    watchGroup.rotation.x = -0.05;
 
-    // Circular base
-    const zoroBase = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.032, 0.035, 0.01, 20),
-      new THREE.MeshStandardMaterial({ color: 0x1b1f24, roughness: 0.6 })
+    // Angled ergonomic display stand
+    const standMat = new THREE.MeshStandardMaterial({ color: 0x111317, roughness: 0.85 });
+    const standBase = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.012, 0.075), standMat);
+    standBase.position.y = 0.006;
+    watchGroup.add(standBase);
+
+    const standPillar = new THREE.Mesh(
+      new THREE.BoxGeometry(0.038, 0.040, 0.040),
+      new THREE.MeshStandardMaterial({ color: 0x181a20, roughness: 0.6 })
     );
-    zoroBase.position.y = 0.005;
-    zoroGroup.add(zoroBase);
+    standPillar.position.set(0, 0.026, -0.008);
+    standPillar.rotation.x = Math.PI / 6;
+    watchGroup.add(standPillar);
 
-    // Zoro Body (Dark Green Coat)
-    const zoroBody = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.018, 0.024, 0.05, 16),
-      new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.5 })
-    );
-    zoroBody.position.y = 0.035;
-    zoroBody.castShadow = true;
-    zoroGroup.add(zoroBody);
+    // Watch Case (Titanium / Stealth Black Chrono)
+    const caseMat = new THREE.MeshStandardMaterial({ color: 0x22242b, metalness: 0.88, roughness: 0.22 });
+    const caseMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.030, 0.030, 0.009, 32), caseMat);
+    caseMesh.position.set(0, 0.042, 0.005);
+    caseMesh.rotation.x = Math.PI / 6;
+    caseMesh.castShadow = true;
+    watchGroup.add(caseMesh);
 
-    // Zoro's 3 Katanas strapped to his sash
-    for (let k = 0; k < 3; k++) {
-      const sword = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.002, 0.002, 0.065, 8),
-        new THREE.MeshStandardMaterial({ color: k === 0 ? 0xffffff : k === 1 ? 0x7e22ce : 0xb91c1c, metalness: 0.7 })
-      );
-      sword.position.set(0.022, 0.032 + k * 0.004, -0.005 + k * 0.006);
-      sword.rotation.set(0.4, 0.1, -0.6);
-      zoroGroup.add(sword);
+    // Bezel with ceramic tachymeter styling
+    const bezelMat = new THREE.MeshStandardMaterial({ color: 0x090a0d, roughness: 0.12, metalness: 0.9 });
+    const bezelMesh = new THREE.Mesh(new THREE.TorusGeometry(0.0285, 0.0022, 10, 36), bezelMat);
+    bezelMesh.position.set(0, 0.0048, 0);
+    bezelMesh.rotation.x = Math.PI / 2;
+    caseMesh.add(bezelMesh);
+
+    // Knurled Titanium Crown (3 o'clock)
+    const crownMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.0032, 0.0032, 0.006, 12), silverMetal);
+    crownMesh.position.set(0.033, 0.0, 0.0);
+    crownMesh.rotation.z = Math.PI / 2;
+    caseMesh.add(crownMesh);
+
+    // Chrono Pushers (2 o'clock and 4 o'clock)
+    const pusher1 = new THREE.Mesh(new THREE.CylinderGeometry(0.0022, 0.0022, 0.004, 8), silverMetal);
+    pusher1.position.set(0.028, 0.0, -0.016);
+    pusher1.rotation.set(0, 0.5, Math.PI / 2);
+    caseMesh.add(pusher1);
+    const pusher2 = pusher1.clone();
+    pusher2.position.set(0.028, 0.0, 0.016);
+    pusher2.rotation.set(0, -0.5, Math.PI / 2);
+    caseMesh.add(pusher2);
+
+    // Dial Face
+    const dialMat = new THREE.MeshStandardMaterial({ color: 0x06080d, roughness: 0.35, metalness: 0.4 });
+    const dialMesh = new THREE.Mesh(new THREE.CircleGeometry(0.026, 36), dialMat);
+    dialMesh.position.set(0, 0.0045, 0);
+    dialMesh.rotation.x = -Math.PI / 2;
+    caseMesh.add(dialMesh);
+
+    // 12 Glowing Hour Markers around Dial
+    const markerMat = new THREE.MeshStandardMaterial({ color: 0x22d3ee, emissive: 0x22d3ee, emissiveIntensity: 0.6 });
+    const markerWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+    for (let i = 0; i < 12; i++) {
+      const angle = (i / 12) * Math.PI * 2;
+      const isCardinal = (i % 3 === 0);
+      const mGeom = new THREE.BoxGeometry(isCardinal ? 0.0025 : 0.0014, isCardinal ? 0.005 : 0.0032, 0.0006);
+      const mMesh = new THREE.Mesh(mGeom, isCardinal ? markerMat : markerWhiteMat);
+      mMesh.position.set(Math.sin(angle) * 0.022, Math.cos(angle) * 0.022, 0.0006);
+      mMesh.rotation.z = -angle;
+      dialMesh.add(mMesh);
     }
 
-    // Spring (connecting body to head)
-    const spring = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.006, 0.006, 0.02, 12),
-      silverMetal
+    // Subdials
+    const subdialMat = new THREE.MeshBasicMaterial({ color: 0x141822 });
+    const sub1 = new THREE.Mesh(new THREE.CircleGeometry(0.007, 16), subdialMat);
+    sub1.position.set(-0.011, 0, 0.0005);
+    dialMesh.add(sub1);
+    const sub2 = new THREE.Mesh(new THREE.CircleGeometry(0.007, 16), subdialMat);
+    sub2.position.set(0, -0.010, 0.0005);
+    dialMesh.add(sub2);
+
+    // Clock Hands Group
+    const handsGroup = new THREE.Group();
+    handsGroup.position.set(0, 0, 0.0012);
+    dialMesh.add(handsGroup);
+
+    // Hour Hand
+    const hourHandMesh = new THREE.Mesh(new THREE.BoxGeometry(0.0022, 0.013, 0.0008), silverMetal);
+    hourHandMesh.geometry.translate(0, 0.0065, 0);
+    handsGroup.add(hourHandMesh);
+    watchHourHandRef.current = hourHandMesh;
+
+    // Minute Hand
+    const minuteHandMesh = new THREE.Mesh(new THREE.BoxGeometry(0.0016, 0.020, 0.0008), silverMetal);
+    minuteHandMesh.geometry.translate(0, 0.010, 0);
+    handsGroup.add(minuteHandMesh);
+    watchMinuteHandRef.current = minuteHandMesh;
+
+    // Second Hand (Neon Sweeping Red)
+    const secondHandMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.0008, 0.024, 0.0008),
+      new THREE.MeshBasicMaterial({ color: 0xef4444 })
     );
-    spring.position.y = 0.065;
-    zoroGroup.add(spring);
+    secondHandMesh.geometry.translate(0, 0.009, 0.0006);
+    handsGroup.add(secondHandMesh);
+    watchSecondHandRef.current = secondHandMesh;
 
-    // Zoro Head Group (mounted on spring for harmonic wobbling)
-    const zoroHead = new THREE.Group();
-    zoroHead.position.set(0.0, 0.09, 0.0);
+    // Center Cap
+    const pinMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.0018, 0.0018, 0.002, 12), silverMetal);
+    pinMesh.rotation.x = Math.PI / 2;
+    handsGroup.add(pinMesh);
 
-    // Head sphere (skin tone)
-    const skinMat = new THREE.MeshStandardMaterial({ color: 0xfbd2b8, roughness: 0.4 });
-    const zoroFace = new THREE.Mesh(new THREE.SphereGeometry(0.024, 16, 16), skinMat);
-    zoroHead.add(zoroFace);
+    // Sapphire Crystal Glass
+    const glassMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      transmission: 0.94,
+      opacity: 0.22,
+      transparent: true,
+      roughness: 0.04,
+      ior: 1.5,
+      depthWrite: false
+    });
+    const glassMesh = new THREE.Mesh(new THREE.CircleGeometry(0.0275, 36), glassMat);
+    glassMesh.position.set(0, 0.0055, 0);
+    glassMesh.rotation.x = -Math.PI / 2;
+    caseMesh.add(glassMesh);
 
-    // Zoro Green Hair (Spiky dome)
-    const hairMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.6 });
-    const zoroHair = new THREE.Mesh(
-      new THREE.SphereGeometry(0.025, 16, 16, 0, Math.PI * 2, 0, Math.PI / 1.8),
-      hairMat
-    );
-    zoroHair.position.y = 0.004;
-    zoroHead.add(zoroHair);
+    // Watch Silicone Strap
+    const strapMat = new THREE.MeshStandardMaterial({ color: 0x15171c, roughness: 0.8 });
+    const topStrap = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.0035, 0.042), strapMat);
+    topStrap.position.set(0, 0.028, -0.016);
+    topStrap.rotation.x = Math.PI / 6;
+    watchGroup.add(topStrap);
 
-    // Black Pirate Bandana tied around head
-    const bandanaMat = new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.7 });
-    const bandana = new THREE.Mesh(new THREE.TorusGeometry(0.024, 0.004, 10, 24), bandanaMat);
-    bandana.rotation.x = Math.PI / 2;
-    bandana.position.y = 0.006;
-    zoroHead.add(bandana);
+    const botStrap = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.0035, 0.046), strapMat);
+    botStrap.position.set(0, 0.024, 0.024);
+    botStrap.rotation.x = Math.PI / 6;
+    watchGroup.add(botStrap);
 
-    zoroHead.castShadow = true;
-    zoroHeadRef.current = zoroHead;
-    zoroGroup.add(zoroHead);
-
-    scene.add(zoroGroup);
-    registerClickable(zoroFace, 'zoro');
-    registerClickable(zoroBody, 'zoro');
+    scene.add(watchGroup);
+    registerClickable(caseMesh, 'watch');
+    registerClickable(glassMesh, 'watch');
+    registerClickable(dialMesh, 'watch');
+    registerClickable(standBase, 'watch');
 
     // 11. Smartphone & Stand (Right of Laptop)
     const phoneGroup = new THREE.Group();
@@ -1701,6 +1797,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       eyeGroup.add(templeMesh);
       registerClickable(templeMesh, 'glasses');
 
+      if (side === -1) leftTempleRef.current = templeMesh;
+      else rightTempleRef.current = templeMesh;
+
       glassesGroup.add(eyeGroup);
     });
 
@@ -1712,6 +1811,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     glassesGroup.add(bridgeMesh);
     registerClickable(bridgeMesh, 'glasses');
 
+    glassesGroupRef.current = glassesGroup;
     scene.add(glassesGroup);
 
     // Raycasting Interactivity
@@ -1739,11 +1839,6 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         const name = rootClickable?.userData?.clickableName || null;
         setHoveredObject(name);
         renderer.domElement.style.cursor = name ? 'pointer' : 'default';
-
-        // Hover Zoro causes head to wobble
-        if (name === 'zoro') {
-          zoroWobbleRef.current = Math.max(zoroWobbleRef.current, 0.35);
-        }
       } else {
         setHoveredObject(null);
         renderer.domElement.style.cursor = 'default';
@@ -1815,10 +1910,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         } else if (name === 'printer') {
           soundFX.playClick();
           setIsReceiptModalOpen(true);
-        } else if (name === 'zoro') {
+        } else if (name === 'watch') {
           soundFX.playClick();
-          zoroWobbleRef.current = 0.65;
-          focusObject('zoro');
+          focusObject('watch');
         } else if (name === 'lamp') {
           soundFX.playClick();
           setLampOn(prev => {
@@ -1839,10 +1933,13 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           }, 360);
         } else if (name === 'glasses') {
           soundFX.playClick();
-          setIsXRayMode(prev => {
+          soundFX.playZoom();
+          setIsWearingSpecs(prev => {
             const next = !prev;
-            if (next) setSelectedXRayItem(XRAY_DESK_ITEMS[3]);
-            else setSelectedXRayItem(null);
+            if (!next) {
+              setIsXRayMode(false);
+              setSelectedXRayItem(null);
+            }
             return next;
           });
         } else if (name === 'tablet') {
@@ -1872,7 +1969,12 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           soundFX.playClick();
         }
       } else {
-        // Empty space clicked: if card is held, smoothly put it back down
+        // Empty space clicked:
+        if (isWearingSpecsRef.current) {
+          takeOffSpecs();
+          return;
+        }
+        // if card is held, smoothly put it back down
         if (cardAnimRef.current.out > 0.5) {
           putDownCard();
         }
@@ -1919,6 +2021,11 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        if (isWearingSpecsRef.current) {
+          e.preventDefault();
+          takeOffSpecs();
+          return;
+        }
         // Close modals in priority order
         if (isStickyNotesOpenRef.current) {
           e.preventDefault();
@@ -1996,19 +2103,18 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       animationFrameId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
-      // Smooth Camera Lerping & Mouse Parallax Inertia (Matching pradiplabs.dev)
-      if (!focusedTargetRef.current && cardAnimRef.current.out < 0.1 && !isXRayModeRef.current) {
-        const parallaxX = mouseParallaxRef.current.x * 0.08;
-        const parallaxY = mouseParallaxRef.current.y * 0.04;
-        camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetCamPos.current.x + parallaxX, 0.05);
-        camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetCamPos.current.y + parallaxY, 0.05);
-        camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetCamPos.current.z, 0.07);
-        controls.target.x = THREE.MathUtils.lerp(controls.target.x, targetLookAt.current.x + parallaxX * 0.4, 0.05);
-        controls.target.y = THREE.MathUtils.lerp(controls.target.y, targetLookAt.current.y + parallaxY * 0.4, 0.05);
-        controls.target.z = THREE.MathUtils.lerp(controls.target.z, targetLookAt.current.z, 0.07);
-      } else {
-        camera.position.lerp(targetCamPos.current, 0.07);
-        controls.target.lerp(targetLookAt.current, 0.07);
+      // Camera Programmed Transitions / Free Movement Handling (Zero sticking!)
+      if (isCameraTransitioningRef.current) {
+        camera.position.lerp(targetCamPos.current, 0.08);
+        controls.target.lerp(targetLookAt.current, 0.08);
+        if (
+          camera.position.distanceTo(targetCamPos.current) < 0.008 &&
+          controls.target.distanceTo(targetLookAt.current) < 0.008
+        ) {
+          camera.position.copy(targetCamPos.current);
+          controls.target.copy(targetLookAt.current);
+          isCameraTransitioningRef.current = false;
+        }
       }
       controls.update();
 
@@ -2030,14 +2136,60 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         setBadgePositions(newCoords);
       }
 
-      // Zoro Spring Wobble Physics (Harmonic multi-axis wobble + bounce)
-      if (zoroHeadRef.current) {
-        zoroWobbleRef.current *= 0.972; // Damped harmonic decay
-        const wobble = zoroWobbleRef.current;
-        zoroHeadRef.current.rotation.x = Math.sin(elapsedTime * 9.2) * wobble;
-        zoroHeadRef.current.rotation.z = Math.cos(elapsedTime * 7.4) * wobble;
-        zoroHeadRef.current.rotation.y = Math.sin(elapsedTime * 5.1) * (wobble * 0.4);
-        zoroHeadRef.current.position.y = 0.09 + Math.abs(Math.sin(elapsedTime * 14.0)) * (wobble * 0.012);
+      // Precision Chronometer Watch Live Movement (Smooth sweeping mechanical seconds)
+      const now = new Date();
+      const s = now.getSeconds() + now.getMilliseconds() / 1000;
+      const m = now.getMinutes() + s / 60;
+      const h = (now.getHours() % 12) + m / 60;
+      if (watchSecondHandRef.current) {
+        watchSecondHandRef.current.rotation.z = -s * (Math.PI / 30);
+      }
+      if (watchMinuteHandRef.current) {
+        watchMinuteHandRef.current.rotation.z = -m * (Math.PI / 30);
+      }
+      if (watchHourHandRef.current) {
+        watchHourHandRef.current.rotation.z = -h * (Math.PI / 6);
+      }
+
+      // Wearable Spectacles Cinematic Animation (Desk -> Eyes & Temples Unfold)
+      const deskGlassesPos = new THREE.Vector3(-0.20, 0.171, 0.17);
+      const deskGlassesQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.04, 0.22, 0));
+      const targetProg = isWearingSpecsRef.current ? 1.0 : 0.0;
+      specsWearProgressRef.current = THREE.MathUtils.lerp(specsWearProgressRef.current, targetProg, 0.075);
+      const p = specsWearProgressRef.current;
+
+      if (glassesGroupRef.current) {
+        if (p > 0.002) {
+          camera.updateMatrixWorld();
+          const targetFacePos = new THREE.Vector3(0, -0.012, -0.16).applyMatrix4(camera.matrixWorld);
+          const targetFaceQuat = camera.quaternion.clone();
+          const arcY = Math.sin(p * Math.PI) * 0.14;
+          glassesGroupRef.current.position.lerpVectors(deskGlassesPos, targetFacePos, p);
+          glassesGroupRef.current.position.y += arcY;
+          glassesGroupRef.current.quaternion.slerpQuaternions(deskGlassesQuat, targetFaceQuat, p);
+          const sc = THREE.MathUtils.lerp(1.0, 3.4, p);
+          glassesGroupRef.current.scale.set(sc, sc, sc);
+          if (leftTempleRef.current) leftTempleRef.current.rotation.y = THREE.MathUtils.lerp(-0.32, 0.08, p);
+          if (rightTempleRef.current) rightTempleRef.current.rotation.y = THREE.MathUtils.lerp(0.32, -0.08, p);
+
+          if (p > 0.85 && !isWireframeOnRef.current) {
+            setIsXRayMode(true);
+            isWireframeOnRef.current = true;
+          } else if (p <= 0.85 && isWireframeOnRef.current) {
+            setIsXRayMode(false);
+            isWireframeOnRef.current = false;
+          }
+        } else {
+          glassesGroupRef.current.position.copy(deskGlassesPos);
+          glassesGroupRef.current.quaternion.copy(deskGlassesQuat);
+          glassesGroupRef.current.scale.set(1.0, 1.0, 1.0);
+          if (leftTempleRef.current) leftTempleRef.current.rotation.y = -0.32;
+          if (rightTempleRef.current) rightTempleRef.current.rotation.y = 0.32;
+          if (isWireframeOnRef.current) {
+            setIsXRayMode(false);
+            isWireframeOnRef.current = false;
+          }
+        }
       }
 
       // Succulent Plant Organic Leaf Sway & Water Drop Bounce
@@ -2197,8 +2349,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     };
   }, [dayMode, takeCard, putDownCard, triggerFlip]);
 
-  const focusObject = (target: 'laptop' | 'tablet' | 'phone' | 'diary' | 'zcard' | 'printer' | 'zoro' | 'reset') => {
+  const focusObject = (target: 'laptop' | 'tablet' | 'phone' | 'diary' | 'zcard' | 'printer' | 'watch' | 'reset') => {
     soundFX.playClick();
+    isCameraTransitioningRef.current = true;
     if (target === 'reset') {
       setFocusedTarget(null);
       const container = mountRef.current;
@@ -2219,10 +2372,10 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       setFocusedTarget('printer');
       targetCamPos.current.set(-0.52, 0.38, 0.28);
       targetLookAt.current.set(-0.52, 0.22, -0.06);
-    } else if (target === 'zoro') {
-      setFocusedTarget('zoro');
-      targetCamPos.current.set(-0.54, 0.36, 0.38);
-      targetLookAt.current.set(-0.54, 0.24, 0.15);
+    } else if (target === 'watch') {
+      setFocusedTarget('watch');
+      targetCamPos.current.set(-0.50, 0.32, 0.28);
+      targetLookAt.current.set(-0.50, 0.19, 0.14);
     } else if (target === 'phone') {
       setFocusedTarget('phone');
       targetCamPos.current.set(0.27, 0.36, 0.32);
@@ -2243,7 +2396,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         : 'bg-[#090b10] text-white'
     }`}>
       {/* Top Banner Headline (Clean & minimal on mobile, expanded on desktop) */}
-      {!isXRayMode && !isCardHeld && (
+      {!isXRayMode && !isCardHeld && !isWearingSpecs && (
         <div className="absolute top-10 sm:top-12 inset-x-0 z-20 pointer-events-none text-center px-4 max-w-xl mx-auto transition-opacity duration-300">
           <h1 className={`text-base sm:text-3xl md:text-4xl font-extrabold tracking-tight drop-shadow-md font-display ${
             dayMode ? 'text-slate-900' : 'text-white'
@@ -2258,33 +2411,16 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         </div>
       )}
 
-      {/* Top HUD Controls: X-Ray, Day/Night (Rendered only if not externally controlled in page header) */}
-      {controlledXRayMode === undefined && (
-        <div className="absolute top-14 sm:top-3 right-3 z-30 flex items-center gap-1 rounded-full bg-black/60 border border-white/10 p-1 backdrop-blur-xl shadow-lg pointer-events-auto">
-          {/* Spectacles (X-Ray Glasses Toggle) */}
-          <button
-            onClick={() => { soundFX.playClick(); setIsXRayMode(!isXRayMode); }}
-            className={`px-2.5 py-1 rounded-full text-[10px] font-mono transition-all flex items-center gap-1.5 ${
-              isXRayMode
-                ? 'bg-amber-400 text-black font-bold shadow-md shadow-amber-400/40'
-                : 'text-zinc-300 hover:text-white hover:bg-white/10'
-            }`}
-            title="X-ray glasses · see how it's made"
-          >
-            <SpectaclesIcon className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{isXRayMode ? 'Glasses On' : 'X-Ray'}</span>
-          </button>
-
-          {/* Day Studio vs Cozy Night Toggle */}
-          <button
-            onClick={() => { soundFX.playClick(); setDayMode(!dayMode); }}
-            className="p-1.5 rounded-full text-amber-300 hover:text-white hover:bg-white/10 transition-all"
-            title={dayMode ? 'Switch to Night Cozy Mode' : 'Switch to Day Studio Mode'}
-          >
-            {dayMode ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
-          </button>
-        </div>
-      )}
+      {/* Top HUD Controls: Day/Night Studio Toggle (Zero X-Ray buttons!) */}
+      <div className="absolute top-14 sm:top-3 right-3 z-30 flex items-center gap-1 rounded-full bg-black/60 border border-white/10 p-1 backdrop-blur-xl shadow-lg pointer-events-auto">
+        <button
+          onClick={() => { soundFX.playClick(); setDayMode(!dayMode); }}
+          className="p-1.5 rounded-full text-amber-300 hover:text-white hover:bg-white/10 transition-all"
+          title={dayMode ? 'Switch to Night Cozy Mode' : 'Switch to Day Studio Mode'}
+        >
+          {dayMode ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+        </button>
+      </div>
 
       {/* ── FOCUSED OBJECT DEDICATED CLOSE & ACTION BAR (Accessible Bottom Center) ── */}
       {focusedTarget && !isCardHeld && (
@@ -2332,17 +2468,11 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
             </button>
           )}
 
-          {focusedTarget === 'zoro' && (
-            <button
-              onClick={() => {
-                soundFX.playClick();
-                zoroWobbleRef.current = 1.0;
-              }}
-              className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-emerald-500/25 hover:bg-emerald-500/35 border border-emerald-400/50 text-emerald-200 text-xs font-mono font-semibold flex items-center gap-2 shadow-xl backdrop-blur-xl active:scale-95 transition-all"
-              title="Wobble Zoro"
-            >
-              <span>⚔️ Wobble Zoro</span>
-            </button>
+          {focusedTarget === 'watch' && (
+            <div className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-cyan-500/25 border border-cyan-400/50 text-cyan-200 text-xs font-mono font-semibold flex items-center gap-2 shadow-xl backdrop-blur-xl">
+              <Clock size={14} className="text-cyan-400 animate-spin" style={{ animationDuration: '60s' }} />
+              <span>Titanium Chronometer</span>
+            </div>
           )}
 
           {/* Dedicated prominent Close / Back to Desk button */}
@@ -2387,11 +2517,11 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         </div>
       )}
 
-      {hoveredObject === 'zoro' && (
+      {hoveredObject === 'watch' && !isCardHeld && (
         <div className="absolute top-[58%] left-[23%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
-          <div className="px-3 py-1 rounded-full bg-black/85 backdrop-blur-md border border-emerald-400/40 text-emerald-300 text-xs font-sans shadow-xl flex items-center gap-1.5">
-            <Sparkles className="w-3 h-3 text-emerald-400" />
-            <span>Zoro Bobblehead on a Spring · Click to Wobble!</span>
+          <div className="px-3.5 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-cyan-400/50 text-cyan-200 text-xs font-mono shadow-xl flex items-center gap-2">
+            <Clock size={13} className="text-cyan-400" />
+            <span>Chrono Watch · Click to inspect</span>
           </div>
         </div>
       )}
@@ -2404,12 +2534,12 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         </div>
       )}
 
-      {hoveredObject === 'glasses' && !isCardHeld && (
+      {hoveredObject === 'glasses' && !isWearingSpecs && !isCardHeld && (
         <div className="absolute top-[62%] left-[40%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
           <div className="whitespace-nowrap rounded-full bg-white text-zinc-900 px-3.5 py-1.5 text-[13px] font-medium shadow-xl flex items-center gap-2 ring-1 ring-black/10">
             <SpectaclesIcon className="w-4 h-4 text-amber-600" />
-            <span>X-ray glasses</span>
-            <span className="text-zinc-500 font-normal">· see how it's all made</span>
+            <span className="font-bold">Wearable Spectacles</span>
+            <span className="text-zinc-600 font-normal">· Click to put on</span>
           </div>
         </div>
       )}
@@ -2451,6 +2581,35 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         </div>
       )}
 
+      {/* ── WEARABLE SPECTACLES FIRST-PERSON HUD & CONTROLS ── */}
+      {isWearingSpecs && (
+        <div className="pointer-events-none fixed inset-0 z-40 overflow-hidden animate-fadeIn">
+          {/* Subtle Acetate Eyewear Vignette & Optic Lens Tint */}
+          <div className="absolute inset-0 border-[14px] sm:border-[24px] border-black/80 rounded-[32px] sm:rounded-[44px] pointer-events-none shadow-[inset_0_0_80px_rgba(34,211,238,0.18)]" />
+          
+          {/* Tech Optics Telemetry HUD Header */}
+          <div className="absolute top-3 sm:top-4 inset-x-0 flex justify-center pointer-events-none">
+            <div className="flex items-center gap-2 rounded-full border border-cyan-400/40 bg-black/85 px-4 py-1 text-[10px] font-mono tracking-wider text-cyan-300 shadow-xl backdrop-blur-md">
+              <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+              <span>OPTICAL SPECTACLES ACTIVE // X-RAY INSPECT MODE</span>
+            </div>
+          </div>
+
+          {/* Prominent Action Bar at Bottom Center: Take Off Specs */}
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 pointer-events-auto flex items-center gap-2">
+            <button
+              onClick={takeOffSpecs}
+              className="px-5 py-2.5 rounded-full bg-amber-400 hover:bg-amber-300 text-black text-xs font-mono font-bold flex items-center gap-2 shadow-2xl shadow-amber-400/40 active:scale-95 transition-all"
+              title="Take off glasses and return to desk"
+              aria-label="Take off spectacles"
+            >
+              <SpectaclesIcon className="w-4 h-4 text-black" />
+              <span>Take Off Specs (Esc)</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Blueprint Grid Paper Background when X-Ray is Active (Matching v2_10.png) */}
       {isXRayMode && (
         <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:24px_24px] opacity-40" />
@@ -2470,11 +2629,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           </p>
           <div className="mt-2.5 pointer-events-auto inline-block">
             <button
-              onClick={() => {
-                soundFX.playClick();
-                setIsXRayMode(false);
-                setSelectedXRayItem(null);
-              }}
+              onClick={takeOffSpecs}
               className="px-4 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-mono transition shadow-lg flex items-center gap-2 mx-auto"
             >
               <SpectaclesIcon className="w-3.5 h-3.5 text-amber-400" />

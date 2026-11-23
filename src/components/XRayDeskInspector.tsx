@@ -42,25 +42,22 @@ if (receiptPaperMeshRef.current && receiptAnimRef.current > 0.01) {
   },
   {
     id: 2,
-    key: 'zoro',
-    name: 'Zoro Bobblehead',
-    description: 'Chibi bobblehead figure mounted on a tempered spring with real-time damped harmonic oscillation physics. Click or hover him to see him wobble.',
-    pieces: 6,
-    triangles: '3,460',
-    lines: 65,
-    filePath: 'src/desk/scene/ZoroFigurine.tsx',
-    lineRange: 'lines 70-134',
-    codeSnippet: `// Damped harmonic oscillator physics for head wobble
-if (zoroHeadRef.current) {
-  zoroWobbleRef.current *= 0.965; // Harmonic energy decay
-  const wobble = zoroWobbleRef.current;
-  zoroHeadRef.current.rotation.x = Math.sin(elapsedTime * 8.5) * wobble;
-  zoroHeadRef.current.rotation.z = Math.cos(elapsedTime * 6.8) * wobble;
-}
-const bandana = new THREE.Mesh(
-  new THREE.SphereGeometry(0.038, 16, 16),
-  new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5 })
-);`
+    key: 'watch',
+    name: 'Precision Chronometer Watch',
+    description: 'Precision mechanical chronograph mounted on an ergonomic desk stand with sweeping live seconds, sapphire crystal, titanium case, knurled crown, and dual pushers.',
+    pieces: 9,
+    triangles: '4,280',
+    lines: 78,
+    filePath: 'src/desk/scene/ChronoWatch.tsx',
+    lineRange: 'lines 85-163',
+    codeSnippet: `// Smooth real-time mechanical chronometer movement
+const now = new Date();
+const s = now.getSeconds() + now.getMilliseconds() / 1000;
+const m = now.getMinutes() + s / 60;
+const h = (now.getHours() % 12) + m / 60;
+secondHand.rotation.z = -s * (Math.PI / 30);
+minuteHand.rotation.z = -m * (Math.PI / 30);
+hourHand.rotation.z = -h * (Math.PI / 6);`
   },
   {
     id: 3,
