@@ -187,7 +187,7 @@ export const PROJECTS: Project[] = [
     ],
     description: "Personal creative audio production studio releasing under the artist alias 7YNX, blending lofi beats, ambient soundscapes, and modular synthesizer sound design.",
     fullOverview: [
-      "Composed and mixed original instrumental soundtracks including 'Lofi Study' and 'Regardless'.",
+      "Composed and mixed original instrumental soundtracks including 'Afrotonic 4', 'Analog', and 'My Mind'.",
       "Part-time music instruction at St. Sophia Convent High School teaching rhythm, notation, and keyboard basics.",
       "Acoustic treatment, digital audio workstation (DAW) workflow, and VST sound design."
     ],

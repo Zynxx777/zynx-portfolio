@@ -47,22 +47,40 @@ interface AudioTrack {
 
 const AUDIO_TRACKS: AudioTrack[] = [
   {
-    id: "studio-jam",
-    title: "Studio Jam",
-    artist: "7YNX // Joris Voorn",
-    genre: "Melodic Techno House",
-    bpm: "124 BPM",
-    src: "/music/Joris Voorn - Studio Jam ｜ Melodic Atmospheric Techno House.opus",
-    cover: "/images/sound/sound-studiojam.jpg"
+    id: "afrotonic4",
+    title: "Afrotonic 4",
+    artist: "7YNX",
+    genre: "Afro House & Melodic",
+    bpm: "122 BPM",
+    src: "/music/afrotonic4.mp3",
+    cover: "/images/ambient/lofi-study-night.jpg"
   },
   {
-    id: "regardless",
-    title: "Regardless",
-    artist: "7YNX DSP Lab",
-    genre: "Synthwave & Trap Bass",
-    bpm: "140 BPM",
-    src: "/music/Regardless.mp3",
-    cover: "/images/sound/sound-regardless.jpg"
+    id: "analog",
+    title: "Analog",
+    artist: "7YNX",
+    genre: "Analog Synthwave",
+    bpm: "126 BPM",
+    src: "/music/analog.mp3",
+    cover: "/images/space/cosmic-stars-4k.jpg"
+  },
+  {
+    id: "if-only-you",
+    title: "If Only You",
+    artist: "7YNX",
+    genre: "Chill Electronic",
+    bpm: "118 BPM",
+    src: "/music/if only youuu.mp3",
+    cover: "/images/gallery/anime-moon-landscape.jpg"
+  },
+  {
+    id: "my-mind",
+    title: "My Mind",
+    artist: "7YNX",
+    genre: "Deep House & Bass",
+    bpm: "124 BPM",
+    src: "/music/my mind2.mp3",
+    cover: "/images/gallery/winter-evening-japanese-village.jpg"
   },
   {
     id: "lofi-study",

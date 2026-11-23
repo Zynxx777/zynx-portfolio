@@ -166,7 +166,7 @@ export const MONITOR_PROJECTS: MonitorProject[] = [
     stack: ['FL Studio', 'Synthesizers', 'Audio Mastering', 'Music Theory', 'Sound Design'],
     summary: 'Personal creative audio production studio releasing under artist alias 7YNX, blending lofi beats, ambient soundscapes, and modular synthesizer sound design.',
     bullets: [
-      'Composed and mixed original instrumental soundtracks including "Lofi Study" and "Regardless".',
+      'Composed and mixed original instrumental soundtracks including "Afrotonic 4", "Analog", and "My Mind".',
       'Taught rhythm, notation, and keyboard basics at St. Sophia Convent High School.',
       'Custom modular VST patches and spatial audio sound design.'
     ]

@@ -358,29 +358,55 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <MusicReleaseCard
-            title="Regardless"
-            genre="Future Bounce / EDM"
-            bpm="128 BPM"
-            keySig="F Minor"
-            year="2024"
-            img="/images/sound/sound-regardless.jpg"
-            desc="Punchy metallic leads with heavy sub-bass compression and dynamic sidechain bounce. Mastered for peak festival sound systems."
-            audioSrc="/music/Regardless.mp3"
+            title="Afrotonic 4"
+            genre="Afro House / Melodic"
+            bpm="122 BPM"
+            keySig="G Minor"
+            year="2026"
+            img="/images/ambient/lofi-study-night.jpg"
+            desc="Deep percussive afro grooves layered with hypnotic melodic keys and warm sub-bass."
+            audioSrc="/music/afrotonic4.mp3"
             onPlay={handlePlayRelease}
-            isPlayingThis={playingTrack === "/music/Regardless.mp3"}
+            isPlayingThis={playingTrack === "/music/afrotonic4.mp3"}
           />
 
           <MusicReleaseCard
-            title="Atmospheric Studio Jam"
-            genre="Melodic Techno / House"
+            title="Analog"
+            genre="Analog Synthwave"
             bpm="126 BPM"
-            keySig="A Minor"
-            year="2025"
-            img="/images/sound/sound-studiojam.jpg"
-            desc="Deep hypnotic modular synth riffs with analog tape saturation, spatial stereo widening, and ambient reverberant decay."
-            audioSrc="/music/Joris Voorn - Studio Jam ｜ Melodic Atmospheric Techno House.opus"
+            keySig="D Minor"
+            year="2026"
+            img="/images/space/cosmic-stars-4k.jpg"
+            desc="Warm analog synthesizer textures with tape saturation, vintage chorus, and energetic drive."
+            audioSrc="/music/analog.mp3"
             onPlay={handlePlayRelease}
-            isPlayingThis={playingTrack === "/music/Joris Voorn - Studio Jam ｜ Melodic Atmospheric Techno House.opus"}
+            isPlayingThis={playingTrack === "/music/analog.mp3"}
+          />
+
+          <MusicReleaseCard
+            title="If Only You"
+            genre="Chill Electronic"
+            bpm="118 BPM"
+            keySig="C Minor"
+            year="2026"
+            img="/images/gallery/anime-moon-landscape.jpg"
+            desc="Atmospheric vocal chops with ethereal synth pads, lush chords, and crisp punchy drums."
+            audioSrc="/music/if only youuu.mp3"
+            onPlay={handlePlayRelease}
+            isPlayingThis={playingTrack === "/music/if only youuu.mp3"}
+          />
+
+          <MusicReleaseCard
+            title="My Mind"
+            genre="Deep House / Club Bass"
+            bpm="124 BPM"
+            keySig="E Minor"
+            year="2026"
+            img="/images/gallery/winter-evening-japanese-village.jpg"
+            desc="Rolling club low-end with vocal cut textures, crisp percussion, and immersive sonic space."
+            audioSrc="/music/my mind2.mp3"
+            onPlay={handlePlayRelease}
+            isPlayingThis={playingTrack === "/music/my mind2.mp3"}
           />
         </div>
       </section>

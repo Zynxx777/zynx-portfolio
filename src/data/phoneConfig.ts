@@ -32,8 +32,11 @@ export const PHONE_SOCIAL_LINKS = {
 
 // Add or edit entries for public media stored under public/.
 export const PHONE_AUDIO_FILES = [
+  { id: "afrotonic4", name: "Afrotonic 4", src: "/music/afrotonic4.mp3", type: "audio/mpeg" },
+  { id: "analog", name: "Analog", src: "/music/analog.mp3", type: "audio/mpeg" },
+  { id: "if-only-you", name: "If Only You", src: "/music/if only youuu.mp3", type: "audio/mpeg" },
+  { id: "my-mind", name: "My Mind", src: "/music/my mind2.mp3", type: "audio/mpeg" },
   { id: "lofi-study", name: "Lofi Study", src: "/music/lofi-study.mp3", type: "audio/mpeg" },
-  { id: "regardless", name: "Regardless", src: "/music/Regardless.mp3", type: "audio/mpeg" },
 ];
 
 // Add videos here to show them in both the Gallery and Files apps.
