@@ -130,24 +130,25 @@ export const AnatomyDissectionModal: React.FC<AnatomyDissectionModalProps> = ({ 
       <div className="w-full max-w-5xl rounded-3xl bg-[#090b10] border border-cyan-500/30 text-slate-100 shadow-2xl overflow-hidden relative my-auto">
         
         {/* Header Bar */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between gap-4 bg-[#0c0e14]">
+        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between gap-3 sm:gap-4 bg-[#0c0e14]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 flex items-center justify-center font-bold shrink-0">
               <Layers className="w-4 h-4" />
             </div>
             <div>
               <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
                 Anatomy Reveal Engine
               </span>
-              <h2 className="text-xl font-bold text-white tracking-tight">
-                Z Card v0.1 — 9-Layer Anatomical Dissection
+              <h2 className="text-base sm:text-xl font-bold text-white tracking-tight leading-tight">
+                <span>Z Card v0.1</span>
+                <span className="hidden sm:inline"> — 9-Layer Anatomical Dissection</span>
               </h2>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+            className="p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
@@ -157,11 +158,11 @@ export const AnatomyDissectionModal: React.FC<AnatomyDissectionModalProps> = ({ 
         <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[520px]">
           
           {/* Left: Interactive 3D Exploded Visual Stack */}
-          <div className="lg:col-span-7 bg-[#050609] p-6 flex flex-col justify-between relative border-b lg:border-b-0 lg:border-r border-slate-800 overflow-hidden">
+          <div className="lg:col-span-7 bg-[#050609] p-4 sm:p-6 flex flex-col justify-between relative border-b lg:border-b-0 lg:border-r border-slate-800 overflow-hidden">
             
             {/* Top Explode Slider Control */}
-            <div className="flex items-center justify-between gap-4 p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-xs font-mono mb-4">
-              <span className="flex items-center gap-1.5 text-cyan-400 font-semibold">
+            <div className="flex items-center justify-between gap-3 p-2.5 sm:p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-xs font-mono mb-4">
+              <span className="flex items-center gap-1.5 text-cyan-400 font-semibold text-[11px] sm:text-xs">
                 <Sliders className="w-3.5 h-3.5" /> Separation: {Math.round(explodeFactor * 100)}%
               </span>
               <input
@@ -171,7 +172,7 @@ export const AnatomyDissectionModal: React.FC<AnatomyDissectionModalProps> = ({ 
                 step="0.01"
                 value={explodeFactor}
                 onChange={(e) => setExplodeFactor(parseFloat(e.target.value))}
-                className="w-44 accent-cyan-400 cursor-pointer"
+                className="w-24 sm:w-44 accent-cyan-400 cursor-pointer"
               />
             </div>
 

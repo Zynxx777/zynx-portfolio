@@ -864,19 +864,19 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
       `}</style>
 
       {/* Small corner controls keep the room as the main event. */}
-      <header className="absolute top-3 left-3 right-3 z-30 flex items-start justify-between gap-3 pointer-events-none">
-        <div className="flex items-center gap-2 pointer-events-auto">
+      <header className="absolute top-3 left-3 right-3 z-30 flex items-start justify-between gap-2 pointer-events-none">
+        <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
           <button
             onClick={() => { soundFX.playClick(); onNavigatePortfolio(); }}
-            className="flex h-9 items-center gap-2 rounded-full border border-white/10 bg-black/45 px-3 text-[11px] font-mono text-zinc-200 shadow-lg backdrop-blur-xl transition hover:border-cyan-300/60 hover:text-white"
+            className="hidden sm:flex h-8 sm:h-9 items-center gap-1.5 sm:gap-2 rounded-full border border-white/10 bg-black/60 px-2.5 sm:px-3 text-[11px] font-mono text-zinc-200 shadow-lg backdrop-blur-xl transition hover:border-cyan-300/60 hover:text-white"
             aria-label="Back to developer portfolio"
           >
             <ArrowLeft size={13} />
-            <span className="hidden sm:inline">Portfolio</span>
+            <span>Portfolio</span>
           </button>
           
           {/* View Mode Switcher */}
-          <div className="flex items-center gap-1 bg-black/45 border border-white/10 rounded-full p-1 shadow-lg backdrop-blur-xl">
+          <div className="flex items-center gap-0.5 sm:gap-1 bg-black/60 border border-white/10 rounded-full p-0.5 sm:p-1 shadow-lg backdrop-blur-xl">
             <button
               onClick={() => {
                 soundFX.playClick();
@@ -884,10 +884,10 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
                 setEditMode(false);
                 setSelectedFurniture(null);
               }}
-              className={`flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-mono transition ${viewMode === "desk" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
+              className={`flex h-7 items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-2.5 text-[10px] font-mono transition ${viewMode === "desk" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
             >
               <Laptop size={12} />
-              <span>3D Desk</span>
+              <span>Desk</span>
             </button>
             <button
               onClick={() => {
@@ -896,10 +896,11 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
                 setEditMode(false);
                 setSelectedFurniture(null);
               }}
-              className={`flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-mono transition ${viewMode === "3d" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
+              className={`flex h-7 items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-2.5 text-[10px] font-mono transition ${viewMode === "3d" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
             >
               <BedDouble size={12} />
               <span className="hidden sm:inline">Room 3D</span>
+              <span className="sm:hidden">Room</span>
             </button>
             <button
               onClick={() => {
@@ -908,7 +909,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
                 setEditMode(false);
                 setSelectedFurniture(null);
               }}
-              className={`flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-mono transition ${viewMode === "catalog" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
+              className={`flex h-7 items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-2.5 text-[10px] font-mono transition ${viewMode === "catalog" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
             >
               <Grid size={12} />
               <span className="hidden sm:inline">Catalog</span>
@@ -956,12 +957,12 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
         )}
       </header>
 
-      {/* Mobile Gesture Helper Badge */}
-      {!editMode && (
-        <div className="pointer-events-none absolute left-1/2 top-[6.5rem] sm:top-28 z-20 -translate-x-1/2 sm:hidden">
-          <div className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[9px] font-mono tracking-wider text-zinc-300 shadow-lg backdrop-blur-md">
+      {/* Mobile Gesture Helper Badge (Bottom-left, non-overlapping) */}
+      {!editMode && viewMode === "desk" && (
+        <div className="pointer-events-none absolute left-3 bottom-3 z-20 sm:hidden pb-[env(safe-area-inset-bottom,0px)]">
+          <div className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-black/75 px-2.5 py-1 text-[9px] font-mono tracking-wider text-zinc-300 shadow-lg backdrop-blur-md">
             <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
-            <span>DRAG TO ROTATE • PINCH TO ZOOM • TAP TO OPEN</span>
+            <span>DRAG • PINCH • TAP</span>
           </div>
         </div>
       )}
@@ -1286,7 +1287,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
           </div>
 
           {/* Compact zone dock: the room stays visible while every exhibit remains one click away. */}
-          {!editMode && <nav className="absolute bottom-[calc(0.5rem+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-30 pointer-events-auto max-w-[94vw] max-h-16 overflow-hidden overflow-x-auto p-1.5 rounded-full cyber-glass border border-white/15 shadow-2xl backdrop-blur-2xl flex items-center gap-1">
+          {!editMode && <nav className="absolute bottom-[calc(0.5rem+env(safe-area-inset-bottom,0px))] left-3 sm:left-1/2 sm:-translate-x-1/2 z-30 pointer-events-auto max-w-[calc(100vw-4.8rem)] sm:max-w-[94vw] max-h-16 overflow-hidden overflow-x-auto p-1.5 rounded-full cyber-glass border border-white/15 shadow-2xl backdrop-blur-2xl flex items-center gap-1">
             <button
               onClick={() => handleDockSelect("overview")}
               title="Room overview"
@@ -1407,7 +1408,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
       {phoneOpen && <PhoneExperience onClose={() => setPhoneOpen(false)} />}
 
       {/* ── LIVE LO-FI RADIO STATION / SOUND LAB DOCK (Available across all views) ── */}
-      <div className="absolute bottom-[4.5rem] sm:bottom-4 right-3 sm:right-4 z-40 flex items-end gap-2 pointer-events-auto pb-[env(safe-area-inset-bottom,0px)]">
+      <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 z-40 flex items-end gap-2 pointer-events-auto pb-[env(safe-area-inset-bottom,0px)]">
         {musicOpen && (
           <div className="max-w-[min(94vw,28rem)] max-h-[85dvh] overflow-y-auto animate-fadeIn">
             <BedroomAudioPlayer onClose={() => setMusicOpen(false)} />

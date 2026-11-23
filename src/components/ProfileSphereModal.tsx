@@ -34,16 +34,16 @@ export const ProfileSphereModal: React.FC<ProfileSphereModalProps> = ({ isOpen, 
       {/* Top Close Button (exact style from jesperlandberg.com) */}
       <button
         onClick={onClose}
-        className="absolute top-8 right-8 z-50 text-xs font-mono uppercase tracking-widest text-slate-400 hover:text-white flex items-center gap-2 transition-colors group"
+        className="absolute top-4 right-4 sm:top-8 sm:right-8 z-50 text-xs font-mono uppercase tracking-widest text-slate-400 hover:text-white flex items-center gap-2 transition-colors group"
       >
-        <span>CLOSE</span>
-        <div className="w-7 h-7 rounded-full border border-white/20 flex items-center justify-center group-hover:border-white transition-colors">
+        <span className="hidden sm:inline">CLOSE</span>
+        <div className="w-8 h-8 sm:w-7 sm:h-7 rounded-full border border-white/20 flex items-center justify-center group-hover:border-white transition-colors bg-black/40 backdrop-blur-md">
           <X className="w-4 h-4" />
         </div>
       </button>
 
       {/* Center Refractive Glass Sphere Container */}
-      <div className="relative w-full max-w-2xl aspect-square max-h-[85vh] rounded-full p-8 sm:p-14 flex flex-col items-center justify-center text-center shadow-[0_0_120px_rgba(0,240,255,0.18)] border border-white/20 overflow-hidden bg-gradient-to-br from-slate-950/95 via-[#080c14]/95 to-slate-950/95 backdrop-blur-2xl">
+      <div className="relative w-full max-w-2xl aspect-auto sm:aspect-square max-h-[90dvh] rounded-3xl sm:rounded-full p-6 sm:p-14 flex flex-col items-center justify-center text-center shadow-[0_0_120px_rgba(0,240,255,0.18)] border border-white/20 overflow-y-auto sm:overflow-hidden bg-gradient-to-br from-slate-950/95 via-[#080c14]/95 to-slate-950/95 backdrop-blur-2xl">
         
         {/* Dynamic Refractive Ring / Chromatic Aberration Rim */}
         <div className="absolute inset-0 rounded-full border-[6px] border-transparent bg-gradient-to-tr from-cyan-400/30 via-transparent to-amber-300/30 pointer-events-none blur-[2px]"></div>

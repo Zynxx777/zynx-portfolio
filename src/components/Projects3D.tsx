@@ -1058,24 +1058,32 @@ export const Projects3D: React.FC<Projects3DProps> = ({ immersive = false, profi
 
           {/* Floating Minimal Card Metadata (Anchored in bottom center) */}
           {activeProject && (
-            <div className="pointer-events-none absolute bottom-8 inset-x-4 z-30 mx-auto flex max-w-[1700px] flex-col gap-3 sm:inset-x-8 sm:flex-row sm:items-end sm:justify-between lg:inset-x-12">
-              <div className="pointer-events-auto w-full max-w-3xl space-y-1 rounded-2xl border border-white/10 bg-black/65 p-4 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-6 lg:p-7">
+            <div className="pointer-events-none absolute bottom-4 sm:bottom-8 inset-x-3 sm:inset-x-8 z-30 mx-auto flex max-w-[1700px] flex-col gap-2.5 sm:gap-3 sm:flex-row sm:items-end sm:justify-between lg:inset-x-12">
+              <div className="pointer-events-auto w-full max-w-3xl space-y-1 rounded-2xl border border-white/10 bg-black/65 p-3.5 sm:p-6 lg:p-7 shadow-2xl shadow-black/30 backdrop-blur-xl">
                 <div className="flex items-center gap-2 text-[10px] sm:text-xs font-mono uppercase tracking-[0.2em] text-cyan-300">
                   <span>{activeProject.badge}</span>
                   <span className="text-zinc-600">·</span>
                   <span className="text-zinc-400">{activeProject.subtitle}</span>
                 </div>
-                <h3 className="text-[clamp(1.5rem,3.6vw,3.1rem)] leading-[0.98] font-display font-medium tracking-[-0.05em] text-white">
+                <h3 className="text-[clamp(1.25rem,3.6vw,3.1rem)] leading-[1] font-display font-medium tracking-[-0.05em] text-white">
                   {activeProject.name}
                 </h3>
-                <p className="text-sm text-zinc-300 font-sans line-clamp-2 pt-1 sm:text-base">
+                <p className="text-xs sm:text-sm text-zinc-300 font-sans line-clamp-2 pt-0.5 sm:pt-1">
                   {activeProject.description}
                 </p>
-                <div className="flex flex-wrap gap-1.5 pt-2">
-                  {activeProject.skills.slice(0, 5).map((sk) => (
+                <div className="flex flex-wrap gap-1 sm:gap-1.5 pt-1.5 sm:pt-2">
+                  {activeProject.skills.slice(0, 3).map((sk) => (
                     <span
                       key={sk}
-                      className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 border border-white/15 text-zinc-300"
+                      className="text-[9px] sm:text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 border border-white/15 text-zinc-300"
+                    >
+                      {sk}
+                    </span>
+                  ))}
+                  {activeProject.skills.slice(3, 5).map((sk) => (
+                    <span
+                      key={sk}
+                      className="hidden sm:inline-block text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 border border-white/15 text-zinc-300"
                     >
                       {sk}
                     </span>
@@ -1083,42 +1091,47 @@ export const Projects3D: React.FC<Projects3DProps> = ({ immersive = false, profi
                 </div>
               </div>
 
-              {/* Navigation Arrows & Inspect Trigger */}
-              <div className="pointer-events-auto flex items-center gap-2 self-end sm:gap-3 sm:self-auto">
-                <button
-                  onClick={() => moveStrip(-1)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/80 text-white shadow-xl transition-all hover:bg-white hover:text-black sm:h-11 sm:w-11"
-                  title="Previous project"
-                  aria-label="Previous project"
-                >
-                  <ArrowLeft size={16} />
-                </button>
-
-                <button
-                  onClick={() => moveStrip(1)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/80 text-white shadow-xl transition-all hover:bg-white hover:text-black sm:h-11 sm:w-11"
-                  title="Next project"
-                  aria-label="Next project"
-                >
-                  <ArrowRight size={16} />
-                </button>
-
-                <button
-                  onClick={() => setSelectedProject(activeProject)}
-                  className="flex h-10 items-center gap-2 rounded-full bg-cyan-400 px-4 font-mono text-[11px] font-bold tracking-wide text-black shadow-lg shadow-cyan-400/20 transition-all hover:bg-cyan-300 sm:h-11 sm:px-5 sm:text-xs sm:tracking-wider"
-                >
-                  <span>Inspect Spec</span>
-                  <ArrowUpRight size={15} />
-                </button>
-
-                {activeProject.id === "zcard-hardware" && onOpenAnatomy && (
+              {/* Navigation Arrows & Inspect Trigger (Responsive touch-friendly) */}
+              <div className="pointer-events-auto flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <button
-                    onClick={onOpenAnatomy}
-                    className="flex h-10 items-center gap-2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-4 font-mono text-[11px] font-bold tracking-wide text-black shadow-lg shadow-cyan-400/25 transition-all hover:brightness-110 sm:h-11 sm:px-5 sm:text-xs"
+                    onClick={() => moveStrip(-1)}
+                    className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-white/20 bg-black/80 text-white shadow-xl transition-all hover:bg-white hover:text-black active:scale-95"
+                    title="Previous project"
+                    aria-label="Previous project"
                   >
-                    <span>🔬 3D Anatomy Dissection</span>
+                    <ArrowLeft size={15} />
                   </button>
-                )}
+
+                  <button
+                    onClick={() => moveStrip(1)}
+                    className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-white/20 bg-black/80 text-white shadow-xl transition-all hover:bg-white hover:text-black active:scale-95"
+                    title="Next project"
+                    aria-label="Next project"
+                  >
+                    <ArrowRight size={15} />
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <button
+                    onClick={() => setSelectedProject(activeProject)}
+                    className="flex h-9 sm:h-11 items-center gap-1.5 sm:gap-2 rounded-full bg-cyan-400 px-3.5 sm:px-5 font-mono text-[11px] sm:text-xs font-bold tracking-wide text-black shadow-lg shadow-cyan-400/20 transition-all hover:bg-cyan-300 active:scale-95"
+                  >
+                    <span>Inspect</span>
+                    <ArrowUpRight size={14} />
+                  </button>
+
+                  {activeProject.id === "zcard-hardware" && onOpenAnatomy && (
+                    <button
+                      onClick={onOpenAnatomy}
+                      className="flex h-9 sm:h-11 items-center gap-1 sm:gap-2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-3 sm:px-5 font-mono text-[10px] sm:text-xs font-bold tracking-wide text-black shadow-lg shadow-cyan-400/25 transition-all hover:brightness-110 active:scale-95"
+                    >
+                      <span className="hidden sm:inline">🔬 3D Anatomy Dissection</span>
+                      <span className="sm:hidden">🔬 Anatomy</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}

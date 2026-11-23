@@ -3,7 +3,6 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { 
   RotateCcw, 
-  Layers, 
   ExternalLink,
   Sun,
   Moon,
@@ -15,10 +14,7 @@ import {
   Phone,
   Mail,
   X,
-  Droplets,
-  Volume2,
-  VolumeX,
-  StickyNote
+  Droplets
 } from 'lucide-react';
 import { soundFX } from '../utils/audioFX';
 import { MonitorDesktopModal } from './MonitorDesktopModal';
@@ -524,12 +520,9 @@ interface BedroomDesk3DProps {
 export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   onOpenDiary,
   onOpenProject,
-  onSwitchToShowcase,
   onOpenAnatomy,
   onOpenMonitor,
   onOpenPhone,
-  onToggleMusic,
-  isMusicPlaying = false
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const [hoveredObject, setHoveredObject] = useState<string | null>(null);
@@ -2193,93 +2186,67 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         ? 'bg-[radial-gradient(120%_90%_at_50%_45%,#FFFFFF_0%,#F4F4F6_55%,#E8E8EC_100%)] text-slate-900' 
         : 'bg-[#090b10] text-white'
     }`}>
-      {/* Top Banner Headline (Matching pradiplabs.dev - cleanly hidden in X-Ray mode or when inspecting card) */}
+      {/* Top Banner Headline (Clean & minimal on mobile, expanded on desktop) */}
       {!isXRayMode && !isCardHeld && (
-        <div className="absolute top-14 sm:top-6 inset-x-0 z-20 pointer-events-none text-center px-4 max-w-2xl mx-auto transition-opacity duration-300">
-          <h1 className={`text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight drop-shadow-md font-display ${
+        <div className="absolute top-14 sm:top-16 inset-x-0 z-20 pointer-events-none text-center px-4 max-w-xl mx-auto transition-opacity duration-300">
+          <h1 className={`text-base sm:text-3xl md:text-4xl font-extrabold tracking-tight drop-shadow-md font-display ${
             dayMode ? 'text-slate-900' : 'text-white'
           }`}>
             Hi, I'm Joshua (ZYNX).
           </h1>
-          <p className={`mt-1.5 sm:mt-2 text-[11px] sm:text-xs md:text-sm max-w-xl mx-auto drop-shadow-sm font-sans ${
+          <p className={`hidden sm:block mt-1 text-xs md:text-sm max-w-lg mx-auto drop-shadow-sm font-sans ${
             dayMode ? 'text-slate-600' : 'text-slate-300'
           }`}>
-            I build embedded systems, Arch Linux environments, and modern web applications. 
-            Everything on this desk is real and running.
+            I build embedded systems, Arch Linux environments, and modern web applications.
           </p>
         </div>
       )}
 
-      {/* Top HUD Controls: Day/Night, X-Ray, Reset, Music, Showcase */}
-      <div className="absolute top-3 right-3 sm:top-6 sm:right-6 z-30 flex items-center gap-1.5 sm:gap-2">
+      {/* Top HUD Controls: Reset, X-Ray, Day/Night */}
+      <div className="absolute top-3 right-3 sm:top-3 sm:right-3 z-30 flex items-center gap-1 rounded-full bg-black/60 border border-white/10 p-1 backdrop-blur-xl shadow-lg pointer-events-auto">
         {(focusedTarget === 'laptop' || isMonitorOpen) && (
           <button
             onClick={() => { soundFX.playClick(); if (onOpenMonitor) onOpenMonitor(); else setIsMonitorOpen(true); }}
-            className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400 text-[11px] sm:text-xs font-mono text-cyan-200 flex items-center gap-1.5 shadow-lg backdrop-blur-md transition-all"
+            className="px-2.5 py-1 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-[10px] font-mono text-cyan-200 flex items-center gap-1 transition-all"
+            title="Open Z OS Desktop"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Open Desktop</span>
-            <span className="sm:hidden">OS</span>
+            <ExternalLink className="w-3 h-3" />
+            <span className="hidden sm:inline">Desktop</span>
           </button>
         )}
 
         {focusedTarget && (
           <button
             onClick={() => focusObject('reset')}
-            className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-white/20 text-[11px] sm:text-xs font-mono text-cyan-300 flex items-center gap-1.5 shadow-lg backdrop-blur-md transition-all"
+            className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-cyan-300 text-[10px] font-mono flex items-center gap-1 transition-all"
+            title="Reset camera view"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Reset View</span>
+            <RotateCcw className="w-3 h-3" />
+            <span className="hidden sm:inline">Reset</span>
           </button>
         )}
 
         {/* Spectacles (X-Ray Glasses Toggle) */}
         <button
           onClick={() => { soundFX.playClick(); setIsXRayMode(!isXRayMode); }}
-          className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full border text-[11px] sm:text-xs font-mono transition-all flex items-center gap-1.5 sm:gap-2 shadow-lg backdrop-blur-md ${
+          className={`px-2.5 py-1 rounded-full text-[10px] font-mono transition-all flex items-center gap-1.5 ${
             isXRayMode
-              ? 'bg-amber-400 text-black font-bold border-amber-300 shadow-amber-400/40'
-              : 'bg-black/60 border-white/20 text-zinc-300 hover:text-white'
+              ? 'bg-amber-400 text-black font-bold shadow-md shadow-amber-400/40'
+              : 'text-zinc-300 hover:text-white hover:bg-white/10'
           }`}
-          title="X-ray glasses · see how it's all made"
+          title="X-ray glasses · see how it's made"
         >
-          <SpectaclesIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          <span className="hidden sm:inline">{isXRayMode ? 'Glasses On' : 'Spectacles'}</span>
-        </button>
-
-        {/* Showcase Switcher */}
-        <button
-          onClick={() => { soundFX.playClick(); onSwitchToShowcase(); }}
-          className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full border border-white/20 bg-black/60 hover:bg-black/90 text-[11px] sm:text-xs font-mono text-zinc-200 transition-all flex items-center gap-1.5 shadow-lg backdrop-blur-md"
-          title="Switch to Showcase Carousel (jesperlandberg.com replica)"
-        >
-          <span className="hidden sm:inline">Showcase</span>
-          <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
-        </button>
-
-        {/* Ambient FM / 7YNX Audio Toggle (Matching pradiplabs.dev top-right speaker) */}
-        <button
-          onClick={() => {
-            soundFX.playClick();
-            if (onToggleMusic) onToggleMusic();
-          }}
-          className={`p-2 sm:p-2.5 rounded-full border transition-all shadow-lg backdrop-blur-md ${
-            isMusicPlaying
-              ? 'bg-cyan-500/25 border-cyan-400 text-cyan-300 shadow-cyan-500/30'
-              : 'border-white/15 bg-black/60 text-slate-300 hover:text-white'
-          }`}
-          title={isMusicPlaying ? 'Mute 7YNX Audio' : 'Play 7YNX Audio'}
-        >
-          {isMusicPlaying ? <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400" /> : <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+          <SpectaclesIcon className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">{isXRayMode ? 'Glasses On' : 'X-Ray'}</span>
         </button>
 
         {/* Day Studio vs Cozy Night Toggle */}
         <button
           onClick={() => { soundFX.playClick(); setDayMode(!dayMode); }}
-          className="p-2 sm:p-2.5 rounded-full border border-white/15 bg-black/60 backdrop-blur-md text-amber-300 hover:text-white transition-all shadow-lg"
+          className="p-1.5 rounded-full text-amber-300 hover:text-white hover:bg-white/10 transition-all"
           title={dayMode ? 'Switch to Night Cozy Mode' : 'Switch to Day Studio Mode'}
         >
-          {dayMode ? <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+          {dayMode ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
         </button>
       </div>
 
@@ -2475,122 +2442,6 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           receiptAnimRef.current = 1.0;
         }}
       />
-
-      {/* Bottom Bar Pills (Exact Navigation from pradiplabs.dev - scrollable on mobile, centered on desktop) */}
-      {!isCardHeld && !focusedTarget && !isMonitorOpen && !isPhoneOpen && (
-        <div className="absolute bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:bottom-6 inset-x-0 z-30 flex items-center justify-start sm:justify-center gap-2 px-3 sm:px-4 pointer-events-auto animate-fade-in overflow-x-auto no-scrollbar py-1 scroll-smooth pb-[max(0.75rem,env(safe-area-inset-bottom))]" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}>
-          <button
-            onClick={() => {
-              soundFX.playClick();
-              focusObject('laptop');
-              setTimeout(() => {
-                if (onOpenMonitor) onOpenMonitor();
-                else setIsMonitorOpen(true);
-              }, 360);
-            }}
-            className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg shrink-0 ${
-              focusedTarget === 'laptop' || isMonitorOpen
-                ? 'bg-white text-slate-950 font-bold border-white'
-                : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
-            }`}
-          >
-            <span className="font-semibold text-white">Laptop</span>
-            <span className="hidden sm:inline text-slate-400">My websites</span>
-          </button>
-
-          <button
-            onClick={() => {
-              soundFX.playClick();
-              setIsDocketOpen(true);
-            }}
-            className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg shrink-0 ${
-              isDocketOpen
-                ? 'bg-white text-slate-950 font-bold border-white'
-                : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
-            }`}
-          >
-            <span className="font-semibold text-white">Tablet</span>
-            <span className="hidden sm:inline text-slate-400">Docket system</span>
-          </button>
-
-          <button
-            onClick={handleOpenPhone}
-            className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg shrink-0 ${
-              focusedTarget === 'phone' || isPhoneOpen
-                ? 'bg-white text-slate-950 font-bold border-white'
-                : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
-            }`}
-          >
-            <span className="font-semibold text-white">Phone</span>
-            <span className="hidden sm:inline text-slate-400">7YNX Chat & Audio</span>
-          </button>
-
-          <button
-            onClick={() => {
-              soundFX.playClick();
-              setIsStickyNotesOpen(true);
-            }}
-            className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg shrink-0 ${
-              isStickyNotesOpen
-                ? 'bg-yellow-400 text-slate-950 font-bold border-yellow-300'
-                : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
-            }`}
-          >
-            <StickyNote className="w-3.5 h-3.5 text-yellow-300" />
-            <span className="font-semibold text-white">Notes</span>
-            <span className="hidden sm:inline text-slate-400">Sticky notes</span>
-          </button>
-
-          <button
-            onClick={onOpenDiary}
-            className="px-3.5 py-2 rounded-full border border-white/15 bg-black/70 text-xs font-sans text-slate-300 hover:text-white hover:bg-black/90 transition-all flex items-center gap-2 backdrop-blur-md shadow-lg shrink-0"
-          >
-            <span className="text-amber-300">✎</span>
-            <span className="font-semibold text-white">Diary</span>
-            <span className="hidden sm:inline text-slate-400">Guestbook</span>
-          </button>
-
-          <button
-            onClick={() => {
-              soundFX.playClick();
-              setIsXRayMode((prev) => {
-                const next = !prev;
-                if (next) setSelectedXRayItem(XRAY_DESK_ITEMS[3]);
-                else setSelectedXRayItem(null);
-                return next;
-              });
-            }}
-            className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg shrink-0 ${
-              isXRayMode
-                ? 'bg-amber-400 text-black font-bold border-amber-300 shadow-amber-400/40'
-                : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
-            }`}
-          >
-            <SpectaclesIcon className="w-4 h-4 text-amber-400" />
-            <span className="font-semibold text-white">{isXRayMode ? 'Take off glasses' : "See how it's made"}</span>
-          </button>
-
-          <button
-            onClick={takeCard}
-            className={`px-3.5 py-2 rounded-full border text-xs font-sans transition-all flex items-center gap-2 backdrop-blur-md shadow-lg shrink-0 ${
-              isCardHeld
-                ? 'bg-white text-slate-950 font-bold border-white'
-                : 'bg-black/70 border-white/15 text-slate-300 hover:text-white hover:bg-black/90'
-            }`}
-          >
-            <span className="font-semibold text-white">Card</span>
-            <span className="hidden sm:inline text-slate-400">Take my card</span>
-          </button>
-
-          <button
-            onClick={onOpenAnatomy}
-            className="px-4 py-2 rounded-full border border-cyan-400/50 bg-cyan-500/20 text-xs font-mono font-bold text-cyan-300 hover:bg-cyan-500/30 transition-all flex items-center gap-2 backdrop-blur-md shadow-lg shadow-cyan-500/20 shrink-0"
-          >
-            <Layers className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Z Card Anatomy</span>
-          </button>
-        </div>
-      )}
 
       {/* Interactive Business Card Held Overlay (Matching pradiplabs.dev hC floating action dock) */}
       {isCardHeld && (

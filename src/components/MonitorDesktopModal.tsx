@@ -300,10 +300,11 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex h-10 items-center gap-2 rounded-full bg-white/95 px-4 text-[14px] font-medium text-[#1D1D1F] shadow-md ring-1 ring-black/10 backdrop-blur-xl transition-all hover:bg-white hover:scale-105 active:scale-95"
+          className="inline-flex h-9 sm:h-10 items-center gap-1.5 sm:gap-2 rounded-full bg-white/95 px-3 sm:px-4 text-[13px] sm:text-[14px] font-medium text-[#1D1D1F] shadow-md ring-1 ring-black/10 backdrop-blur-xl transition-all hover:bg-white active:scale-95"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back to the desk
+          <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <span className="hidden sm:inline">Back to the desk</span>
+          <span className="sm:hidden">Back</span>
         </button>
 
         <button
@@ -384,10 +385,10 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
             </div>
 
             {/* MacOS Top Menu Bar */}
-            <header className="relative z-20 flex h-8 shrink-0 items-center justify-between bg-white/60 px-4 text-[13px] backdrop-blur-xl border-b border-black/[0.06]">
-              <div className="flex items-center gap-5">
-                <span className="font-semibold tracking-tight text-zinc-900 flex items-center gap-1.5">
-                  <span className="inline-grid h-4.5 w-4.5 place-items-center rounded bg-[#2F5BEA] text-white text-[10px] font-black font-mono shadow-sm">
+            <header className="relative z-20 flex h-8 shrink-0 items-center justify-between bg-white/60 px-3 sm:px-4 text-[12px] sm:text-[13px] backdrop-blur-xl border-b border-black/[0.06]">
+              <div className="flex items-center gap-2.5 sm:gap-5">
+                <span className="font-semibold tracking-tight text-zinc-900 flex items-center gap-1 sm:gap-1.5">
+                  <span className="inline-grid h-4 w-4 sm:h-4.5 sm:w-4.5 place-items-center rounded bg-[#2F5BEA] text-white text-[9px] sm:text-[10px] font-black font-mono shadow-sm">
                     Z
                   </span>
                   <span>Z OS</span>
@@ -416,9 +417,10 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
               </div>
 
               {/* Right: Live Local City & Time */}
-              <div className="flex items-center gap-2 tabular-nums text-zinc-700 text-[12px] font-mono">
-                <Clock className="w-3.5 h-3.5 text-zinc-400" />
-                <span>Bengaluru {localTime || '3:30 am'}</span>
+              <div className="flex items-center gap-1.5 tabular-nums text-zinc-700 text-[11px] sm:text-[12px] font-mono">
+                <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-zinc-400" />
+                <span className="hidden xs:inline">Bengaluru </span>
+                <span>{localTime || '3:30 am'}</span>
               </div>
             </header>
 
@@ -851,17 +853,17 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
             </div>
 
             {/* Bottom Floating MacOS Dock */}
-            <div className="relative z-20 pb-3 flex justify-center">
-              <div className="flex items-end gap-2 rounded-[22px] bg-white/65 p-2 shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_10px_30px_-10px_rgba(0,0,0,0.25)] backdrop-blur-2xl">
+            <div className="relative z-20 pb-3 flex justify-center px-2">
+              <div className="flex items-end gap-1.5 sm:gap-2 rounded-[22px] bg-white/65 p-1.5 sm:p-2 shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_10px_30px_-10px_rgba(0,0,0,0.25)] backdrop-blur-2xl max-w-[calc(100vw-2.5rem)] overflow-x-auto no-scrollbar">
                 {/* Work Folder */}
                 <button
                   type="button"
                   onClick={() => setActiveTab('work')}
                   title="Work (8 Live Projects)"
-                  className="relative flex flex-col items-center transition-transform duration-200 ease-out hover:-translate-y-1.5 hover:scale-115 focus:outline-none"
+                  className="relative flex flex-col items-center transition-transform duration-200 ease-out hover:-translate-y-1.5 hover:scale-115 focus:outline-none shrink-0"
                 >
-                  <span className="grid h-10 w-10 place-items-center rounded-[20%] bg-[#2F5BEA] text-white shadow-sm ring-1 ring-black/5">
-                    <Folder className="h-5 w-5" />
+                  <span className="grid h-8 w-8 sm:h-10 sm:w-10 place-items-center rounded-[20%] bg-[#2F5BEA] text-white shadow-sm ring-1 ring-black/5">
+                    <Folder className="h-4 w-4 sm:h-5 sm:w-5" />
                   </span>
                   {activeTab === 'work' && (
                     <span className="w-1 h-1 rounded-full bg-zinc-800 mt-1" />
@@ -874,16 +876,16 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
                     type="button"
                     onClick={() => openProjectInBrowser(p)}
                     title={p.name}
-                    className="relative transition-transform duration-200 ease-out hover:-translate-y-1.5 hover:scale-115 focus:outline-none"
+                    className="relative transition-transform duration-200 ease-out hover:-translate-y-1.5 hover:scale-115 focus:outline-none shrink-0"
                   >
                     <span
-                      className="block h-10 w-10 rounded-[20%] overflow-hidden shadow-sm ring-1 ring-black/[0.08]"
+                      className="block h-8 w-8 sm:h-10 sm:w-10 rounded-[20%] overflow-hidden shadow-sm ring-1 ring-black/[0.08]"
                       style={{ background: p.tint }}
                     >
                       {p.cover ? (
                         <img src={p.cover} alt={p.name} className="h-full w-full object-cover" />
                       ) : (
-                        <span className="grid h-full place-items-center text-xs font-bold text-zinc-700">
+                        <span className="grid h-full place-items-center text-[10px] sm:text-xs font-bold text-zinc-700">
                           {p.name.slice(0, 2)}
                         </span>
                       )}
@@ -894,15 +896,15 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
                   </button>
                 ))}
 
-                <span className="mx-1 h-8 w-px self-center bg-black/10" aria-hidden="true" />
+                <span className="mx-0.5 sm:mx-1 h-6 sm:h-8 w-px self-center bg-black/10 shrink-0" aria-hidden="true" />
 
                 <button
                   type="button"
                   onClick={() => setActiveTab('about')}
                   title="About me"
-                  className="relative grid h-10 w-10 place-items-center rounded-[20%] bg-white/90 shadow-sm ring-1 ring-black/5 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-115"
+                  className="relative grid h-8 w-8 sm:h-10 sm:w-10 place-items-center rounded-[20%] bg-white/90 shadow-sm ring-1 ring-black/5 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-115 shrink-0"
                 >
-                  <User className="h-5 w-5 text-zinc-800" />
+                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-zinc-800" />
                   {activeTab === 'about' && (
                     <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-zinc-800" />
                   )}
@@ -912,9 +914,9 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
                   type="button"
                   onClick={() => setActiveTab('contact')}
                   title="Contact"
-                  className="relative grid h-10 w-10 place-items-center rounded-[20%] bg-[#2F5BEA] text-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-115"
+                  className="relative grid h-8 w-8 sm:h-10 sm:w-10 place-items-center rounded-[20%] bg-[#2F5BEA] text-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-115 shrink-0"
                 >
-                  <Mail className="h-5 w-5" />
+                  <Mail className="h-4 w-4 sm:h-5 sm:w-5" />
                   {activeTab === 'contact' && (
                     <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-white" />
                   )}
@@ -925,9 +927,9 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
                     type="button"
                     onClick={openResume}
                     title="Open Resume"
-                    className="grid h-10 w-10 place-items-center rounded-[20%] bg-emerald-600 text-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-115"
+                    className="grid h-8 w-8 sm:h-10 sm:w-10 place-items-center rounded-[20%] bg-emerald-600 text-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-115 shrink-0"
                   >
-                    <FileText className="h-5 w-5" />
+                    <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
                 )}
 
@@ -936,21 +938,21 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
                     type="button"
                     onClick={onOpenAnatomy}
                     title="Anatomy CAD Reveal"
-                    className="grid h-10 w-10 place-items-center rounded-[20%] bg-purple-600 text-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-115"
+                    className="grid h-8 w-8 sm:h-10 sm:w-10 place-items-center rounded-[20%] bg-purple-600 text-white shadow-sm ring-1 ring-black/5 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-115 shrink-0"
                   >
-                    <Layers className="h-5 w-5" />
+                    <Layers className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
                 )}
 
-                <span className="mx-0.5 h-8 w-px self-center bg-black/10" aria-hidden="true" />
+                <span className="mx-0.5 h-6 sm:h-8 w-px self-center bg-black/10 shrink-0" aria-hidden="true" />
 
                 <button
                   type="button"
                   onClick={onClose}
                   title="Back to Desk (Esc)"
-                  className="grid h-10 w-10 place-items-center rounded-[20%] bg-white/95 text-zinc-800 shadow-sm ring-1 ring-black/10 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-115"
+                  className="grid h-8 w-8 sm:h-10 sm:w-10 place-items-center rounded-[20%] bg-white/95 text-zinc-800 shadow-sm ring-1 ring-black/10 transition-transform duration-200 hover:-translate-y-1.5 hover:scale-115 shrink-0"
                 >
-                  <ArrowLeft className="h-5 w-5" />
+                  <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
               </div>
             </div>

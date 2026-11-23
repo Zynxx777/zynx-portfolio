@@ -801,10 +801,11 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
           type="button"
           autoFocus
           onClick={onClose}
-          className="inline-flex h-10 items-center gap-2 rounded-full bg-white/90 px-4 text-[15px] font-medium text-[#1D1D1F] shadow-sm ring-1 ring-black/5 backdrop-blur-xl transition-colors hover:bg-white"
+          className="inline-flex h-9 sm:h-10 items-center gap-1.5 sm:gap-2 rounded-full bg-white/90 px-3 sm:px-4 text-[13px] sm:text-[15px] font-medium text-[#1D1D1F] shadow-sm ring-1 ring-black/5 backdrop-blur-xl transition-colors hover:bg-white active:scale-95"
         >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Back to the desk
+          <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
+          <span className="hidden sm:inline">Back to the desk</span>
+          <span className="sm:hidden">Back</span>
         </button>
 
         <p className="hidden font-hand text-[22px] text-white/85 sm:block">

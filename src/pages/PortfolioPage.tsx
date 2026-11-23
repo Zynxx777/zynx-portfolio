@@ -213,14 +213,14 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
               Daily Arch Linux user experienced in package troubleshooting (<code className="text-zinc-300 font-mono text-xs">pacman</code> / <code className="text-zinc-300 font-mono text-xs">pactree</code>), responsive web development with React, Astro, and Tailwind CSS, and embedded hardware coursework.
             </p>
 
-            {/* Clear Action Hierarchy */}
-            <div className="flex flex-wrap items-center gap-3 pt-2">
+            {/* Clear Action Hierarchy (Responsive for mobile & desktop) */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-2">
               <button
                 onClick={() => scrollToSection("projects")}
-                className="px-6 py-3 rounded-full bg-white hover:bg-zinc-200 text-black font-mono text-xs font-bold tracking-wider transition-all duration-200 shadow-lg flex items-center gap-2 group"
+                className="px-4 py-2.5 sm:px-6 sm:py-3 rounded-full bg-white hover:bg-zinc-200 text-black font-mono text-[11px] sm:text-xs font-bold tracking-wider transition-all duration-200 shadow-lg flex items-center gap-2 group"
               >
                 <span>View Selected Work</span>
-                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
               </button>
 
               <button
@@ -228,9 +228,9 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                   soundFX.playClick();
                   openResume();
                 }}
-                className="px-5 py-3 rounded-full bg-white/[0.06] hover:bg-white/12 border border-white/15 hover:border-cyan-400/50 text-white font-mono text-xs tracking-wider transition-all duration-200 flex items-center gap-2"
+                className="px-3.5 py-2.5 sm:px-5 sm:py-3 rounded-full bg-white/[0.06] hover:bg-white/12 border border-white/15 hover:border-cyan-400/50 text-white font-mono text-[11px] sm:text-xs tracking-wider transition-all duration-200 flex items-center gap-1.5 sm:gap-2"
               >
-                <Download size={14} className="text-cyan-300" />
+                <Download size={13} className="text-cyan-300" />
                 <span>Résumé</span>
               </button>
 
@@ -239,17 +239,17 @@ export const PortfolioPage: React.FC<PortfolioPageProps> = ({
                   soundFX.playZoom();
                   setIsProfileDrawerOpen(true);
                 }}
-                className="px-5 py-3 rounded-full bg-transparent hover:bg-white/[0.05] border border-white/15 hover:border-white/30 text-zinc-300 hover:text-white font-mono text-xs tracking-wider transition-all duration-200 flex items-center gap-2"
+                className="px-3.5 py-2.5 sm:px-5 sm:py-3 rounded-full bg-transparent hover:bg-white/[0.05] border border-white/15 hover:border-white/30 text-zinc-300 hover:text-white font-mono text-[11px] sm:text-xs tracking-wider transition-all duration-200 flex items-center gap-1.5 sm:gap-2"
               >
-                <User size={14} className="text-zinc-400" />
+                <User size={13} className="text-zinc-400" />
                 <span>Profile Dossier</span>
               </button>
 
               <button
                 onClick={() => scrollToSection("contact")}
-                className="px-4 py-3 rounded-full text-zinc-400 hover:text-cyan-300 font-mono text-xs tracking-wider transition-colors flex items-center gap-2"
+                className="px-3 py-2.5 sm:px-4 sm:py-3 rounded-full text-zinc-400 hover:text-cyan-300 font-mono text-[11px] sm:text-xs tracking-wider transition-colors flex items-center gap-1.5 sm:gap-2"
               >
-                <Mail size={14} />
+                <Mail size={13} />
                 <span>Contact</span>
               </button>
             </div>

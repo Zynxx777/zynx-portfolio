@@ -456,7 +456,7 @@ export const PhoneExperience: React.FC<PhoneExperienceProps> = ({
                       soundFX.playClick();
                       setApp("home");
                     }}
-                    className="p-1.5 rounded-full text-white/60 hover:text-white hover:bg-white/10"
+                    className="p-2 min-h-9 min-w-9 flex items-center justify-center rounded-full text-white/70 hover:text-white hover:bg-white/10 active:scale-95"
                     title="Phone Home"
                   >
                     <Home className="w-4 h-4" />
@@ -464,7 +464,7 @@ export const PhoneExperience: React.FC<PhoneExperienceProps> = ({
                 )}
                 <button
                   onClick={onClose}
-                  className="p-1.5 rounded-full text-white/60 hover:text-white hover:bg-white/10"
+                  className="p-2 min-h-9 min-w-9 flex items-center justify-center rounded-full text-white/70 hover:text-white hover:bg-white/10 active:scale-95"
                   title="Close Phone (Esc)"
                 >
                   <X className="w-4 h-4" />

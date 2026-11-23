@@ -135,11 +135,12 @@ export const TabletDocketModal: React.FC<TabletDocketModalProps> = ({
       <div className="absolute top-4 left-4 z-10 flex items-center gap-3">
         <button
           onClick={() => { soundFX.playClick(); onClose(); }}
-          className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-mono backdrop-blur-md border border-white/15 transition shadow-lg"
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-mono backdrop-blur-md border border-white/15 transition shadow-lg active:scale-95"
           title="Back to desk (Esc)"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to the desk (Esc)</span>
+          <span className="hidden sm:inline">Back to the desk (Esc)</span>
+          <span className="sm:hidden">Back</span>
         </button>
       </div>
 

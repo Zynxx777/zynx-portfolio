@@ -161,10 +161,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
 
         {/* Right: ATS Resume & Mobile Trigger */}
-        <div className="pointer-events-auto flex items-center gap-2.5">
+        <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2.5">
           <button
             onClick={openResume}
-            className="px-3.5 sm:px-4 py-2 rounded-full backdrop-blur-2xl bg-white/[0.06] hover:bg-white hover:text-black border border-white/15 hover:border-white text-zinc-100 font-mono text-xs tracking-wider transition-all duration-200 flex items-center gap-2 shadow-lg"
+            className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full backdrop-blur-2xl bg-white/[0.06] hover:bg-white hover:text-black border border-white/15 hover:border-white text-zinc-100 font-mono text-[11px] sm:text-xs tracking-wider transition-all duration-200 flex items-center gap-1.5 sm:gap-2 shadow-lg active:scale-95"
             aria-label="Open ATS Resume"
           >
             <FileText size={13} className="text-cyan-400 group-hover:text-black" />
@@ -174,7 +174,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2.5 rounded-full backdrop-blur-2xl bg-[#0a0d18]/80 border border-white/10 text-zinc-300 hover:text-white hover:border-white/25 transition-all"
+            className="lg:hidden p-2 sm:p-2.5 rounded-full backdrop-blur-2xl bg-[#0a0d18]/80 border border-white/10 text-zinc-300 hover:text-white hover:border-white/25 transition-all active:scale-95"
             aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}
             aria-expanded={mobileMenuOpen}
           >
@@ -198,7 +198,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Mobile Drawer — slides down under the header bar */}
       {mobileMenuOpen && (
-        <div className="pointer-events-auto lg:hidden mt-2 mx-4 p-2 rounded-2xl backdrop-blur-2xl bg-[#090c16]/96 border border-white/15 shadow-2xl flex flex-col gap-1 animate-slideUp">
+        <div className="pointer-events-auto lg:hidden mt-2 mx-3 sm:mx-4 p-2 rounded-2xl backdrop-blur-2xl bg-[#090c16]/96 border border-white/15 shadow-2xl flex flex-col gap-1 animate-slideUp">
           {worlds.map((w) => {
             const Icon = w.icon;
             const isActive = currentView === w.id;
