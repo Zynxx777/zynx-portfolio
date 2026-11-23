@@ -3,8 +3,6 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { 
   ExternalLink,
-  Sun,
-  Moon,
   Printer,
   Sparkles,
   RotateCw,
@@ -496,7 +494,7 @@ const XRAY_TARGETS: { id: number; key: string; pos: THREE.Vector3 }[] = [
   { id: 3, key: 'tablet', pos: new THREE.Vector3(-0.32, 0.28, 0.04) },   // 3: Tablet (Docket system)
   { id: 4, key: 'laptop', pos: new THREE.Vector3(0.0, 0.35, -0.10) },    // 4: Laptop (MacBook)
   { id: 5, key: 'notes', pos: new THREE.Vector3(-0.16, 0.36, -0.09) },   // 5: Sticky Notes
-  { id: 6, key: 'card', pos: new THREE.Vector3(0.0, 0.19, 0.01) },       // 6: Z Business Card
+  { id: 6, key: 'card', pos: new THREE.Vector3(-0.04, 0.20, 0.22) },      // 6: Z Business Card
   { id: 7, key: 'diary', pos: new THREE.Vector3(0.14, 0.18, 0.18) },     // 7: Opened Guestbook Diary
   { id: 8, key: 'photo', pos: new THREE.Vector3(0.14, 0.23, -0.20) },    // 8: Picture Frame
   { id: 9, key: 'mug', pos: new THREE.Vector3(0.32, 0.21, 0.18) },       // 9: Coffee Mug (Front)
@@ -515,7 +513,6 @@ interface BedroomDesk3DProps {
   onToggleMusic?: () => void;
   isMusicPlaying?: boolean;
   dayMode?: boolean;
-  onSetDayMode?: (val: boolean | ((prev: boolean) => boolean)) => void;
 }
 
 export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
@@ -525,23 +522,14 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   onOpenMonitor,
   onOpenPhone,
   dayMode: controlledDayMode,
-  onSetDayMode,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const [hoveredObject, setHoveredObject] = useState<string | null>(null);
   const [lampOn, setLampOn] = useState(true);
-  const [internalDayMode, setInternalDayMode] = useState(false); // Day Studio vs Cozy Night
   const [isXRayMode, setIsXRayMode] = useState(false); // X-Ray mode activated exclusively when wearing specs
   const [isWearingSpecs, setIsWearingSpecs] = useState(false); // Wearable specs animation state
 
-  const dayMode = controlledDayMode !== undefined ? controlledDayMode : internalDayMode;
-  const setDayMode = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
-    if (onSetDayMode) {
-      onSetDayMode(val);
-    } else {
-      setInternalDayMode(val);
-    }
-  }, [onSetDayMode]);
+  const dayMode = controlledDayMode ?? false;
   const [printedReceipt, setPrintedReceipt] = useState(false);
   const [isMonitorOpen, setIsMonitorOpen] = useState(false);
   const [isPhoneOpen, setIsPhoneOpen] = useState(false);
@@ -2536,16 +2524,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         </div>
       )}
 
-      {/* Top HUD Controls: Day/Night Studio Toggle (Zero X-Ray buttons!) */}
-      <div className="absolute top-14 sm:top-3 right-3 z-30 flex items-center gap-1 rounded-full bg-black/60 border border-white/10 p-1 backdrop-blur-xl shadow-lg pointer-events-auto">
-        <button
-          onClick={() => { soundFX.playClick(); setDayMode(!dayMode); }}
-          className="p-1.5 rounded-full text-amber-300 hover:text-white hover:bg-white/10 transition-all"
-          title={dayMode ? 'Switch to Night Cozy Mode' : 'Switch to Day Studio Mode'}
-        >
-          {dayMode ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
-        </button>
-      </div>
+
 
       {/* ── FOCUSED OBJECT DEDICATED CLOSE & ACTION BAR (Accessible Bottom Center) ── */}
       {focusedTarget && !isCardHeld && (
@@ -2760,15 +2739,6 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           <p className="mt-2 text-xs md:text-sm max-w-xl mx-auto text-slate-600 font-sans">
             No 3D model files here: everything on this desk is built in code. Tap anything to see how.
           </p>
-          <div className="mt-2.5 pointer-events-auto inline-block">
-            <button
-              onClick={takeOffSpecs}
-              className="px-4 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-mono transition shadow-lg flex items-center gap-2 mx-auto"
-            >
-              <SpectaclesIcon className="w-3.5 h-3.5 text-amber-400" />
-              <span>Take off glasses (Esc)</span>
-            </button>
-          </div>
         </div>
       )}
 

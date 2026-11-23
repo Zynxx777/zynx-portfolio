@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ArrowLeft, ChevronLeft, ChevronRight, Type, PenTool, Eraser, Undo2, Trash2, Loader2, BookOpen } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { type DiaryEntry, INITIAL_DIARY_ENTRIES } from '../data/portfolioData';
+import { fetchLiveDiaryEntries, saveLiveDiaryEntry } from '../services/diaryCloud';
 
 interface DiaryModalProps {
   isOpen: boolean;
@@ -196,6 +197,28 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
       return INITIAL_DIARY_ENTRIES;
     }
   });
+  const [isCloudSynced, setIsCloudSynced] = useState(false);
+
+  // Live Cloud Sync Polling on mount & interval
+  useEffect(() => {
+    if (!isOpen) return;
+    let isMounted = true;
+
+    const loadCloud = async () => {
+      const res = await fetchLiveDiaryEntries();
+      if (isMounted && res.entries.length > 0) {
+        setEntries(res.entries);
+        setIsCloudSynced(res.isCloud);
+      }
+    };
+
+    loadCloud();
+    const timer = setInterval(loadCloud, 20000);
+    return () => {
+      isMounted = false;
+      clearInterval(timer);
+    };
+  }, [isOpen]);
 
   // Responsive page sizing & spread state
   const stageContainerRef = useRef<HTMLDivElement>(null);
@@ -243,15 +266,6 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
     }
   }, [isSpread, lastIndex]);
 
-  // Save entries to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('zynx_diary_entries', JSON.stringify(entries));
-    } catch {
-      // Ignore storage errors
-    }
-  }, [entries]);
-
   // Tool states for writer
   const [toolMode, setToolMode] = useState<'write' | 'draw'>('write');
   const [inkColor, setInkColor] = useState(INK_COLORS[0]);
@@ -268,7 +282,7 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
   const pointerStateRef = useRef<{ id: number; x: number; y: number; mx: number; my: number } | null>(null);
   const [canUndo, setCanUndo] = useState(false);
 
-  // 3D Smooth Page Flip Animation State
+  // 3D Realistic Curved Page Flip Animation State
   const [flippingState, setFlippingState] = useState<{
     dir: number; // 1: next, -1: prev
     progress: number; // 0 to 1
@@ -283,13 +297,15 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
     playPageTurnSound();
 
     const startTime = performance.now();
-    const duration = 400; // ms
+    const duration = 520; // Natural paper physics duration
 
     const step = (now: number) => {
       const elapsed = now - startTime;
       const rawProg = Math.min(1, elapsed / duration);
-      // Natural cubic bezier easing: cubic-bezier(0.25, 1, 0.5, 1)
-      const ease = 1 - Math.pow(1 - rawProg, 3);
+      // Realistic smooth S-curve cubic easing
+      const ease = rawProg < 0.5
+        ? 4 * rawProg * rawProg * rawProg
+        : 1 - Math.pow(-2 * rawProg + 2, 3) / 2;
       setFlippingState({ dir, progress: ease });
 
       if (rawProg < 1) {
@@ -440,7 +456,7 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
     setCanUndo(true);
   };
 
-  // Adding the user's page to the diary
+  // Adding the user's page to the diary & sync with cloud
   const handleAddPage = async () => {
     const textTrimmed = writerText.trim();
     let drawingDataUrl: string | undefined = undefined;
@@ -452,17 +468,19 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
     if (!textTrimmed && !drawingDataUrl) return;
 
     setStatusMessage({ kind: 'sending' });
-    await new Promise(r => setTimeout(r, 650));
 
-    const newEntry: DiaryEntry = {
-      id: `entry-${Date.now()}`,
-      date: formatDate(new Date()),
-      author: writerName.trim() || 'A Friendly Visitor',
-      message: textTrimmed,
+    const authorName = writerName.trim() || 'A Friendly Visitor';
+    const res = await saveLiveDiaryEntry({
+      author: authorName,
+      message: textTrimmed || undefined,
       drawingData: drawingDataUrl
-    };
+    });
 
-    setEntries(prev => [...prev, newEntry]);
+    if (res.entries) {
+      setEntries(res.entries);
+      setIsCloudSynced(true);
+    }
+
     setWriterText('');
     setWriterName('');
     const ctx = getCanvasContext();
@@ -472,12 +490,12 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
     setCanUndo(false);
 
     confetti({
-      particleCount: 45,
-      spread: 60,
+      particleCount: 55,
+      spread: 70,
       origin: { y: 0.6 }
     });
 
-    setStatusMessage({ kind: 'done', message: 'Your page is preserved in the diary. Thank you!' });
+    setStatusMessage({ kind: 'done', message: 'Your page is published live & synced to the cloud! Thank you.' });
     setTimeout(() => {
       setStatusMessage({ kind: 'idle' });
     }, 4000);
@@ -568,6 +586,12 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
           <span className="hidden sm:inline-block text-xs text-white/60 font-mono">
             ({entries.length} {entries.length === 1 ? 'entry' : 'entries'})
           </span>
+          <div className={`flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-mono shadow ${
+            isCloudSynced ? 'border-emerald-500/30 bg-emerald-950/60 text-emerald-300' : 'border-amber-500/30 bg-amber-950/60 text-amber-300'
+          }`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${isCloudSynced ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+            <span>{isCloudSynced ? 'Cloud Synced // Live' : 'Local Storage'}</span>
+          </div>
         </div>
 
         <button
@@ -667,7 +691,25 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
                   <div className="w-1.5 h-3 border-x border-white/20 rounded-full" />
                 </div>
 
-                {/* 3D Animated Page Flip Layer during page turn */}
+                {/* Dynamic Cast Shadow sweeping across static pages below */}
+                {flippingState && (
+                  <div
+                    className="absolute inset-y-0 pointer-events-none z-20 transition-opacity"
+                    style={{
+                      left: flippingState.progress < 0.5
+                        ? (flippingState.dir === 1 ? '50%' : 0)
+                        : (flippingState.dir === 1 ? 0 : '50%'),
+                      width: '50%',
+                      background: `linear-gradient(to ${
+                        flippingState.progress < 0.5
+                          ? (flippingState.dir === 1 ? 'right' : 'left')
+                          : (flippingState.dir === 1 ? 'left' : 'right')
+                      }, rgba(0,0,0,${Math.sin(flippingState.progress * Math.PI) * 0.42}), transparent)`
+                    }}
+                  />
+                )}
+
+                {/* 3D Animated Flexible Page Flip Layer during page turn */}
                 {flippingState && (
                   <div
                     className="absolute inset-y-0 pointer-events-none z-30"
@@ -680,27 +722,30 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
                         flippingState.dir === 1
                           ? -flippingState.progress * 180
                           : (1 - flippingState.progress) * 180
-                      }deg)`
+                      }deg) skewY(${Math.sin(flippingState.progress * Math.PI) * (flippingState.dir === 1 ? -2.4 : 2.4)}deg)`
                     }}
                   >
-                    {/* Front Face of Turning Leaf */}
+                    {/* Front Face of Turning Leaf with realistic paper flex sheen */}
                     <div
-                      className="absolute inset-0 overflow-hidden"
+                      className="absolute inset-0 overflow-hidden shadow-2xl"
                       style={{ backfaceVisibility: 'hidden' }}
                     >
                       {flippingState.dir === 1
                         ? renderPageItem(2 * spreadIndex, 'right')
                         : renderPageItem(2 * spreadIndex - 1, 'left')}
-                      {/* Dynamic shading sweep as page lifts */}
+                      {/* Dynamic lighting & curl gradient sweep as page lifts */}
                       <div
-                        className="absolute inset-0 pointer-events-none bg-gradient-to-r from-black/30 via-transparent to-black/10 transition-opacity"
-                        style={{ opacity: Math.sin(flippingState.progress * Math.PI) }}
+                        className="absolute inset-0 pointer-events-none transition-opacity"
+                        style={{
+                          background: 'linear-gradient(to right, rgba(0,0,0,0.32) 0%, rgba(255,255,255,0.2) 48%, rgba(0,0,0,0.18) 100%)',
+                          opacity: Math.sin(flippingState.progress * Math.PI)
+                        }}
                       />
                     </div>
 
-                    {/* Back Face of Turning Leaf (Verso) */}
+                    {/* Back Face of Turning Leaf (Verso) with realistic paper flex sheen */}
                     <div
-                      className="absolute inset-0 overflow-hidden"
+                      className="absolute inset-0 overflow-hidden shadow-2xl"
                       style={{
                         backfaceVisibility: 'hidden',
                         transform: 'rotateY(180deg)'
@@ -709,10 +754,13 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
                       {flippingState.dir === 1
                         ? renderPageItem(2 * spreadIndex + 1, 'left')
                         : renderPageItem(2 * spreadIndex - 2, 'right')}
-                      {/* Dynamic shading sweep as page lands */}
+                      {/* Dynamic lighting & curl gradient sweep as page lands */}
                       <div
-                        className="absolute inset-0 pointer-events-none bg-gradient-to-l from-black/30 via-transparent to-black/10 transition-opacity"
-                        style={{ opacity: Math.sin(flippingState.progress * Math.PI) }}
+                        className="absolute inset-0 pointer-events-none transition-opacity"
+                        style={{
+                          background: 'linear-gradient(to left, rgba(0,0,0,0.32) 0%, rgba(255,255,255,0.2) 48%, rgba(0,0,0,0.18) 100%)',
+                          opacity: Math.sin(flippingState.progress * Math.PI)
+                        }}
                       />
                     </div>
                   </div>
@@ -739,19 +787,35 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
                     className="absolute inset-0 pointer-events-none z-30"
                     style={{
                       transformStyle: 'preserve-3d',
-                      transformOrigin: flippingState.dir === 1 ? 'left center' : 'right center',
+                      transformOrigin: 'left center',
                       transform: `rotateY(${
                         flippingState.dir === 1
-                          ? -flippingState.progress * 120
-                          : (1 - flippingState.progress) * 120
-                      }deg) scale(${1 - Math.sin(flippingState.progress * Math.PI) * 0.05})`
+                          ? -flippingState.progress * 180
+                          : (1 - flippingState.progress) * 180
+                      }deg) skewY(${Math.sin(flippingState.progress * Math.PI) * -2.4}deg) scale(${1 - Math.sin(flippingState.progress * Math.PI) * 0.04})`
                     }}
                   >
-                    <div className="absolute inset-0 overflow-hidden" style={{ backfaceVisibility: 'hidden' }}>
+                    <div className="absolute inset-0 overflow-hidden shadow-2xl" style={{ backfaceVisibility: 'hidden' }}>
                       {renderPageItem(spreadIndex, 'right')}
                       <div
-                        className="absolute inset-0 pointer-events-none bg-gradient-to-r from-black/40 via-transparent to-black/20"
-                        style={{ opacity: Math.sin(flippingState.progress * Math.PI) }}
+                        className="absolute inset-0 pointer-events-none transition-opacity"
+                        style={{
+                          background: 'linear-gradient(to right, rgba(0,0,0,0.35) 0%, rgba(255,255,255,0.2) 50%, rgba(0,0,0,0.12) 100%)',
+                          opacity: Math.sin(flippingState.progress * Math.PI)
+                        }}
+                      />
+                    </div>
+                    <div
+                      className="absolute inset-0 overflow-hidden shadow-2xl"
+                      style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+                    >
+                      {renderPageItem(spreadIndex + (flippingState.dir === 1 ? 1 : -1), 'right')}
+                      <div
+                        className="absolute inset-0 pointer-events-none transition-opacity"
+                        style={{
+                          background: 'linear-gradient(to left, rgba(0,0,0,0.35) 0%, rgba(255,255,255,0.2) 50%, rgba(0,0,0,0.12) 100%)',
+                          opacity: Math.sin(flippingState.progress * Math.PI)
+                        }}
                       />
                     </div>
                   </div>

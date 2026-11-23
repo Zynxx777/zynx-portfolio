@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useCallback } from "react";
 import * as THREE from "three";
 import { soundFX } from "../utils/audioFX";
 import { Sun, Moon } from "lucide-react";
+import { drawCardFront, drawCardBack, CARD_WIDTH, CARD_HEIGHT } from "../utils/cardCanvas";
 import {
   HARDCODED_DEFAULT_ROOM_LAYOUT,
   ROOM_ZONES,
@@ -38,7 +39,7 @@ interface ImmersiveRoomProps {
 
 const ROOM_LAYOUT_KEY = "zynx-bedroom-room-layout-v2";
 const ROOM_DEFAULT_LAYOUT_KEY = "zynx-bedroom-room-default-layout-v2";
-const ROOM_DEFAULT_CAPTURE_KEY = "zynx-bedroom-room-default-capture-v3";
+const ROOM_DEFAULT_CAPTURE_KEY = "zynx-bedroom-room-default-capture-v4";
 const ROOM_LAYOUT_SHIFT_KEY = "zynx-bedroom-room-layout-workspace-shift-v2";
 
 // Helper: neon sign text canvas
@@ -433,7 +434,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       }
     };
 
-    const addClickable = (geo: THREE.BufferGeometry, mat: THREE.MeshStandardMaterial, zone: ZoneId, posterId?: RoomPosterId) => {
+    const addClickable = (geo: THREE.BufferGeometry, mat: THREE.Material | THREE.Material[], zone: ZoneId, posterId?: RoomPosterId) => {
       const mesh = new THREE.Mesh(geo, mat);
       registerZone(mesh, zone, posterId);
       return mesh;
@@ -457,7 +458,6 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       bookshelf:     new THREE.Vector3( 0,    4.5,  0   ),
       poster_wall:   new THREE.Vector3(-4.2,  5.6, -4.0 ),
       headphones:    new THREE.Vector3(-3.52, 2.9, -0.96),
-      printer:       new THREE.Vector3( 0,    0.48, 0   ),
       zoro:          new THREE.Vector3( 0,    0.60, 0   ),
       zcard:         new THREE.Vector3( 0,    0.20, 0   ),
       diary:         new THREE.Vector3( 0,    0.20, 0   ),
@@ -700,8 +700,8 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     let watchSecondHand: THREE.Mesh | null = null;
     let watchMinuteHand: THREE.Mesh | null = null;
     let watchHourHand: THREE.Mesh | null = null;
-    let receiptPaperMesh: THREE.Mesh | null = null;
-    let receiptAnimProgress = 0;
+    let roninRgbMat: THREE.MeshStandardMaterial | null = null;
+    let mouseRgbMat: THREE.MeshStandardMaterial | null = null;
     if (isBedroomTheme) {
       const curtainMat = new THREE.MeshStandardMaterial({ color: "#292b55", roughness: 0.94 });
       [-1, 1].forEach(side => {
@@ -1032,7 +1032,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     // A phone sits beside the keyboard. Both its body and screen travel as one piece.
     const phoneGroup = new THREE.Group();
     phoneGroup.name = "movable-desk-phone";
-    phoneGroup.position.set(-1.65, DESK_TOP_Y, 0.32);
+    phoneGroup.position.set(-1.50, DESK_TOP_Y, -0.15);
     const phoneBodyMat = new THREE.MeshStandardMaterial({ color: "#171521", metalness: 0.58, roughness: 0.28, emissive: "#000000", emissiveIntensity: 0.7 });
     const phoneBody = new THREE.Mesh(
       new THREE.BoxGeometry(0.28, 0.045, 0.54),
@@ -1096,58 +1096,212 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       scene.add(marker);
     });
 
-    // ── Typing keyboard: a separate compact mechanical 75% board ───────────
-    const typingBoardMat = new THREE.MeshStandardMaterial({ color: "#151827", roughness: 0.34, metalness: 0.56 });
-    const typingBoard = new THREE.Mesh(new THREE.BoxGeometry(2.06, 0.11, 0.72), typingBoardMat);
-    typingBoard.position.set(-0.05, 1.545, 0.035);
-    typingBoard.castShadow = true;
-    scene.add(typingBoard);
-    const keycapMats = [
-      new THREE.MeshStandardMaterial({ color: "#d5d9e4", roughness: 0.48 }),
-      new THREE.MeshStandardMaterial({ color: "#aeb7ca", roughness: 0.42 }),
-      new THREE.MeshStandardMaterial({ color: "#222b3d", roughness: 0.35, metalness: 0.2 }),
-    ];
+    // ── EvoFox Ronin X75 Plus Mechanical Keyboard (75% Compact, Rotary Knob, South-facing RGB) ──
+    const roninCaseMat = new THREE.MeshStandardMaterial({
+      color: "#181b28",
+      roughness: 0.32,
+      metalness: 0.48,
+      transparent: true,
+      opacity: 0.95
+    });
+    const roninBase = new THREE.Mesh(new THREE.BoxGeometry(2.02, 0.08, 0.74), roninCaseMat);
+    roninBase.position.set(-0.05, 1.53, 0.035);
+    roninBase.castShadow = true;
+    scene.add(roninBase);
+
+    // Gasket-mounted top plate bezel
+    const roninTopPlate = new THREE.Mesh(
+      new THREE.BoxGeometry(1.98, 0.03, 0.70),
+      new THREE.MeshStandardMaterial({ color: "#111420", roughness: 0.4, metalness: 0.6 })
+    );
+    roninTopPlate.position.set(-0.05, 1.575, 0.035);
+    scene.add(roninTopPlate);
+
+    // Metallic Knurled Rotary Volume Knob at Top-Right
+    const knobMat = new THREE.MeshStandardMaterial({
+      color: "#b4b9c5",
+      metalness: 0.92,
+      roughness: 0.22
+    });
+    const roninKnob = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.055, 24), knobMat);
+    roninKnob.position.set(0.85, 1.63, -0.23);
+    roninKnob.castShadow = true;
+    scene.add(roninKnob);
+
+    const knobRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.048, 0.006, 12, 24),
+      new THREE.MeshStandardMaterial({ color: "#00f0ff", emissive: "#00f0ff", emissiveIntensity: 1.2 })
+    );
+    knobRing.rotation.x = Math.PI / 2;
+    knobRing.position.set(0.85, 1.605, -0.23);
+    scene.add(knobRing);
+
+    // South-facing dynamic RGB backlighting diffuser
+    roninRgbMat = new THREE.MeshStandardMaterial({
+      color: "#9D4EDD",
+      emissive: "#9D4EDD",
+      emissiveIntensity: 2.4
+    });
+    const roninSouthRgb = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.016, 0.022), roninRgbMat);
+    roninSouthRgb.position.set(-0.05, 1.51, 0.385);
+    scene.add(roninSouthRgb);
+
+    const roninBackplateGlow = new THREE.Mesh(new THREE.BoxGeometry(1.90, 0.006, 0.64), roninRgbMat);
+    roninBackplateGlow.position.set(-0.05, 1.585, 0.035);
+    scene.add(roninBackplateGlow);
+
+    // Keycaps: PBT Double-shot with distinct Red Esc and Cyan Enter accents
+    const pbtAlphaMat = new THREE.MeshStandardMaterial({ color: "#222a3d", roughness: 0.38, metalness: 0.15 });
+    const pbtModMat = new THREE.MeshStandardMaterial({ color: "#141a27", roughness: 0.42, metalness: 0.2 });
+    const escKeyMat = new THREE.MeshStandardMaterial({ color: "#ef4444", roughness: 0.35, metalness: 0.1, emissive: "#ef4444", emissiveIntensity: 0.35 });
+    const enterKeyMat = new THREE.MeshStandardMaterial({ color: "#06b6d4", roughness: 0.35, metalness: 0.1, emissive: "#06b6d4", emissiveIntensity: 0.35 });
+
+    // Function Row (Esc + F1-F12)
+    const escKey = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.04, 0.082), escKeyMat);
+    escKey.position.set(-0.90, 1.62, -0.245);
+    escKey.castShadow = true;
+    scene.add(escKey);
+
+    for (let c = 0; c < 12; c++) {
+      const fKey = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.04, 0.082), pbtModMat);
+      fKey.position.set(-0.76 + c * 0.118, 1.62, -0.245);
+      fKey.castShadow = true;
+      scene.add(fKey);
+    }
+
+    // 4 Rows of typing keys
     for (let row = 0; row < 4; row++) {
       for (let col = 0; col < 15; col++) {
-        if (row === 3 && col > 4 && col < 10) continue;
-        const key = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.043, 0.092), keycapMats[(row * 3 + col) % keycapMats.length]);
-        key.position.set(-0.05 + (col - 7) * 0.128, 1.622, -0.205 + row * 0.115);
+        if (row === 2 && col === 13) {
+          const enterKey = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.04, 0.088), enterKeyMat);
+          enterKey.position.set(-0.05 + (col - 7) * 0.122 + 0.03, 1.62, -0.135 + row * 0.11);
+          enterKey.castShadow = true;
+          scene.add(enterKey);
+          continue;
+        }
+        if (row === 2 && col === 14) continue;
+        if (row === 3 && col >= 4 && col <= 9) continue;
+        const isNavCol = col >= 13;
+        const mat = isNavCol || col === 0 ? pbtModMat : pbtAlphaMat;
+        const key = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.04, 0.088), mat);
+        key.position.set(-0.05 + (col - 7) * 0.122, 1.62, -0.135 + row * 0.11);
         key.castShadow = true;
         scene.add(key);
       }
     }
-    const spacebar = new THREE.Mesh(new THREE.BoxGeometry(0.69, 0.045, 0.09), keycapMats[0]);
-    spacebar.position.set(-0.05, 1.622, 0.14);
-    scene.add(spacebar);
-    const kbLedMat = new THREE.MeshStandardMaterial({ color: "#9D4EDD", emissive: "#9D4EDD", emissiveIntensity: 2.2 });
-    const kbLed = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.018, 0.025), kbLedMat);
-    kbLed.position.set(-0.05, 1.505, 0.37);
-    scene.add(kbLed);
 
-    // A stitched desk mat and sculpted wireless mouse with split buttons and wheel.
+    // Spacebar
+    const spacebar = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.042, 0.088), pbtAlphaMat);
+    spacebar.position.set(-0.16, 1.62, 0.195);
+    spacebar.castShadow = true;
+    scene.add(spacebar);
+
+    // Dedicated Arrow Cluster (Bottom Right)
+    const arrowUp = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.038, 0.082), pbtModMat);
+    arrowUp.position.set(0.70, 1.62, 0.085);
+    arrowUp.castShadow = true;
+    scene.add(arrowUp);
+
+    [-1, 0, 1].forEach((_, idx) => {
+      const arrow = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.038, 0.082), pbtModMat);
+      arrow.position.set(0.58 + idx * 0.115, 1.62, 0.195);
+      arrow.castShadow = true;
+      scene.add(arrow);
+    });
+
+    // ── Stitched Desk Mat & Sculpted RGB Glowing Gaming Mouse ──
     const padMat = new THREE.MeshStandardMaterial({ color: "#111624", roughness: 0.92, metalness: 0.04 });
     const mousePad = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.014, 0.86), padMat);
     mousePad.position.set(1.55, 1.499, 0.06);
     scene.add(mousePad);
-    const padStitch = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.006, 0.012), new THREE.MeshBasicMaterial({ color: "#38bdf8" }));
+    const padStitch = new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.006, 0.012), new THREE.MeshBasicMaterial({ color: "#38bdf8" }));
     padStitch.position.set(1.55, 1.509, 0.47);
     scene.add(padStitch);
-    const mouseMat = new THREE.MeshStandardMaterial({ color: "#202838", roughness: 0.28, metalness: 0.42 });
-    const mouseBody = new THREE.Mesh(new THREE.SphereGeometry(0.17, 24, 16), mouseMat);
-    mouseBody.scale.set(0.84, 0.43, 1.22);
-    mouseBody.position.set(1.55, 1.57, 0.04);
+
+    // Sculpted Ergonomic Gaming Mouse Group with Flared Thumb Rest & RGB
+    const mouseGroup = new THREE.Group();
+    mouseGroup.position.set(1.55, 1.515, 0.06);
+
+    const mouseMat = new THREE.MeshStandardMaterial({
+      color: "#1c2232",
+      roughness: 0.25,
+      metalness: 0.52
+    });
+
+    // Ergonomic Palm Shell
+    const mouseBody = new THREE.Mesh(new THREE.SphereGeometry(0.16, 24, 16), mouseMat);
+    mouseBody.scale.set(0.82, 0.42, 1.25);
+    mouseBody.position.set(0, 0.055, 0);
     mouseBody.castShadow = true;
-    scene.add(mouseBody);
-    const mouseButtons = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.016, 0.13), new THREE.MeshStandardMaterial({ color: "#333e51", roughness: 0.3, metalness: 0.32 }));
-    mouseButtons.position.set(1.55, 1.636, -0.09);
-    scene.add(mouseButtons);
-    const mouseWheel = new THREE.Mesh(new THREE.CylinderGeometry(0.027, 0.027, 0.06, 12), new THREE.MeshStandardMaterial({ color: "#8eeaff", metalness: 0.6, roughness: 0.25 }));
-    mouseWheel.rotation.z = Math.PI / 2;
-    mouseWheel.position.set(1.55, 1.652, -0.035);
-    scene.add(mouseWheel);
-    const mouseRgb = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.012, 0.23), new THREE.MeshBasicMaterial({ color: "#c084fc" }));
-    mouseRgb.position.set(1.55, 1.53, 0.14);
-    scene.add(mouseRgb);
+    mouseGroup.add(mouseBody);
+
+    // Flared Thumb Wing on Left Side
+    const thumbRest = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.07, 0.18, 16),
+      mouseMat
+    );
+    thumbRest.rotation.x = Math.PI / 2;
+    thumbRest.scale.set(0.7, 1.2, 0.35);
+    thumbRest.position.set(-0.11, 0.02, 0.03);
+    mouseGroup.add(thumbRest);
+
+    // Dual Thumb Buttons (Forward & Back)
+    const thumbBtnMat = new THREE.MeshStandardMaterial({ color: "#0f172a", roughness: 0.3, metalness: 0.6 });
+    const thumbBtn1 = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.018, 0.045), thumbBtnMat);
+    thumbBtn1.position.set(-0.125, 0.052, -0.01);
+    mouseGroup.add(thumbBtn1);
+    const thumbBtn2 = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.018, 0.045), thumbBtnMat);
+    thumbBtn2.position.set(-0.125, 0.052, 0.045);
+    mouseGroup.add(thumbBtn2);
+
+    // Left & Right Primary Click Buttons with Center Groove
+    const btnMat = new THREE.MeshStandardMaterial({ color: "#252d40", roughness: 0.28, metalness: 0.45 });
+    const leftBtn = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.018, 0.125), btnMat);
+    leftBtn.position.set(-0.042, 0.088, -0.115);
+    leftBtn.rotation.x = 0.12;
+    mouseGroup.add(leftBtn);
+
+    const rightBtn = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.018, 0.125), btnMat);
+    rightBtn.position.set(0.042, 0.088, -0.115);
+    rightBtn.rotation.x = 0.12;
+    mouseGroup.add(rightBtn);
+
+    // Illuminated RGB Scroll Wheel & Tread
+    mouseRgbMat = new THREE.MeshStandardMaterial({
+      color: "#00f0ff",
+      emissive: "#00f0ff",
+      emissiveIntensity: 2.2
+    });
+    const scrollWheel = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.038, 16), mouseRgbMat);
+    scrollWheel.rotation.z = Math.PI / 2;
+    scrollWheel.position.set(0, 0.10, -0.065);
+    mouseGroup.add(scrollWheel);
+
+    const scrollTread = new THREE.Mesh(
+      new THREE.TorusGeometry(0.028, 0.005, 8, 20),
+      new THREE.MeshStandardMaterial({ color: "#090d16", roughness: 0.9 })
+    );
+    scrollTread.rotation.y = Math.PI / 2;
+    scrollTread.position.set(0, 0.10, -0.065);
+    mouseGroup.add(scrollTread);
+
+    // 360-degree Base RGB Light-Pipe Ring
+    const mouseRgbRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.13, 0.009, 8, 28),
+      mouseRgbMat
+    );
+    mouseRgbRing.rotation.x = Math.PI / 2;
+    mouseRgbRing.scale.set(0.85, 1.25, 1.0);
+    mouseRgbRing.position.set(0, 0.012, 0);
+    mouseGroup.add(mouseRgbRing);
+
+    // Glowing Stealth Logo on Palm Arch
+    const mouseLogo = new THREE.Mesh(new THREE.PlaneGeometry(0.035, 0.035), mouseRgbMat);
+    mouseLogo.rotation.x = -Math.PI / 2 + 0.35;
+    mouseLogo.position.set(0, 0.096, 0.075);
+    mouseGroup.add(mouseLogo);
+
+    scene.add(mouseGroup);
 
     // ── Compact audio interface for the synth and broadcast mic ─────────────
     const interfaceMat = new THREE.MeshStandardMaterial({ color: "#191d2a", roughness: 0.3, metalness: 0.7 });
@@ -1177,38 +1331,38 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     // ── Broadcast microphone on a small desktop stand ──────────────────────
     const micStandMat = new THREE.MeshStandardMaterial({ color: "#202634", metalness: 0.76, roughness: 0.26 });
     const micBase = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.2, 0.055, 24), micStandMat);
-    micBase.position.set(2.84, 1.52, 0.1);
+    micBase.position.set(2.84, 1.52, -0.40);
     scene.add(micBase);
     const micStem = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.035, 0.39, 16), micStandMat);
-    micStem.position.set(2.84, 1.735, 0.1);
+    micStem.position.set(2.84, 1.735, -0.40);
     scene.add(micStem);
     const micBoom = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 0.32, 12), micStandMat);
     micBoom.rotation.z = Math.PI / 2;
-    micBoom.position.set(2.84, 1.94, 0.1);
+    micBoom.position.set(2.84, 1.94, -0.40);
     scene.add(micBoom);
     const micYoke = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.018, 8, 24, Math.PI), micStandMat);
     micYoke.rotation.z = Math.PI / 2;
-    micYoke.position.set(2.84, 2.03, 0.1);
+    micYoke.position.set(2.84, 2.03, -0.40);
     scene.add(micYoke);
     const micMat = new THREE.MeshStandardMaterial({ color: "#11151d", metalness: 0.54, roughness: 0.3, emissive: "#111722", emissiveIntensity: 0.24 });
     const micBody = addClickable(new THREE.CapsuleGeometry(0.078, 0.3, 6, 16), micMat, "audio_rig");
     micBody.rotation.z = Math.PI / 2;
-    micBody.position.set(2.84, 2.075, 0.1);
+    micBody.position.set(2.84, 2.075, -0.40);
     scene.add(micBody);
     const micGrille = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.078, 0.115, 20), new THREE.MeshStandardMaterial({ color: "#555d69", metalness: 0.8, roughness: 0.35 }));
     micGrille.rotation.z = Math.PI / 2;
-    micGrille.position.set(2.99, 2.075, 0.1);
+    micGrille.position.set(2.99, 2.075, -0.40);
     scene.add(micGrille);
     for (let i = 0; i < 5; i++) {
       const grilleLine = new THREE.Mesh(new THREE.TorusGeometry(0.077, 0.003, 4, 24), new THREE.MeshBasicMaterial({ color: "#aeb7c4" }));
       grilleLine.rotation.y = Math.PI / 2;
-      grilleLine.position.set(2.96 + i * 0.018, 2.075, 0.1);
+      grilleLine.position.set(2.96 + i * 0.018, 2.075, -0.40);
       scene.add(grilleLine);
     }
     const micCableCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(2.65, 2.04, 0.1),
-      new THREE.Vector3(2.54, 1.94, 0.16),
-      new THREE.Vector3(2.58, 1.57, -0.3),
+      new THREE.Vector3(2.65, 2.04, -0.40),
+      new THREE.Vector3(2.54, 1.94, -0.44),
+      new THREE.Vector3(2.58, 1.57, -0.55),
       new THREE.Vector3(2.25, 1.56, -0.73),
       new THREE.Vector3(2.05, 1.57, -0.82),
     ]);
@@ -1313,7 +1467,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
 
     // A small warm task lamp is lit only in night mode and moves with the desk.
     deskLamp = new THREE.Group();
-    deskLamp.position.set(-3.72, 0, 0.45);
+    deskLamp.position.set(-3.65, 0, -0.10);
     const deskLampMetal = new THREE.MeshStandardMaterial({ color: "#5c667c", metalness: 0.76, roughness: 0.24 });
     const deskLampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.19, 0.055, 20), deskLampMetal);
     deskLampBase.position.y = 1.52;
@@ -1381,27 +1535,27 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     // ── Coffee Mug & Desk Plant ─────────────────────────────────────────────
     const mugMat = new THREE.MeshStandardMaterial({ color: "#1a1a30", roughness: 0.5 });
     const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.055, 0.15, 16), mugMat);
-    mug.position.set(-3.25, 1.575, 0.5);
+    mug.position.set(-3.20, 1.575, 0.48);
     scene.add(mug);
 
     const mugGlow = new THREE.PointLight("#ff8844", 0.6, 0.8);
-    mugGlow.position.set(-3.25, 1.75, 0.5);
+    mugGlow.position.set(-3.20, 1.75, 0.48);
     scene.add(mugGlow);
 
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.065, 0.1, 10), new THREE.MeshStandardMaterial({ color: "#3a1800", roughness: 0.9 }));
-    pot.position.set(3.2, 1.55, 0.54);
+    pot.position.set(3.40, 1.55, 0.50);
     scene.add(pot);
 
     const plantMesh = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshStandardMaterial({ color: "#1a5c1a", roughness: 0.9 }));
     plantMesh.scale.set(1, 0.7, 1);
-    plantMesh.position.set(3.2, 1.67, 0.54);
+    plantMesh.position.set(3.40, 1.67, 0.50);
     scene.add(plantMesh);
 
     // ── Newly Integrated PradipLabs Desk Artifacts ──────────────────────────
-    // 1. Precision Analog Chronometer Watch on Ergonomic Display Stand
+    // 1. Precision Analog Chronometer Watch on Ergonomic Display Stand (Replaced Printer)
     const zoroGroup = new THREE.Group();
     zoroGroup.name = "movable-chrono-watch";
-    zoroGroup.position.set(-3.65, DESK_TOP_Y, 0.42);
+    zoroGroup.position.set(-2.55, DESK_TOP_Y, 0.42);
 
     // Ergonomic Midnight Display Stand Base
     const chronoStandMat = new THREE.MeshStandardMaterial({
@@ -1547,67 +1701,146 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     zoroGroup.add(watchHead);
     scene.add(zoroGroup);
 
-    // 2. Thermal POS Receipt Printer with paper
-    const printerGroup = new THREE.Group();
-    printerGroup.name = "movable-receipt-printer";
-    printerGroup.position.set(-2.55, DESK_TOP_Y, 0.42);
+    // 2. Smart Titanium Business Card & Chamfered Walnut Dock
+    const cardFrontCanvas = document.createElement("canvas");
+    cardFrontCanvas.width = CARD_WIDTH;
+    cardFrontCanvas.height = CARD_HEIGHT;
+    const cfCtx = cardFrontCanvas.getContext("2d");
 
-    const printerBody = addClickable(new THREE.BoxGeometry(0.55, 0.42, 0.58), new THREE.MeshStandardMaterial({ color: "#f3f4f6", roughness: 0.35 }), "printer");
-    printerBody.position.y = 0.21;
-    printerGroup.add(printerBody);
+    const cardBackCanvas = document.createElement("canvas");
+    cardBackCanvas.width = CARD_WIDTH;
+    cardBackCanvas.height = CARD_HEIGHT;
+    const cbCtx = cardBackCanvas.getContext("2d");
 
-    const printerSlot = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.035, 0.06), new THREE.MeshStandardMaterial({ color: "#111827" }));
-    printerSlot.position.set(0, 0.425, -0.08);
-    printerGroup.add(printerSlot);
+    const cardFrontTex = new THREE.CanvasTexture(cardFrontCanvas);
+    cardFrontTex.colorSpace = THREE.SRGBColorSpace;
+    cardFrontTex.anisotropy = 8;
 
-    const printerLed = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), new THREE.MeshBasicMaterial({ color: "#10b981" }));
-    printerLed.position.set(0.18, 0.43, 0.18);
-    printerGroup.add(printerLed);
+    const cardBackTex = new THREE.CanvasTexture(cardBackCanvas);
+    cardBackTex.colorSpace = THREE.SRGBColorSpace;
+    cardBackTex.anisotropy = 8;
 
-    const paperGeo = new THREE.PlaneGeometry(0.36, 0.68, 8, 8);
-    const paperMat = new THREE.MeshBasicMaterial({ color: "#fafaf7", side: THREE.DoubleSide });
-    const receiptPaper = new THREE.Mesh(paperGeo, paperMat);
-    receiptPaper.position.set(0, 0.43, 0.15);
-    receiptPaper.rotation.x = Math.PI / 3;
-    receiptPaper.scale.set(1, 0.01, 1);
-    printerGroup.add(receiptPaper);
-    receiptPaperMesh = receiptPaper;
-    scene.add(printerGroup);
+    const cardAvatarImg = new Image();
+    cardAvatarImg.crossOrigin = "anonymous";
+    cardAvatarImg.src = "/images/profile_avatar.webp";
+    cardAvatarImg.onload = () => {
+      if (cfCtx && cbCtx) {
+        drawCardFront(cfCtx, cardAvatarImg);
+        drawCardBack(cbCtx, cardAvatarImg);
+        cardFrontTex.needsUpdate = true;
+        cardBackTex.needsUpdate = true;
+      }
+    };
+    if (cfCtx && cbCtx) {
+      drawCardFront(cfCtx, null);
+      drawCardBack(cbCtx, null);
+      cardFrontTex.needsUpdate = true;
+      cardBackTex.needsUpdate = true;
+    }
+    if (typeof document !== "undefined" && document.fonts) {
+      document.fonts.load("600 62px Inter").then(() => {
+        if (cfCtx && cbCtx) {
+          drawCardFront(cfCtx, cardAvatarImg.complete ? cardAvatarImg : null);
+          drawCardBack(cbCtx, cardAvatarImg.complete ? cardAvatarImg : null);
+          cardFrontTex.needsUpdate = true;
+          cardBackTex.needsUpdate = true;
+        }
+      }).catch(() => {});
+    }
 
-    // 3. Flagship Z Card v0.1 (Clickable direct entry to Anatomy Reveal)
     const zcardGroup = new THREE.Group();
     zcardGroup.name = "movable-zcard-hardware";
-    zcardGroup.position.set(-0.85, DESK_TOP_Y + 0.01, 0.65);
+    zcardGroup.position.set(-1.35, DESK_TOP_Y, 0.55);
     zcardGroup.rotation.y = 0.15;
 
-    const zcardBody = addClickable(
-      new THREE.BoxGeometry(0.48, 0.016, 0.30),
-      new THREE.MeshStandardMaterial({ color: "#06090e", roughness: 0.22, metalness: 0.4 }),
+    // Solid Chamfered Walnut Dock Base
+    const walnutDockMat = new THREE.MeshStandardMaterial({
+      color: "#5a3d28",
+      roughness: 0.55,
+      metalness: 0.05
+    });
+    const walnutDock = addClickable(
+      new THREE.BoxGeometry(0.56, 0.045, 0.22),
+      walnutDockMat,
       "zcard"
     );
-    zcardGroup.add(zcardBody);
+    walnutDock.position.set(0, 0.0225, 0);
+    walnutDock.castShadow = true;
+    walnutDock.receiveShadow = true;
+    zcardGroup.add(walnutDock);
 
-    const zcardChip = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.08, 0.06),
-      new THREE.MeshStandardMaterial({ color: "#eab308", roughness: 0.2, metalness: 0.95 })
+    // Dark walnut recess slot
+    const dockSlot = new THREE.Mesh(
+      new THREE.BoxGeometry(0.48, 0.02, 0.04),
+      new THREE.MeshStandardMaterial({ color: "#22150d", roughness: 0.85 })
     );
-    zcardChip.rotation.x = -Math.PI / 2;
-    zcardChip.position.set(-0.14, 0.01, -0.01);
-    zcardGroup.add(zcardChip);
+    dockSlot.position.set(0, 0.04, -0.01);
+    zcardGroup.add(dockSlot);
 
-    const zcardScreen = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.24, 0.12),
-      new THREE.MeshBasicMaterial({ color: "#00f0ff" })
+    // Background resting card stack (titanium cards behind)
+    const stackEdgeMat = new THREE.MeshStandardMaterial({
+      color: "#2a2a2e",
+      metalness: 0.85,
+      roughness: 0.3
+    });
+    for (let i = 0; i < 3; i++) {
+      const bgCard = new THREE.Mesh(
+        new THREE.BoxGeometry(0.46, 0.27, 0.008),
+        stackEdgeMat
+      );
+      bgCard.position.set(0, 0.14 - (i + 1) * 0.004, -0.01 - (i + 1) * 0.012);
+      bgCard.rotation.x = -0.22;
+      bgCard.castShadow = true;
+      zcardGroup.add(bgCard);
+    }
+
+    // Active Titanium Business Card Mesh with multi-face materials
+    const titaniumEdgeMat = new THREE.MeshStandardMaterial({
+      color: "#3a3a3e",
+      metalness: 0.9,
+      roughness: 0.25
+    });
+    const cardFrontMat = new THREE.MeshStandardMaterial({
+      map: cardFrontTex,
+      metalness: 0.65,
+      roughness: 0.32,
+      emissive: "#ffffff",
+      emissiveMap: cardFrontTex,
+      emissiveIntensity: 0.15
+    });
+    const cardBackMat = new THREE.MeshStandardMaterial({
+      map: cardBackTex,
+      metalness: 0.65,
+      roughness: 0.32,
+      emissive: "#ffffff",
+      emissiveMap: cardBackTex,
+      emissiveIntensity: 0.15
+    });
+
+    const cardMats = [
+      titaniumEdgeMat,
+      titaniumEdgeMat,
+      titaniumEdgeMat,
+      titaniumEdgeMat,
+      cardFrontMat, // +Z front
+      cardBackMat   // -Z back
+    ];
+    const interactiveCard = addClickable(
+      new THREE.BoxGeometry(0.46, 0.27, 0.009),
+      cardMats,
+      "zcard"
     );
-    zcardScreen.rotation.x = -Math.PI / 2;
-    zcardScreen.position.set(0.08, 0.01, 0.02);
-    zcardGroup.add(zcardScreen);
+    interactiveCard.position.set(0, 0.145, 0.005);
+    interactiveCard.rotation.x = -0.22;
+    interactiveCard.castShadow = true;
+    interactiveCard.receiveShadow = true;
+    zcardGroup.add(interactiveCard);
     scene.add(zcardGroup);
 
-    // 4. Guestbook Diary
+    // 3. Guestbook Diary
     const diaryGroup = new THREE.Group();
     diaryGroup.name = "movable-guestbook-diary";
-    diaryGroup.position.set(2.45, DESK_TOP_Y + 0.01, 0.55);
+    diaryGroup.position.set(2.35, DESK_TOP_Y + 0.01, 0.45);
     diaryGroup.rotation.y = -0.2;
 
     const diaryBook = addClickable(
@@ -1638,19 +1871,13 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     registerFurniture("cpu", "PC tower", pcGroup, "table", { x: 3.65, z: -0.62 }, DESK_BOUNDS, {
       halfX: 0.49, halfZ: 0.59, centerZ: 0,
     });
-    registerFurniture("phone", "Desk phone", phoneGroup, "table", { x: -1.65, z: 0.32 }, DESK_BOUNDS, {
+    registerFurniture("phone", "Desk phone", phoneGroup, "table", { x: -1.50, z: -0.15 }, DESK_BOUNDS, {
       halfX: 0.16, halfZ: 0.29, centerZ: 0,
     });
-    registerFurniture("printer", "Thermal POS printer", printerGroup, "table", { x: -2.55, z: 0.42 }, DESK_BOUNDS, {
-      halfX: 0.32, halfZ: 0.35, centerZ: 0
+    registerFurniture("zcard", "Z Card v0.1", zcardGroup, "table", { x: -1.35, z: 0.55 }, DESK_BOUNDS, {
+      halfX: 0.28, halfZ: 0.16, centerZ: 0
     });
-    registerFurniture("zoro", "Precision Chrono Watch", zoroGroup, "table", { x: -3.65, z: 0.42 }, DESK_BOUNDS, {
-      halfX: 0.22, halfZ: 0.22, centerZ: 0
-    });
-    registerFurniture("zcard", "Z Card v0.1", zcardGroup, "table", { x: -0.85, z: 0.65 }, DESK_BOUNDS, {
-      halfX: 0.26, halfZ: 0.18, centerZ: 0
-    });
-    registerFurniture("diary", "Guestbook diary", diaryGroup, "table", { x: 2.45, z: 0.55 }, DESK_BOUNDS, {
+    registerFurniture("diary", "Guestbook diary", diaryGroup, "table", { x: 2.35, z: 0.45 }, DESK_BOUNDS, {
       halfX: 0.40, halfZ: 0.48, centerZ: 0
     });
 
@@ -2360,10 +2587,14 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     } catch {
       // Layout migration is optional when browser storage is disabled.
     }
+    delete (defaultLayout as any).printer;
+    delete (savedLayout as any).printer;
+    delete (defaultLayout as any).zoro;
+    delete (savedLayout as any).zoro;
     let shouldCaptureCurrentDefault = !hasRoomDefault;
     try {
       shouldCaptureCurrentDefault = shouldCaptureCurrentDefault
-        || window.localStorage.getItem(ROOM_DEFAULT_CAPTURE_KEY) !== "3";
+        || window.localStorage.getItem(ROOM_DEFAULT_CAPTURE_KEY) !== "4";
     } catch {
       shouldCaptureCurrentDefault = true;
     }
@@ -2371,6 +2602,10 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       // Promote the user's most recently saved room arrangement to the new reset
       // point once, including furniture from the other theme and new desk pieces.
       defaultLayout = { ...HARDCODED_DEFAULT_ROOM_LAYOUT, ...defaultLayout, ...savedLayout };
+      delete (defaultLayout as any).printer;
+      delete (savedLayout as any).printer;
+      delete (defaultLayout as any).zoro;
+      delete (savedLayout as any).zoro;
       furniture.forEach(item => {
         defaultLayout[item.id] = {
           x: item.group.position.x,
@@ -2382,7 +2617,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       hasRoomDefault = true;
       try {
         window.localStorage.setItem(ROOM_DEFAULT_LAYOUT_KEY, JSON.stringify(defaultLayout));
-        window.localStorage.setItem(ROOM_DEFAULT_CAPTURE_KEY, "3");
+        window.localStorage.setItem(ROOM_DEFAULT_CAPTURE_KEY, "4");
       } catch {
         // The refreshed default still works for this session if storage is disabled.
       }
@@ -2708,11 +2943,6 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         onOpenDiaryRef.current?.();
         return;
       }
-      if (zone === "printer") {
-        soundFX.playClick();
-        receiptAnimProgress = 1.0;
-        return;
-      }
 
       // If clicking synth keyboard, trigger polyphonic synthesizer chord
       if (zone === "audio_rig") {
@@ -2735,6 +2965,8 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     };
 
     const onClick = (e: MouseEvent) => {
+      // Ignore click if cursor was dragged (prevents accidental trigger / mistouch on drag release)
+      if (mouseDragDistance > 6) return;
       setMouseFromEvent(e);
       handleInteractAtMouse();
     };
@@ -2755,6 +2987,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     let isDragging = false;
     let orbitTargetSwitched = false;
     let prevDrag = { x: 0, y: 0 };
+    let mouseDragDistance = 0;
     const spherical = new THREE.Spherical();
 
     // ── Mobile Touch Interaction (1-Finger Orbit, 2-Finger Pinch Zoom, Tap Interaction) ──
@@ -2908,6 +3141,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     };
 
     const onMouseDown = (e: MouseEvent) => {
+      mouseDragDistance = 0;
       if (editModeRef.current) {
         if (e.button === 1) {
           spherical.setFromVector3(camera.position.clone().sub(targetLookAt.current));
@@ -2990,6 +3224,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       }
       const dx = e.clientX - prevDrag.x;
       const dy = e.clientY - prevDrag.y;
+      mouseDragDistance += Math.hypot(dx, dy);
       prevDrag = { x: e.clientX, y: e.clientY };
 
       spherical.theta -= dx * 0.0055;
@@ -3101,8 +3336,23 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       if (watchSecondHand) watchSecondHand.rotation.z = -sec * (Math.PI / 30);
       if (watchMinuteHand) watchMinuteHand.rotation.z = -min * (Math.PI / 30);
       if (watchHourHand) watchHourHand.rotation.z = -hr * (Math.PI / 6);
-      if (receiptPaperMesh && receiptAnimProgress > 0.01) {
-        receiptPaperMesh.scale.y = THREE.MathUtils.lerp(receiptPaperMesh.scale.y, 1.0, 0.08);
+      // Dynamic South-facing & Gaming Mouse RGB spectrum wave
+      if (roninRgbMat || mouseRgbMat) {
+        const rgbTime = Date.now() * 0.0015;
+        const r1 = Math.sin(rgbTime) * 0.5 + 0.5;
+        const g1 = Math.sin(rgbTime + (2 * Math.PI) / 3) * 0.5 + 0.5;
+        const b1 = Math.sin(rgbTime + (4 * Math.PI) / 3) * 0.5 + 0.5;
+        if (roninRgbMat) {
+          roninRgbMat.color.setRGB(r1, g1, b1);
+          roninRgbMat.emissive.setRGB(r1, g1, b1);
+        }
+        if (mouseRgbMat) {
+          const r2 = Math.sin(rgbTime + 1.2) * 0.5 + 0.5;
+          const g2 = Math.sin(rgbTime + 1.2 + (2 * Math.PI) / 3) * 0.5 + 0.5;
+          const b2 = Math.sin(rgbTime + 1.2 + (4 * Math.PI) / 3) * 0.5 + 0.5;
+          mouseRgbMat.color.setRGB(r2, g2, b2);
+          mouseRgbMat.emissive.setRGB(r2, g2, b2);
+        }
       }
 
       // 1. Decorative audio spectrum animation for the music workstation.
@@ -3151,8 +3401,9 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         pos.needsUpdate = true;
       }
 
-      // 4. Smooth Camera Lerp
-      camera.position.lerp(targetCamPos.current, 0.055);
+      // 4. Smooth Camera Lerp (Snappy 0.22 while actively dragging/orbiting to eliminate stickiness)
+      const camLerp = (isDragging || touchMode === "orbit") ? 0.22 : 0.055;
+      camera.position.lerp(targetCamPos.current, camLerp);
       camera.lookAt(targetLookAt.current);
       const viewVector = camera.position.clone().sub(targetLookAt.current);
       const viewingFromSide = Math.abs(viewVector.x) > Math.abs(viewVector.z) * 0.9;
@@ -3220,10 +3471,11 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       }
 
       // 7. Keyboard RGB Cycle
-      const kbHue = isBedroomTheme ? 0.76 : (t * 0.1 + 0.33) % 1;
-      const kbCol = new THREE.Color().setHSL(kbHue, isBedroomTheme ? 0.46 : 1, isBedroomTheme ? 0.72 : 0.5);
-      kbLedMat.color.set(kbCol);
-      kbLedMat.emissive.set(kbCol);
+      if (roninRgbMat && isBedroomTheme) {
+        const kbCol = new THREE.Color().setHSL(0.76, 0.46, 0.72);
+        roninRgbMat.color.set(kbCol);
+        roninRgbMat.emissive.set(kbCol);
+      }
 
       // 8. Breathing Lights
       deskLight.intensity = (nightMode ? (isBedroomTheme ? 0.8 : 1.15) : isBedroomTheme ? 2.2 : 2.8) + Math.sin(t * 1.8) * (nightMode ? 0.08 : 0.24);

@@ -515,29 +515,7 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
     </div>
   ),
 
-  // 10. Thermal POS Receipt Printer
-  printer: (
-    <div className="space-y-8 animate-fadeIn">
-      <div className="relative p-7 rounded-3xl bg-gradient-to-br from-sky-950/60 via-black/80 to-cyan-950/40 border border-sky-500/30 overflow-hidden shadow-2xl">
-        <div className="relative z-10 space-y-3">
-          <div className="flex items-center gap-2">
-            <Zap size={15} className="text-sky-400" />
-            <span className="text-[11px] font-mono text-sky-400 uppercase tracking-widest">
-              [ 10 // TELEMETRY DOCKET SYSTEM ]
-            </span>
-          </div>
-          <h2 className="text-3xl sm:text-2xl font-display font-extrabold text-white">
-            Thermal POS Receipt Printer
-          </h2>
-          <p className="text-xs sm:text-[11px] text-zinc-300 font-sans leading-relaxed">
-            Connected to the Arch Linux workstation and tablet. Generates physical receipts of system status, hardware diagnostics, and visit confirmations.
-          </p>
-        </div>
-      </div>
-    </div>
-  ),
-
-  // 11. Precision Analog Chronometer Watch
+  // 10. Precision Analog Chronometer Watch
   zoro: (
     <div className="space-y-8 animate-fadeIn">
       <div className="relative p-7 rounded-3xl bg-gradient-to-br from-cyan-950/60 via-black/80 to-blue-950/40 border border-cyan-500/30 overflow-hidden shadow-2xl">
@@ -1007,7 +985,6 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
         <div className="w-full h-full relative">
           <BedroomDesk3D
             dayMode={deskDayMode}
-            onSetDayMode={setDeskDayMode}
             onOpenProject={(projectId) => {
               const proj = PROJECTS.find((p) => p.id === projectId) || PROJECTS[0];
               setSelectedProject(proj);
