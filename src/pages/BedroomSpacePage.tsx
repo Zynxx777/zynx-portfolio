@@ -631,11 +631,11 @@ const PosterView: React.FC<{ posterId: RoomPosterId; onClose: () => void }> = ({
               soundFX.playClick();
               onClose();
             }}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-red-500/30 bg-red-500/10 text-red-200 hover:bg-red-500/25 hover:text-white text-xs font-mono transition-colors"
+            className="flex h-9 items-center justify-center gap-1.5 px-3.5 rounded-full border border-red-500/40 bg-red-500/15 text-red-100 hover:bg-red-500/30 text-xs font-mono transition-colors active:scale-95"
             aria-label="Close artwork view"
           >
             <X size={15} />
-            <span className="hidden sm:inline font-bold">Close</span>
+            <span className="font-bold">Close</span>
           </button>
         </header>
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 p-4 sm:p-7">
@@ -682,7 +682,7 @@ const ZoneModal: React.FC<ZoneModalProps> = ({ zoneId, onClose, onPosterClick })
         style={{ animation: "slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) both" }}
       >
         {/* Fixed panel header stays available while the detail content scrolls. */}
-        <div className="relative z-20 flex shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-[#06060e]/95 p-5 backdrop-blur-md">
+        <div className="relative z-20 flex shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-[#06060e]/95 px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-4 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: zone.color }} />
             <div>
@@ -696,12 +696,12 @@ const ZoneModal: React.FC<ZoneModalProps> = ({ zoneId, onClose, onPosterClick })
               soundFX.playClick();
               onClose();
             }}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-red-500/30 bg-red-500/10 text-red-200 transition-colors hover:bg-red-500/25 hover:text-white text-xs font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+            className="flex h-9 items-center justify-center gap-1.5 px-3.5 rounded-full border border-red-500/40 bg-red-500/15 text-red-100 transition-colors hover:bg-red-500/30 active:scale-95 text-xs font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
             aria-label="Close exhibition modal"
             title="Close details (ESC)"
           >
             <X size={15} />
-            <span className="hidden sm:inline font-bold">Close</span>
+            <span className="font-bold">Close</span>
           </button>
         </div>
 
@@ -918,42 +918,39 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
         </div>
 
         {viewMode === "3d" && (
-          <div className="pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-1 rounded-full border border-white/10 bg-black/45 p-1 shadow-lg backdrop-blur-xl">
-            <button
-              onClick={() => {
-                soundFX.playClick();
-                setRoomTheme("cyberpunk");
-                try { window.localStorage.setItem("zynx-bedroom-theme-v1", "cyberpunk"); } catch {}
-                setTargetZone("overview");
-                setActiveZone(null);
-                setEditMode(false);
-                setSelectedFurniture(null);
-              }}
-              className={`flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-mono transition sm:px-3 sm:text-[11px] ${roomTheme === "cyberpunk" ? "bg-cyan-300 text-[#071014] font-bold" : "text-zinc-300 hover:text-white"}`}
-              aria-pressed={roomTheme === "cyberpunk"}
-            >
-              <Sparkles size={12} />
-              <span className="hidden sm:inline">Cyberpunk Space</span>
-              <span className="sm:hidden">Space</span>
-            </button>
-            <button
-              onClick={() => {
-                soundFX.playClick();
-                setRoomTheme("anime-bedroom");
-                try { window.localStorage.setItem("zynx-bedroom-theme-v1", "anime-bedroom"); } catch {}
-                setTargetZone("overview");
-                setActiveZone(null);
-                setEditMode(false);
-                setSelectedFurniture(null);
-              }}
-              className={`flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-mono transition sm:px-3 sm:text-[11px] ${roomTheme === "anime-bedroom" ? "bg-rose-200 text-[#281c2b] font-bold" : "text-zinc-300 hover:text-white"}`}
-              aria-pressed={roomTheme === "anime-bedroom"}
-            >
-              <BedDouble size={12} />
-              <span className="hidden sm:inline">Anime Bedroom</span>
-              <span className="sm:hidden">Bedroom</span>
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              soundFX.playClick();
+              const nextTheme = roomTheme === "cyberpunk" ? "anime-bedroom" : "cyberpunk";
+              setRoomTheme(nextTheme);
+              try { window.localStorage.setItem("zynx-bedroom-theme-v1", nextTheme); } catch {}
+              setTargetZone("overview");
+              setActiveZone(null);
+              setEditMode(false);
+              setSelectedFurniture(null);
+            }}
+            className={`pointer-events-auto flex h-7 sm:h-8 items-center gap-1.5 rounded-full px-2.5 sm:px-3 text-[10px] sm:text-[11px] font-mono border shadow-lg backdrop-blur-xl transition active:scale-95 ${
+              roomTheme === "cyberpunk"
+                ? "bg-cyan-500/20 border-cyan-400/40 text-cyan-200 hover:bg-cyan-500/30"
+                : "bg-rose-500/20 border-rose-400/40 text-rose-200 hover:bg-rose-500/30"
+            }`}
+            title="Switch 3D room theme"
+            aria-label={`Current theme: ${roomTheme === "cyberpunk" ? "Cyberpunk Space" : "Anime Bedroom"}. Click to toggle.`}
+          >
+            {roomTheme === "cyberpunk" ? (
+              <>
+                <Sparkles size={12} className="text-cyan-400" />
+                <span className="font-semibold">Cyberpunk</span>
+                <span className="text-[9px] text-cyan-300/70 hidden sm:inline">(Switch)</span>
+              </>
+            ) : (
+              <>
+                <BedDouble size={12} className="text-rose-400" />
+                <span className="font-semibold">Anime Room</span>
+                <span className="text-[9px] text-rose-300/70 hidden sm:inline">(Switch)</span>
+              </>
+            )}
+          </button>
         )}
       </header>
 

@@ -322,12 +322,12 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
 
   return (
     <div
-      className="w-[min(94vw,27.5rem)] pointer-events-auto select-none transition-all duration-300"
+      className="w-[min(92vw,22rem)] sm:w-[26rem] pointer-events-auto select-none transition-all duration-300"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       {/* ── iPHONE FROSTED GLASS MEDIA CAPSULE ─────────────────────────── */}
       <div
-        className="relative flex flex-col rounded-[32px] overflow-hidden backdrop-blur-3xl transition-all duration-500"
+        className="relative flex flex-col rounded-[24px] sm:rounded-[32px] overflow-hidden backdrop-blur-3xl transition-all duration-500"
         style={{
           background: "linear-gradient(145deg, rgba(255, 255, 255, 0.11) 0%, rgba(18, 20, 32, 0.72) 40%, rgba(8, 10, 18, 0.88) 100%)",
           borderColor: isActive ? currentPalette.border : "rgba(255, 255, 255, 0.16)",
@@ -342,22 +342,22 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
         }}
       >
         {/* Subtle Apple-style gloss sheen overlay */}
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white/[0.08] via-transparent to-black/20 rounded-[32px]" />
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white/[0.08] via-transparent to-black/20 rounded-[24px] sm:rounded-[32px]" />
 
         {/* ── 1. TOP HEADER: Status Bar & Dynamic Island Badge ─────────── */}
-        <div className="relative z-10 px-3 sm:px-5 pt-4 pb-2 flex items-center justify-between gap-3">
+        <div className="relative z-10 px-3 sm:px-5 pt-3 sm:pt-4 pb-1 sm:pb-2 flex items-center justify-between gap-2.5 sm:gap-3">
           {/* Left: FM Radio / Live Broadcast Pill */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/10 backdrop-blur-md shadow-sm">
-              <span className={`w-2 h-2 rounded-full ${isActive ? "bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" : "bg-zinc-500"}`} />
-              <span className="text-[10px] font-mono font-bold tracking-wider uppercase text-zinc-200">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-white/10 border border-white/10 backdrop-blur-md shadow-sm">
+              <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isActive ? "bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" : "bg-zinc-500"}`} />
+              <span className="text-[9px] sm:text-[10px] font-mono font-bold tracking-wider uppercase text-zinc-200">
                 {currentTrack.type === "stream" ? "98.5 FM LIVE" : "STEREO LAB"}
               </span>
             </div>
 
             {/* Station Genre Badge */}
             <span
-              className="text-[9px] px-2 py-0.5 rounded-full font-mono font-bold tracking-wider uppercase truncate border max-w-[7.5rem]"
+              className="text-[8px] sm:text-[9px] px-1.5 sm:px-2 py-0.5 rounded-full font-mono font-bold tracking-wider uppercase truncate border max-w-[6rem] sm:max-w-[7.5rem]"
               style={{
                 backgroundColor: currentPalette.badgeBg,
                 color: currentPalette.badgeText,
@@ -372,12 +372,12 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
           <div className="flex items-center gap-1.5">
             <button
               onClick={handleColorCycle}
-              className="w-7 h-7 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/15 transition-transform active:scale-90"
+              className="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/15 transition-transform active:scale-90"
               title={`Aura: ${currentPalette.name} (Click to switch)`}
               aria-label="Cycle visualizer theme aura"
             >
               <span
-                className="w-3.5 h-3.5 rounded-full shadow-sm transition-all"
+                className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full shadow-sm transition-all"
                 style={{
                   backgroundColor: currentPalette.glow,
                   boxShadow: `0 0 10px ${currentPalette.glow}`,
@@ -391,19 +391,19 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
                   soundFX.playClick();
                   onClose();
                 }}
-                className="w-7 h-7 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/15 text-zinc-300 hover:text-white transition-transform active:scale-90"
+                className="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/15 text-zinc-300 hover:text-white transition-transform active:scale-90"
                 title="Minimize player"
                 aria-label="Close FM Radio"
               >
-                <X size={13} />
+                <X size={12} className="sm:w-3.5 sm:h-3.5" />
               </button>
             )}
           </div>
         </div>
 
         {/* ── 2. BUTTERY SMOOTH WAVY VISUALIZER DISPLAY ────────────────── */}
-        <div className="relative z-10 px-4 py-1">
-          <div className="relative w-full h-[80px] sm:h-[105px] rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-inner flex items-center justify-center">
+        <div className="relative z-10 px-3 sm:px-4 py-0.5 sm:py-1">
+          <div className="relative w-full h-[54px] sm:h-[95px] rounded-xl sm:rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-inner flex items-center justify-center">
             {/* Ambient Background Aura behind the wave */}
             <div
               className="absolute inset-0 opacity-40 blur-xl transition-all duration-700 pointer-events-none"
@@ -419,25 +419,25 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
             />
 
             {/* Center Subtle Freq Watermark */}
-            <div className="absolute top-2 left-3 pointer-events-none text-[9px] font-mono tracking-widest text-white/30 uppercase flex items-center gap-1">
-              <Radio size={10} className="text-white/40" />
+            <div className="absolute top-1.5 left-2.5 pointer-events-none text-[8px] sm:text-[9px] font-mono tracking-widest text-white/30 uppercase flex items-center gap-1">
+              <Radio size={9} className="text-white/40" />
               <span>AIRWAVE SPECTRUM</span>
             </div>
 
             {isBuffering && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-20 gap-2 text-amber-300 text-xs font-mono">
-                <Loader2 size={16} className="animate-spin" />
-                <span>SYNCHRONIZING STREAM</span>
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-20 gap-1.5 text-amber-300 text-[11px] font-mono">
+                <Loader2 size={14} className="animate-spin" />
+                <span>SYNCING STREAM</span>
               </div>
             )}
           </div>
         </div>
 
         {/* ── 3. TRACK & STATION METADATA ──────────────────────────────── */}
-        <div className="relative z-10 px-3 sm:px-5 pt-3 pb-1 flex items-center gap-3.5">
+        <div className="relative z-10 px-3 sm:px-5 pt-2 sm:pt-3 pb-0.5 sm:pb-1 flex items-center gap-2.5 sm:gap-3.5">
           {/* iOS Squircle Album Tile */}
           <div
-            className="relative w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center overflow-hidden border shadow-lg transition-transform duration-300"
+            className="relative w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex-shrink-0 flex items-center justify-center overflow-hidden border shadow-lg transition-transform duration-300"
             style={{
               borderColor: isActive ? currentPalette.border : "rgba(255, 255, 255, 0.15)",
               background: `linear-gradient(135deg, ${currentPalette.pillBg} 0%, rgba(20, 20, 30, 0.95) 100%)`,
@@ -445,8 +445,8 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
             }}
           >
             <Disc3
-              size={24}
-              className={`transition-all duration-500 ${isActive ? "text-white animate-spin [animation-duration:6s]" : "text-zinc-500"}`}
+              size={18}
+              className={`sm:w-6 sm:h-6 transition-all duration-500 ${isActive ? "text-white animate-spin [animation-duration:6s]" : "text-zinc-500"}`}
               style={{
                 color: isActive ? currentPalette.glow : undefined,
                 filter: isActive ? `drop-shadow(0 0 6px ${currentPalette.glow})` : undefined,
@@ -458,7 +458,7 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
           <div className="flex-1 min-w-0">
             <div
               ref={titleRef}
-              className="font-bold text-[13px] text-white tracking-tight flex items-center gap-1.5 overflow-hidden"
+              className="font-bold text-xs sm:text-[13px] text-white tracking-tight flex items-center gap-1.5 overflow-hidden"
             >
               <span
                 className="whitespace-nowrap"
@@ -473,29 +473,29 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
               </span>
             </div>
 
-            <p className="text-[11px] text-zinc-400 font-medium truncate mt-0.5 tracking-normal">
+            <p className="text-[10px] sm:text-[11px] text-zinc-400 font-medium truncate mt-0.5 tracking-normal">
               {displaySub}
             </p>
           </div>
         </div>
 
         {/* ── 4. iPHONE MEDIA TRANSPORT CONTROLS ───────────────────────── */}
-        <div className="relative z-10 px-4 sm:px-6 py-2.5 flex items-center justify-center gap-6">
+        <div className="relative z-10 px-3 sm:px-6 py-1.5 sm:py-2.5 flex items-center justify-center gap-4 sm:gap-6">
           {/* Previous Station */}
           <button
             onClick={handlePrevTrack}
-            className="w-11 h-11 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/15 text-zinc-200 hover:text-white transition-all active:scale-90 shadow-md backdrop-blur-md"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/15 text-zinc-200 hover:text-white transition-all active:scale-90 shadow-md backdrop-blur-md"
             style={{ touchAction: "manipulation" }}
             title="Previous Radio Station"
             aria-label="Previous track"
           >
-            <SkipBack size={16} />
+            <SkipBack size={14} className="sm:w-4 sm:h-4" />
           </button>
 
           {/* Primary iOS Play / Pause Button */}
           <button
             onClick={handleTogglePlay}
-            className="w-14 h-14 p-3.5 rounded-full flex items-center justify-center text-black font-bold transition-all active:scale-95 shadow-xl group"
+            className="w-11 h-11 sm:w-14 sm:h-14 p-2.5 sm:p-3.5 rounded-full flex items-center justify-center text-black font-bold transition-all active:scale-95 shadow-xl group"
             style={{
               backgroundColor: isActive ? "#FFFFFF" : currentPalette.glow,
               boxShadow: `0 8px 24px -4px ${isActive ? "rgba(255,255,255,0.4)" : currentPalette.shadow}`,
@@ -505,28 +505,28 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
             aria-label={isPlaying ? "Pause" : "Play"}
           >
             {isBuffering ? (
-              <Loader2 size={20} className="animate-spin text-black" />
+              <Loader2 size={16} className="sm:w-5 sm:h-5 animate-spin text-black" />
             ) : isPlaying ? (
-              <Pause size={20} className="fill-black text-black" />
+              <Pause size={16} className="sm:w-5 sm:h-5 fill-black text-black" />
             ) : (
-              <Play size={20} className="fill-black text-black ml-0.5" />
+              <Play size={16} className="sm:w-5 sm:h-5 fill-black text-black ml-0.5" />
             )}
           </button>
 
           {/* Next Station */}
           <button
             onClick={handleNextTrack}
-            className="w-11 h-11 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/15 text-zinc-200 hover:text-white transition-all active:scale-90 shadow-md backdrop-blur-md"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/15 text-zinc-200 hover:text-white transition-all active:scale-90 shadow-md backdrop-blur-md"
             style={{ touchAction: "manipulation" }}
             title="Next Radio Station"
             aria-label="Next track"
           >
-            <SkipForward size={16} />
+            <SkipForward size={14} className="sm:w-4 sm:h-4" />
           </button>
         </div>
 
         {/* ── 5. iPHONE SOUND & VOLUME SLIDER ──────────────────────────── */}
-        <div className="relative z-10 px-4 sm:px-6 pt-1 pb-2 flex items-center gap-3">
+        <div className="relative z-10 px-3 sm:px-6 pt-0.5 sm:pt-1 pb-1 sm:pb-2 flex items-center gap-2 sm:gap-3">
           <button
             onClick={handleVolumeMuteToggle}
             className="text-zinc-400 hover:text-white transition-colors p-1"
@@ -535,9 +535,9 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
             aria-label="Toggle mute"
           >
             {volume === 0 ? (
-              <VolumeX size={15} />
+              <VolumeX size={14} className="sm:w-3.5 sm:h-3.5" />
             ) : (
-              <Volume1 size={15} />
+              <Volume1 size={14} className="sm:w-3.5 sm:h-3.5" />
             )}
           </button>
 
@@ -550,20 +550,20 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
               step="0.01"
               value={volume}
               onChange={handleVolumeChange}
-              className="w-full h-1.5 appearance-none bg-white/15 rounded-full outline-none cursor-pointer accent-white transition-all hover:bg-white/25"
+              className="w-full h-1 sm:h-1.5 appearance-none bg-white/15 rounded-full outline-none cursor-pointer accent-white transition-all hover:bg-white/25"
               aria-label="Master Radio Volume"
             />
           </div>
 
           <div className="text-zinc-400 p-1">
-            <Volume2 size={15} />
+            <Volume2 size={14} className="sm:w-3.5 sm:h-3.5" />
           </div>
         </div>
 
         {/* ── 6. QUICK STATION PRESETS (Scrollable Chips) ──────────────── */}
         <div
-          className="relative z-10 px-3 sm:px-4 pt-1 pb-3.5 border-t border-white/[0.08] flex items-center gap-1.5 overflow-x-auto no-scrollbar"
-          style={{ paddingBottom: "max(0.875rem, env(safe-area-inset-bottom, 0.875rem))" }}
+          className="relative z-10 px-2.5 sm:px-4 pt-1 pb-2 sm:pb-3.5 border-t border-white/[0.08] flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar"
+          style={{ paddingBottom: "max(0.6rem, env(safe-area-inset-bottom, 0.6rem))" }}
         >
           {BEDROOM_PLAYLIST.map((trk, idx) => {
             const isSelected = trackIndex === idx;
@@ -571,7 +571,7 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
               <button
                 key={trk.id}
                 onClick={() => handleSelectTrack(idx)}
-                className={`flex-shrink-0 px-2.5 py-1 rounded-full text-[10px] font-mono transition-all border ${
+                className={`flex-shrink-0 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-mono transition-all border ${
                   isSelected
                     ? "bg-white text-black font-bold border-white shadow-md shadow-white/20"
                     : "bg-white/5 hover:bg-white/15 text-zinc-300 border-white/10"
@@ -579,8 +579,8 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
                 style={{ touchAction: "manipulation" }}
                 title={`Tune into ${trk.title}`}
               >
-                {trk.type === "stream" && <Radio size={9} className="inline mr-1 -mt-0.5" />}
-                {trk.type === "procedural" && <Sparkles size={9} className="inline mr-1 -mt-0.5" />}
+                {trk.type === "stream" && <Radio size={8} className="inline mr-1 -mt-0.5" />}
+                {trk.type === "procedural" && <Sparkles size={8} className="inline mr-1 -mt-0.5" />}
                 <span>{trk.badge.replace("SYNTHWAVE", "NIGHTRIDE").replace("CHILL RETRO", "CHILL")}</span>
               </button>
             );

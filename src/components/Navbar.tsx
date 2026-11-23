@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Terminal, Monitor, Disc3, FileText, Layers, FolderOpen } from "lucide-react";
+import { Terminal, Monitor, Disc3, FileText, Layers, FolderOpen, ChevronRight } from "lucide-react";
 
 export type EcosystemView = "portfolio" | "skills" | "space" | "community" | "showcase";
 
@@ -95,34 +95,52 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header ref={drawerRef} className="fixed top-0 left-0 right-0 z-50 px-4 py-3 pointer-events-none sm:px-8">
       <div className="relative mx-auto flex max-w-[1600px] items-center justify-between">
-        {/* Left: Brand Identity Pill */}
-        <div
-          onClick={() => handleWorldClick("portfolio")}
-          className="pointer-events-auto flex items-center gap-2.5 px-3.5 py-2 rounded-full backdrop-blur-2xl bg-[#0a0d18]/80 border border-white/10 hover:border-cyan-400/40 cursor-pointer group transition-all duration-300 shadow-xl"
-          role="button"
-          tabIndex={0}
-          aria-label="Go to portfolio home"
-          onKeyDown={(e) => e.key === "Enter" && handleWorldClick("portfolio")}
-        >
-          <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-cyan-400/60 via-purple-500/40 to-white/20 p-[1px] group-hover:scale-110 transition-transform duration-300 shadow-[0_0_12px_rgba(34,211,238,0.35)] flex-shrink-0">
-            <div className="w-full h-full bg-[#080911] rounded-full flex items-center justify-center p-0.5">
-              <img
-                src="/images/z7x-logo.svg"
-                alt="Z7X Logo"
-                className="w-full h-full object-contain drop-shadow-[0_0_6px_rgba(34,211,238,0.7)]"
-              />
+        {/* Left: Brand Identity Pill + Mobile Ecosystem Switcher Trigger ('>' icon) */}
+        <div className="pointer-events-auto flex items-center gap-1.5">
+          <div
+            onClick={() => handleWorldClick("portfolio")}
+            className="flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full backdrop-blur-2xl bg-[#0a0d18]/80 border border-white/10 hover:border-cyan-400/40 cursor-pointer group transition-all duration-300 shadow-xl"
+            role="button"
+            tabIndex={0}
+            aria-label="Go to portfolio home"
+            onKeyDown={(e) => e.key === "Enter" && handleWorldClick("portfolio")}
+          >
+            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-cyan-400/60 via-purple-500/40 to-white/20 p-[1px] group-hover:scale-110 transition-transform duration-300 shadow-[0_0_12px_rgba(34,211,238,0.35)] flex-shrink-0">
+              <div className="w-full h-full bg-[#080911] rounded-full flex items-center justify-center p-0.5">
+                <img
+                  src="/images/z7x-logo.svg"
+                  alt="Z7X Logo"
+                  className="w-full h-full object-contain drop-shadow-[0_0_6px_rgba(34,211,238,0.7)]"
+                />
+              </div>
             </div>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="font-display font-bold text-xs tracking-wider text-white group-hover:text-cyan-300 transition-colors">
+                ZYNX
+              </span>
+              <span className="text-zinc-600 text-[10px] font-mono hidden sm:inline">/</span>
+              <span className="font-mono text-[10px] text-zinc-400 hidden sm:inline truncate">
+                JOSHUA D
+              </span>
+            </div>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
           </div>
-          <div className="flex items-center gap-1.5 min-w-0">
-            <span className="font-display font-bold text-xs tracking-wider text-white group-hover:text-cyan-300 transition-colors">
-              ZYNX
-            </span>
-            <span className="text-zinc-600 text-[10px] font-mono hidden sm:inline">/</span>
-            <span className="font-mono text-[10px] text-zinc-400 hidden sm:inline truncate">
-              JOSHUA D
-            </span>
-          </div>
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+
+          {/* Mobile Navigation Drawer Trigger ('>' replacing 3-line hamburger, on the left) */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="lg:hidden h-8 w-8 sm:h-9 sm:w-9 rounded-full backdrop-blur-2xl bg-[#0a0d18]/85 border border-white/15 text-cyan-300 hover:text-white hover:border-cyan-400/40 flex items-center justify-center transition-all active:scale-95 shadow-xl"
+            aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}
+            aria-expanded={mobileMenuOpen}
+            title="Open view switcher"
+          >
+            <ChevronRight
+              size={16}
+              className={`transition-transform duration-300 ${
+                mobileMenuOpen ? "rotate-90 text-white" : "rotate-0 text-cyan-400"
+              }`}
+            />
+          </button>
         </div>
 
         {/* Center: Floating Capsule Ecosystem Switcher */}
@@ -160,38 +178,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           })}
         </nav>
 
-        {/* Right: ATS Resume & Mobile Trigger */}
-        <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2.5">
+        {/* Right: ATS Resume */}
+        <div className="pointer-events-auto flex items-center">
           <button
             onClick={openResume}
-            className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full backdrop-blur-2xl bg-white/[0.06] hover:bg-white hover:text-black border border-white/15 hover:border-white text-zinc-100 font-mono text-[11px] sm:text-xs tracking-wider transition-all duration-200 flex items-center gap-1.5 sm:gap-2 shadow-lg active:scale-95"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full backdrop-blur-2xl bg-white/[0.06] hover:bg-white hover:text-black border border-white/15 hover:border-white text-zinc-100 font-mono text-[11px] sm:text-xs tracking-wider transition-all duration-200 flex items-center gap-1.5 sm:gap-2 shadow-lg active:scale-95"
             aria-label="Open ATS Resume"
           >
             <FileText size={13} className="text-cyan-400 group-hover:text-black" />
             <span>Résumé</span>
-          </button>
-
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 sm:p-2.5 rounded-full backdrop-blur-2xl bg-[#0a0d18]/80 border border-white/10 text-zinc-300 hover:text-white hover:border-white/25 transition-all active:scale-95"
-            aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}
-            aria-expanded={mobileMenuOpen}
-          >
-            <div className="w-4 h-3.5 flex flex-col justify-between">
-              <span
-                className={`h-0.5 w-full bg-current rounded-full transition-all duration-300 origin-center ${mobileMenuOpen ? "rotate-45 translate-y-[6px]" : ""
-                  }`}
-              />
-              <span
-                className={`h-0.5 w-full bg-current rounded-full transition-all duration-200 ${mobileMenuOpen ? "opacity-0 scale-x-0" : ""
-                  }`}
-              />
-              <span
-                className={`h-0.5 w-full bg-current rounded-full transition-all duration-300 origin-center ${mobileMenuOpen ? "-rotate-45 -translate-y-[6px]" : ""
-                  }`}
-              />
-            </div>
           </button>
         </div>
       </div>

@@ -311,7 +311,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     // ── Renderer ────────────────────────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({ antialias: window.innerWidth >= 768, powerPreference: "high-performance", alpha: false });
     renderer.setSize(W, H);
-    const pixelRatio = () => Math.min(window.devicePixelRatio || 1, window.innerWidth < 768 ? 1.25 : 1.75);
+    const pixelRatio = () => Math.min(window.devicePixelRatio || 1, window.innerWidth < 768 ? 1.0 : 1.75);
     renderer.setPixelRatio(pixelRatio());
     renderer.shadowMap.enabled = window.innerWidth >= 768;
     renderer.shadowMap.type = window.innerWidth >= 768 ? THREE.PCFShadowMap : THREE.BasicShadowMap;
@@ -2649,6 +2649,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     // ── Animation Loop ──────────────────────────────────────────────────────
     let animId = 0;
     let lastFrameTime = 0;
+    let frameCount = 0;
     const startTime = performance.now();
 
     const animate = () => {
@@ -2657,7 +2658,18 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         return;
       }
       animId = requestAnimationFrame(animate);
-      const t = (performance.now() - startTime) / 1000;
+
+      // Mobile frame throttle at the top before any heavy computations
+      const isMobileScreen = container.clientWidth < 768;
+      const now = performance.now();
+      if (isMobileScreen) {
+        if (now - lastFrameTime < 32) { // Cap at ~30fps on mobile to save battery and GPU
+          return;
+        }
+        lastFrameTime = now;
+      }
+      frameCount++;
+      const t = (now - startTime) / 1000;
 
       curtainPivots.forEach(({ pivot, phase }) => {
         pivot.rotation.y = Math.sin(t * 0.48 + phase) * 0.055;
@@ -2674,47 +2686,51 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         receiptPaperMesh.scale.y = THREE.MathUtils.lerp(receiptPaperMesh.scale.y, 1.0, 0.08);
       }
 
-      // 1. Decorative audio spectrum animation for the music workstation.
-      audioCtx.fillStyle = "#080410";
-      audioCtx.fillRect(0, 0, 512, 288);
-      audioCtx.fillStyle = "#9D4EDD";
-      audioCtx.font = "bold 13px 'Courier New', monospace";
-      audioCtx.fillText("7YNX AUDIO STUDY // VISUAL DEMO", 20, 30);
+      // 1. Decorative audio spectrum animation for the music workstation (throttled on mobile).
+      if (!isMobileScreen || frameCount % 3 === 0) {
+        audioCtx.fillStyle = "#080410";
+        audioCtx.fillRect(0, 0, 512, 288);
+        audioCtx.fillStyle = "#9D4EDD";
+        audioCtx.font = "bold 13px 'Courier New', monospace";
+        audioCtx.fillText("7YNX AUDIO STUDY // VISUAL DEMO", 20, 30);
 
-      const numBars = 32;
-      const barW = 12;
-      for (let b = 0; b < numBars; b++) {
-        const h = Math.abs(Math.sin(t * 4 + b * 0.35) * Math.cos(t * 2 + b * 0.15)) * 160 + 15;
-        const grad = audioCtx.createLinearGradient(0, 240, 0, 240 - h);
-        grad.addColorStop(0, "#F72585");
-        grad.addColorStop(0.5, "#9D4EDD");
-        grad.addColorStop(1, "#00F2FE");
-        audioCtx.fillStyle = grad;
-        audioCtx.fillRect(30 + b * 14, 240 - h, barW, h);
-      }
-      // Floating sine wave overlay
-      audioCtx.beginPath();
-      audioCtx.strokeStyle = "rgba(255, 255, 255, 0.8)";
-      audioCtx.lineWidth = 2;
-      for (let x = 0; x < 450; x += 5) {
-        const y = 130 + Math.sin((x * 0.04) + t * 6) * 25 * Math.sin(t * 2);
-        if (x === 0) audioCtx.moveTo(30 + x, y);
-        else audioCtx.lineTo(30 + x, y);
-      }
-      audioCtx.stroke();
-      audioTexture.needsUpdate = true;
-
-      // 3. Floating Dust Particles upwards
-      const pos = pGeo.attributes.position as THREE.BufferAttribute;
-      for (let i = 0; i < pCount; i++) {
-        pos.array[i * 3]     += pVel[i * 3];
-        pos.array[i * 3 + 1] += pVel[i * 3 + 1];
-        pos.array[i * 3 + 2] += pVel[i * 3 + 2];
-        if ((pos.array[i * 3 + 1] as number) > 7.5) {
-          pos.array[i * 3 + 1] = 0;
+        const numBars = 32;
+        const barW = 12;
+        for (let b = 0; b < numBars; b++) {
+          const h = Math.abs(Math.sin(t * 4 + b * 0.35) * Math.cos(t * 2 + b * 0.15)) * 160 + 15;
+          const grad = audioCtx.createLinearGradient(0, 240, 0, 240 - h);
+          grad.addColorStop(0, "#F72585");
+          grad.addColorStop(0.5, "#9D4EDD");
+          grad.addColorStop(1, "#00F2FE");
+          audioCtx.fillStyle = grad;
+          audioCtx.fillRect(30 + b * 14, 240 - h, barW, h);
         }
+        // Floating sine wave overlay
+        audioCtx.beginPath();
+        audioCtx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+        audioCtx.lineWidth = 2;
+        for (let x = 0; x < 450; x += 5) {
+          const y = 130 + Math.sin((x * 0.04) + t * 6) * 25 * Math.sin(t * 2);
+          if (x === 0) audioCtx.moveTo(30 + x, y);
+          else audioCtx.lineTo(30 + x, y);
+        }
+        audioCtx.stroke();
+        audioTexture.needsUpdate = true;
       }
-      pos.needsUpdate = true;
+
+      // 3. Floating Dust Particles upwards (throttled on mobile)
+      if (!isMobileScreen || frameCount % 2 === 0) {
+        const pos = pGeo.attributes.position as THREE.BufferAttribute;
+        for (let i = 0; i < pCount; i++) {
+          pos.array[i * 3]     += pVel[i * 3];
+          pos.array[i * 3 + 1] += pVel[i * 3 + 1];
+          pos.array[i * 3 + 2] += pVel[i * 3 + 2];
+          if ((pos.array[i * 3 + 1] as number) > 7.5) {
+            pos.array[i * 3 + 1] = 0;
+          }
+        }
+        pos.needsUpdate = true;
+      }
 
       // 4. Smooth Camera Lerp
       camera.position.lerp(targetCamPos.current, 0.055);
@@ -2769,79 +2785,81 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       scrGlow1.intensity = 0.8 + Math.sin(t * 2.0) * 0.2;
       scrGlow2.intensity = 0.8 + Math.cos(t * 2.2) * 0.2;
 
-      // 9. Raycasting Hover
-      if (editModeRef.current) {
-        if (hoveredZoneId) setHover(null);
-        hoveredZoneId = null;
-        hoveredPhone = false;
-        hoveredLamp = false;
-        hoveredLampTarget = null;
-        isLampTooltipHoveredRef.current = false;
-        setPhoneGlow(false);
-        renderer.domElement.style.cursor = movingFurniture || isDragging ? "grabbing" : "grab";
-      } else {
-        raycaster.setFromCamera(mouse2D, camera);
-        const isPhoneHovered = raycaster.intersectObject(phoneGroup, true).length > 0;
-        const isBedsideHovered = Boolean(bedsideLamp && raycaster.intersectObject(bedsideLamp, true).length > 0);
-        const isDeskHovered = Boolean(deskLamp && raycaster.intersectObject(deskLamp, true).length > 0);
-        const isLampDirectlyHovered = isBedsideHovered || isDeskHovered;
-        const isLampHovered = isLampDirectlyHovered || isLampTooltipHoveredRef.current;
-
-        if (isBedsideHovered) {
-          hoveredLampTarget = "bedside";
-        } else if (isDeskHovered) {
-          hoveredLampTarget = "desk";
-        } else if (!isLampHovered) {
-          hoveredLampTarget = null;
-        }
-
-        if (isPhoneHovered) {
-          if (!hoveredPhone) soundFX.playHover();
+      // 9. Raycasting Hover (desktop cursor only)
+      if (!isMobileScreen) {
+        if (editModeRef.current) {
           if (hoveredZoneId) setHover(null);
           hoveredZoneId = null;
-          hoveredPhone = true;
+          hoveredPhone = false;
           hoveredLamp = false;
-          setPhoneGlow(true);
-          renderer.domElement.style.cursor = "pointer";
-          if (cursorRef.current) {
-            cursorRef.current.style.transform = "translate(-50%,-50%) scale(2.2)";
-            cursorRef.current.style.borderColor = accentColor;
-          }
-        } else if (isLampHovered) {
-          if (!hoveredLamp) soundFX.playHover();
-          if (hoveredZoneId) setHover(null);
-          hoveredZoneId = null;
-          if (hoveredPhone) {
-            hoveredPhone = false;
-            setPhoneGlow(false);
-          }
-          hoveredLamp = true;
-          renderer.domElement.style.cursor = "pointer";
-          if (cursorRef.current) {
-            cursorRef.current.style.transform = "translate(-50%,-50%) scale(2.2)";
-            cursorRef.current.style.borderColor = nightMode ? "#38bdf8" : "#fbbf24";
-          }
+          hoveredLampTarget = null;
+          isLampTooltipHoveredRef.current = false;
+          setPhoneGlow(false);
+          renderer.domElement.style.cursor = movingFurniture || isDragging ? "grabbing" : "grab";
         } else {
-          if (hoveredPhone || hoveredLamp) {
-            hoveredPhone = false;
+          raycaster.setFromCamera(mouse2D, camera);
+          const isPhoneHovered = raycaster.intersectObject(phoneGroup, true).length > 0;
+          const isBedsideHovered = Boolean(bedsideLamp && raycaster.intersectObject(bedsideLamp, true).length > 0);
+          const isDeskHovered = Boolean(deskLamp && raycaster.intersectObject(deskLamp, true).length > 0);
+          const isLampDirectlyHovered = isBedsideHovered || isDeskHovered;
+          const isLampHovered = isLampDirectlyHovered || isLampTooltipHoveredRef.current;
+
+          if (isBedsideHovered) {
+            hoveredLampTarget = "bedside";
+          } else if (isDeskHovered) {
+            hoveredLampTarget = "desk";
+          } else if (!isLampHovered) {
+            hoveredLampTarget = null;
+          }
+
+          if (isPhoneHovered) {
+            if (!hoveredPhone) soundFX.playHover();
+            if (hoveredZoneId) setHover(null);
+            hoveredZoneId = null;
+            hoveredPhone = true;
             hoveredLamp = false;
-            setPhoneGlow(false);
-            renderer.domElement.style.cursor = "none";
+            setPhoneGlow(true);
+            renderer.domElement.style.cursor = "pointer";
             if (cursorRef.current) {
-              cursorRef.current.style.transform = "translate(-50%,-50%) scale(1)";
+              cursorRef.current.style.transform = "translate(-50%,-50%) scale(2.2)";
               cursorRef.current.style.borderColor = accentColor;
             }
-          }
-          const hits = raycaster.intersectObjects(getClickableMeshes(), false);
-          const newZone = hits.length ? (clickable.find(c => c.mesh === hits[0].object)?.zone ?? null) : null;
-          if (newZone !== hoveredZoneId) {
-            setHover(newZone);
-            hoveredZoneId = newZone;
+          } else if (isLampHovered) {
+            if (!hoveredLamp) soundFX.playHover();
+            if (hoveredZoneId) setHover(null);
+            hoveredZoneId = null;
+            if (hoveredPhone) {
+              hoveredPhone = false;
+              setPhoneGlow(false);
+            }
+            hoveredLamp = true;
+            renderer.domElement.style.cursor = "pointer";
             if (cursorRef.current) {
-              cursorRef.current.style.transform = newZone
-                ? "translate(-50%,-50%) scale(2.2)"
-                : "translate(-50%,-50%) scale(1)";
-              cursorRef.current.style.borderColor = newZone ? ROOM_ZONES[newZone].color : accentColor;
+              cursorRef.current.style.transform = "translate(-50%,-50%) scale(2.2)";
+              cursorRef.current.style.borderColor = nightMode ? "#38bdf8" : "#fbbf24";
+            }
+          } else {
+            if (hoveredPhone || hoveredLamp) {
+              hoveredPhone = false;
+              hoveredLamp = false;
+              setPhoneGlow(false);
+              renderer.domElement.style.cursor = "none";
+              if (cursorRef.current) {
+                cursorRef.current.style.transform = "translate(-50%,-50%) scale(1)";
+                cursorRef.current.style.borderColor = accentColor;
+              }
+            }
+            const hits = raycaster.intersectObjects(getClickableMeshes(), false);
+            const newZone = hits.length ? (clickable.find(c => c.mesh === hits[0].object)?.zone ?? null) : null;
+            if (newZone !== hoveredZoneId) {
+              setHover(newZone);
+              hoveredZoneId = newZone;
+              if (cursorRef.current) {
+                cursorRef.current.style.transform = newZone
+                  ? "translate(-50%,-50%) scale(2.2)"
+                  : "translate(-50%,-50%) scale(1)";
+                cursorRef.current.style.borderColor = newZone ? ROOM_ZONES[newZone].color : accentColor;
+              }
             }
           }
         }
@@ -2894,17 +2912,6 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
 
       if (selectionHelper.visible && selectedItem) {
         selectionHelper.setFromObject(selectedItem.group);
-      }
-
-      // Mobile frame throttle
-      const isMobileScreen = container.clientWidth < 768;
-      if (isMobileScreen) {
-        const now = performance.now();
-        if (now - lastFrameTime < 33) { // ~30fps cap
-          animId = requestAnimationFrame(animate);
-          return;
-        }
-        lastFrameTime = now;
       }
 
       renderer.render(scene, camera);
