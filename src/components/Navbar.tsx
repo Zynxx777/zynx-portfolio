@@ -95,15 +95,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header ref={drawerRef} className="fixed top-0 left-0 right-0 z-50 px-4 py-3 pointer-events-none sm:px-8">
       <div className="relative mx-auto flex max-w-[1600px] items-center justify-between">
-        {/* Left: Brand Identity Pill + Mobile Ecosystem Switcher Trigger ('>' icon) */}
-        <div className="pointer-events-auto flex items-center gap-1.5">
-          <div
+        {/* Left: Brand Identity Pill + Merged Mobile Ecosystem Switcher ('>' icon) */}
+        <div className="pointer-events-auto flex items-center rounded-full backdrop-blur-2xl bg-[#0a0d18]/85 border border-white/10 hover:border-cyan-400/40 shadow-xl transition-all duration-300 p-1 sm:p-1.5">
+          <button
+            type="button"
             onClick={() => handleWorldClick("portfolio")}
-            className="flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full backdrop-blur-2xl bg-[#0a0d18]/80 border border-white/10 hover:border-cyan-400/40 cursor-pointer group transition-all duration-300 shadow-xl"
-            role="button"
-            tabIndex={0}
+            className="flex items-center gap-2 px-1.5 py-1 rounded-full hover:bg-white/5 transition-colors focus:outline-none group"
             aria-label="Go to portfolio home"
-            onKeyDown={(e) => e.key === "Enter" && handleWorldClick("portfolio")}
           >
             <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-cyan-400/60 via-purple-500/40 to-white/20 p-[1px] group-hover:scale-110 transition-transform duration-300 shadow-[0_0_12px_rgba(34,211,238,0.35)] flex-shrink-0">
               <div className="w-full h-full bg-[#080911] rounded-full flex items-center justify-center p-0.5">
@@ -114,33 +112,43 @@ export const Navbar: React.FC<NavbarProps> = ({
                 />
               </div>
             </div>
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="font-display font-bold text-xs tracking-wider text-white group-hover:text-cyan-300 transition-colors">
-                ZYNX
-              </span>
-              <span className="text-zinc-600 text-[10px] font-mono hidden sm:inline">/</span>
-              <span className="font-mono text-[10px] text-zinc-400 hidden sm:inline truncate">
-                JOSHUA D
-              </span>
-            </div>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
-          </div>
 
-          {/* Mobile Navigation Drawer Trigger ('>' replacing 3-line hamburger, on the left) */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden h-8 w-8 sm:h-9 sm:w-9 rounded-full backdrop-blur-2xl bg-[#0a0d18]/85 border border-white/15 text-cyan-300 hover:text-white hover:border-cyan-400/40 flex items-center justify-center transition-all active:scale-95 shadow-xl"
-            aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}
-            aria-expanded={mobileMenuOpen}
-            title="Open view switcher"
-          >
-            <ChevronRight
-              size={16}
-              className={`transition-transform duration-300 ${
-                mobileMenuOpen ? "rotate-90 text-white" : "rotate-0 text-cyan-400"
-              }`}
-            />
+            {/* Word ZYNX appears only on the main portfolio page */}
+            {currentView === "portfolio" && (
+              <>
+                <div className="flex items-center gap-1.5 min-w-0 pr-0.5">
+                  <span className="font-display font-bold text-xs tracking-wider text-white group-hover:text-cyan-300 transition-colors">
+                    ZYNX
+                  </span>
+                  <span className="text-zinc-600 text-[10px] font-mono hidden sm:inline">/</span>
+                  <span className="font-mono text-[10px] text-zinc-400 hidden sm:inline truncate">
+                    JOSHUA D
+                  </span>
+                </div>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0 mr-1" />
+              </>
+            )}
           </button>
+
+          {/* Merged Mobile Navigation Drawer Trigger ('>' merged along with logo) */}
+          <div className="lg:hidden flex items-center">
+            <div className="h-3.5 w-[1px] bg-white/15 mx-0.5" />
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full text-cyan-300 hover:text-white hover:bg-white/10 transition-all active:scale-95"
+              aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}
+              aria-expanded={mobileMenuOpen}
+              title="Open view switcher"
+            >
+              <ChevronRight
+                size={16}
+                className={`transition-transform duration-300 ${
+                  mobileMenuOpen ? "rotate-90 text-white" : "rotate-0 text-cyan-400"
+                }`}
+              />
+            </button>
+          </div>
         </div>
 
         {/* Center: Floating Capsule Ecosystem Switcher */}
