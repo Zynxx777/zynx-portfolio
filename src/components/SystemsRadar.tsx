@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Cpu, Terminal, Sparkles, Shield, Code2, Activity, CheckCircle2 } from "lucide-react";
+import { Cpu, Terminal, Sparkles, Shield, Code2, Activity, CheckCircle2, ArrowRight } from "lucide-react";
 import { soundFX } from "../utils/audioFX";
 
 interface DomainSpec {
@@ -129,16 +129,27 @@ const DOMAINS: DomainSpec[] = [
   },
 ];
 
-export const SystemsRadar: React.FC = () => {
+interface SystemsRadarProps {
+  onNavigateSkills?: () => void;
+}
+
+export const SystemsRadar: React.FC<SystemsRadarProps> = ({ onNavigateSkills }) => {
   const [activeDomainId, setActiveDomainId] = useState<string>("linux");
   const activeDomain = DOMAINS.find(d => d.id === activeDomainId) || DOMAINS[0];
   const consoleRef = useRef<HTMLDivElement | null>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0, active: false });
+  const sheenRef = useRef<HTMLDivElement | null>(null);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!consoleRef.current) return;
+    if ("ontouchstart" in window || !consoleRef.current || !sheenRef.current) return;
     const rect = consoleRef.current.getBoundingClientRect();
-    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top, active: true });
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    sheenRef.current.style.opacity = "1";
+    sheenRef.current.style.background = `radial-gradient(400px circle at ${x}px ${y}px, rgba(34, 211, 238, 0.08), transparent 70%)`;
+  };
+
+  const handleMouseLeave = () => {
+    if (sheenRef.current) sheenRef.current.style.opacity = "0";
   };
 
   const selectDomain = (id: string) => {
@@ -147,19 +158,35 @@ export const SystemsRadar: React.FC = () => {
   };
 
   return (
-    <section id="systems-radar" className="py-24 px-6 sm:px-12 max-w-[1700px] mx-auto scroll-mt-20 border-t border-white/10">
+    <section id="systems-radar" className="py-20 sm:py-24 px-5 sm:px-12 max-w-[1600px] mx-auto scroll-mt-20 border-t border-white/10">
       {/* Header */}
-      <div className="mb-14 text-left">
-        <div className="flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.24em] text-cyan-300">
-          <Activity size={14} className="text-cyan-400 animate-pulse" />
-          <span>02 // EXPERIENCE AREAS & EVIDENCE</span>
+      <div className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between text-left">
+        <div>
+          <div className="flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-300">
+            <Activity size={14} className="text-cyan-400" />
+            <span>02 // CORE CAPABILITIES &amp; EVIDENCE</span>
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-display font-medium tracking-[-0.04em] text-white mt-3">
+            Capabilities <span className="text-white/40">in context.</span>
+          </h2>
+          <p className="text-xs sm:text-sm text-zinc-400 font-sans mt-2.5 max-w-xl leading-relaxed">
+            A structured breakdown of hands-on Linux workflows, web projects, engineering coursework, and verified credentials.
+          </p>
         </div>
-        <h2 className="text-3xl sm:text-5xl font-display font-medium tracking-[-0.05em] text-white mt-3">
-          Experience <span className="text-white/40">beyond code</span>
-        </h2>
-        <p className="text-xs sm:text-sm text-zinc-400 font-sans mt-2 max-w-xl">
-          Linux desktop maintenance, web projects, engineering education, recognition, and current work. Choose an area to see its context.
-        </p>
+
+        {onNavigateSkills && (
+          <button
+            type="button"
+            onClick={() => {
+              soundFX.playClick();
+              onNavigateSkills();
+            }}
+            className="self-start md:self-auto px-5 py-2.5 rounded-full border border-white/15 bg-white/[0.04] hover:bg-white hover:text-black text-zinc-200 font-mono text-xs tracking-wider flex items-center gap-2 transition-all duration-200 shrink-0"
+          >
+            <span>Browse Full Skills Matrix</span>
+            <ArrowRight size={14} />
+          </button>
+        )}
       </div>
 
       {/* Main Interactive Radar Console */}
@@ -224,18 +251,14 @@ export const SystemsRadar: React.FC = () => {
         <div
           ref={consoleRef}
           onMouseMove={handleMouseMove}
-          onMouseLeave={() => setMousePos(prev => ({ ...prev, active: false }))}
-          className="lg:col-span-7 relative p-8 sm:p-10 rounded-3xl bg-white/[0.02] border border-white/10 overflow-hidden shadow-2xl flex flex-col justify-between space-y-8"
+          onMouseLeave={handleMouseLeave}
+          className="lg:col-span-7 relative p-6 sm:p-10 rounded-3xl bg-white/[0.02] border border-white/10 overflow-hidden shadow-2xl flex flex-col justify-between space-y-8"
         >
-          {/* Specular Sheen (Jesper Landberg style) */}
-          {mousePos.active && (
-            <div
-              className="pointer-events-none absolute -inset-px rounded-[inherit] transition-opacity duration-200"
-              style={{
-                background: `radial-gradient(400px circle at ${mousePos.x}px ${mousePos.y}px, rgba(34, 211, 238, 0.08), transparent 70%)`,
-              }}
-            />
-          )}
+          {/* Specular Sheen */}
+          <div
+            ref={sheenRef}
+            className="pointer-events-none absolute -inset-px rounded-[inherit] opacity-0 transition-opacity duration-200"
+          />
 
           <div className="space-y-6">
             {/* Console Header */}

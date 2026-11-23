@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Terminal, Monitor, Disc3, FileText, Sparkles, Layers, FolderOpen } from "lucide-react";
+import { Terminal, Monitor, Disc3, FileText, Layers, FolderOpen } from "lucide-react";
 
 export type EcosystemView = "portfolio" | "skills" | "space" | "community" | "showcase";
 
@@ -160,16 +160,15 @@ export const Navbar: React.FC<NavbarProps> = ({
           })}
         </nav>
 
-        {/* Right: ATS Resume Capsule & Mobile Trigger */}
+        {/* Right: ATS Resume & Mobile Trigger */}
         <div className="pointer-events-auto flex items-center gap-2.5">
           <button
             onClick={openResume}
-            className="px-3.5 sm:px-4 py-2 rounded-full backdrop-blur-2xl bg-emerald-950/30 hover:bg-emerald-900/40 border border-emerald-500/35 hover:border-emerald-400 text-emerald-200 hover:text-white font-mono text-xs tracking-wider transition-all duration-200 flex items-center gap-1.5 sm:gap-2 shadow-lg hover:scale-105"
+            className="px-3.5 sm:px-4 py-2 rounded-full backdrop-blur-2xl bg-white/[0.06] hover:bg-white hover:text-black border border-white/15 hover:border-white text-zinc-100 font-mono text-xs tracking-wider transition-all duration-200 flex items-center gap-2 shadow-lg"
             aria-label="Open ATS Resume"
           >
-            <FileText size={13} className="text-emerald-400" />
-            <span>Resume</span>
-            <Sparkles size={11} className="text-emerald-400 animate-pulse hidden sm:inline" />
+            <FileText size={13} className="text-cyan-400 group-hover:text-black" />
+            <span>Résumé</span>
           </button>
 
           {/* Mobile hamburger */}
@@ -233,11 +232,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="border-t border-white/10 mt-1 pt-2 px-1">
             <button
               onClick={() => { openResume(); setMobileMenuOpen(false); }}
-              className="w-full text-left px-4 py-3 rounded-xl text-xs font-mono flex items-center gap-3 text-emerald-300 hover:bg-emerald-950/30 hover:text-emerald-200 transition-colors"
+              className="w-full text-left px-4 py-3 rounded-xl text-xs font-mono flex items-center gap-3 text-cyan-200 hover:bg-white/10 hover:text-white transition-colors"
             >
-              <FileText size={15} className="text-emerald-400" />
-              <span>ATS Resume &amp; CV</span>
-              <Sparkles size={11} className="ml-auto text-emerald-400 animate-pulse" />
+              <FileText size={15} className="text-cyan-400" />
+              <span>ATS Résumé &amp; CV</span>
             </button>
           </div>
         </div>

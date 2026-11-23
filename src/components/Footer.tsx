@@ -77,7 +77,7 @@ export const Footer: React.FC<FooterProps> = ({
                   onClick={() => { onNavigatePortfolio?.(); scrollToSection("hero"); }}
                   className="block hover:text-cyan-400 transition-colors text-left"
                 >
-                  Origin
+                  Overview
                 </button>
                 <button
                   onClick={() => { onNavigatePortfolio?.(); scrollToSection("projects"); }}
@@ -106,9 +106,9 @@ export const Footer: React.FC<FooterProps> = ({
               </div>
             </div>
 
-            {/* Worlds section */}
+            {/* Spaces section */}
             <div className="space-y-3">
-              <div className="text-zinc-400 font-bold uppercase tracking-[0.18em] text-[10px]">Worlds</div>
+              <div className="text-zinc-400 font-bold uppercase tracking-[0.18em] text-[10px]">Spaces</div>
               <div className="space-y-2">
                 <button
                   onClick={() => onNavigateSkills?.()}

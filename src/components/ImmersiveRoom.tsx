@@ -297,7 +297,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     const scene = new THREE.Scene();
     const roomBackground = nightMode ? "#0a1022" : isBedroomTheme ? "#dce8f1" : "#0c1020";
     scene.background = new THREE.Color(roomBackground);
-    scene.fog = new THREE.FogExp2(roomBackground, nightMode ? 0.016 : isBedroomTheme ? 0.012 : 0.026);
+    scene.fog = new THREE.FogExp2(roomBackground, nightMode ? (window.innerWidth < 768 ? 0.028 : 0.016) : isBedroomTheme ? (window.innerWidth < 768 ? 0.022 : 0.012) : (window.innerWidth < 768 ? 0.038 : 0.026));
 
     // ── Camera ──────────────────────────────────────────────────────────────
     const W = container.clientWidth, H = container.clientHeight;
@@ -309,12 +309,12 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     targetLookAt.current.set(...initialCam.lookAt);
 
     // ── Renderer ────────────────────────────────────────────────────────────
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance", alpha: false });
+    const renderer = new THREE.WebGLRenderer({ antialias: window.innerWidth >= 768, powerPreference: "high-performance", alpha: false });
     renderer.setSize(W, H);
     const pixelRatio = () => Math.min(window.devicePixelRatio || 1, window.innerWidth < 768 ? 1.25 : 1.75);
     renderer.setPixelRatio(pixelRatio());
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.shadowMap.enabled = window.innerWidth >= 768;
+    renderer.shadowMap.type = window.innerWidth >= 768 ? THREE.PCFShadowMap : THREE.BasicShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
     container.appendChild(renderer.domElement);
@@ -2648,6 +2648,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
 
     // ── Animation Loop ──────────────────────────────────────────────────────
     let animId = 0;
+    let lastFrameTime = 0;
     const startTime = performance.now();
 
     const animate = () => {
@@ -2895,6 +2896,17 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         selectionHelper.setFromObject(selectedItem.group);
       }
 
+      // Mobile frame throttle
+      const isMobileScreen = container.clientWidth < 768;
+      if (isMobileScreen) {
+        const now = performance.now();
+        if (now - lastFrameTime < 33) { // ~30fps cap
+          animId = requestAnimationFrame(animate);
+          return;
+        }
+        lastFrameTime = now;
+      }
+
       renderer.render(scene, camera);
     };
     const handleVisibilityChange = () => {
@@ -3005,7 +3017,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
               style={{ opacity: 0, left: 0, top: 0, willChange: "transform, opacity" }}
             >
               <div
-                className="px-3 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider border backdrop-blur-md whitespace-nowrap shadow-xl flex items-center gap-1.5"
+                className="px-3 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider border backdrop-blur-md whitespace-nowrap shadow-xl flex items-center gap-1.5 min-h-[36px]"
                 style={{ color: z.color, borderColor: z.color + "66", background: "rgba(6,6,14,0.85)" }}
               >
                 <span>{z.dot}</span>
@@ -3067,7 +3079,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
             </div>
 
             {/* Text Details */}
-            <div className="flex flex-col text-left">
+            <div className="hidden sm:flex flex-col text-left">
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-mono font-bold tracking-wider uppercase text-zinc-300">
                   Lampstand • Lighting Control

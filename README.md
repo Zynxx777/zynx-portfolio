@@ -1,4 +1,4 @@
-# ZYNX Portfolio
+# ZYNX
 
 Personal portfolio for Joshua D, an Electronics and Communication Engineering graduate targeting entry-level IT support and junior Linux administration roles while continuing to build software skills.
 
@@ -8,7 +8,7 @@ The site is a React, TypeScript, and Vite application. It includes a portfolio p
 
 - [S.M. English School website](https://github.com/Zynxx777/sm-english-school-web): Astro and Tailwind CSS website MVP with a Supabase sign-in prototype for the admin area.
 - Arch Linux workstation maintenance: personal practice using pacman configuration and pactree to review packages and dependencies.
-- ZYNX portfolio: current React, TypeScript, Vite, and Three.js project.
+- ZYNX: current React, TypeScript, Vite, and Three.js project.
 - Automotive cockpit and MediVend concepts: academic ECE project exposure.
 
 The site labels personal use, project work, academic exposure, foundations, current work, and recognition separately. It does not present personal or academic work as professional engineering employment.

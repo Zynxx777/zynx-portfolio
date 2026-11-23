@@ -198,7 +198,7 @@ export const MONITOR_PROJECTS: MonitorProject[] = [
     tint: '#FDF6E2',
     url: '/#space',
     displayUrl: 'zynx-portfolio.vercel.app/#space',
-    client: 'Personal Portfolio',
+    client: 'ZYNX',
     sector: 'Spatial Web & Three.js',
     location: 'Live 3D',
     stack: ['Three.js', 'OrbitControls', 'Custom Shaders', 'Procedural Audio FX', 'Interactive 3D Furniture'],

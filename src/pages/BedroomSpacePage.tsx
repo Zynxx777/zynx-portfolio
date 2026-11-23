@@ -45,6 +45,7 @@ const MotoCard: React.FC<MotoCardProps> = ({ children, className = "", glowColor
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
+    if ('ontouchstart' in window) return;
     const rect = cardRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -55,6 +56,7 @@ const MotoCard: React.FC<MotoCardProps> = ({ children, className = "", glowColor
   };
 
   const handleMouseLeave = () => {
+    if ('ontouchstart' in window) return;
     setRotation({ x: 0, y: 0 });
     setGlare({ x: 50, y: 50, opacity: 0 });
   };
@@ -213,7 +215,7 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
       <div className="space-y-4">
         {[
           {
-            title: "ZYNX interactive portfolio",
+            title: "ZYNX",
             badge: "PERSONAL PROJECT",
             desc: "A React and TypeScript portfolio with an interactive project ribbon, responsive sections, and a Three.js room experience. Built through AI-assisted code review and manual iteration.",
             tags: ["React", "TypeScript", "Vite", "Three.js"],
@@ -676,7 +678,7 @@ const ZoneModal: React.FC<ZoneModalProps> = ({ zoneId, onClose, onPosterClick })
         aria-modal="true"
         aria-labelledby="zone-modal-title"
         onClick={(event) => event.stopPropagation()}
-        className="relative z-10 ml-auto flex h-full w-full max-w-2xl flex-col overflow-hidden border-l border-white/10 bg-[#06060e] shadow-2xl"
+        className="relative z-10 ml-auto flex h-full w-full sm:max-w-2xl max-w-full flex-col overflow-hidden border-l border-white/10 bg-[#06060e] shadow-2xl"
         style={{ animation: "slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) both" }}
       >
         {/* Fixed panel header stays available while the detail content scrolls. */}
@@ -703,7 +705,7 @@ const ZoneModal: React.FC<ZoneModalProps> = ({ zoneId, onClose, onPosterClick })
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 pb-20">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain overscroll-y-contain p-6 pb-20" style={{ WebkitOverflowScrolling: "touch" }}>
           {zoneId === "poster_wall" ? <PosterGallery onSelect={onPosterClick} /> : ZONE_CONTENT[zoneId]}
         </div>
       </div>
@@ -956,7 +958,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
 
       {/* Mobile Gesture Helper Badge */}
       {!editMode && (
-        <div className="pointer-events-none absolute left-1/2 top-28 z-20 -translate-x-1/2 sm:hidden">
+        <div className="pointer-events-none absolute left-1/2 top-[6.5rem] sm:top-28 z-20 -translate-x-1/2 sm:hidden">
           <div className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[9px] font-mono tracking-wider text-zinc-300 shadow-lg backdrop-blur-md">
             <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
             <span>DRAG TO ROTATE • PINCH TO ZOOM • TAP TO OPEN</span>
@@ -1284,7 +1286,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
           </div>
 
           {/* Compact zone dock: the room stays visible while every exhibit remains one click away. */}
-          {!editMode && <nav className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 pointer-events-auto max-w-[94vw] overflow-x-auto p-1.5 rounded-full cyber-glass border border-white/15 shadow-2xl backdrop-blur-2xl flex items-center gap-1">
+          {!editMode && <nav className="absolute bottom-[calc(0.5rem+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-30 pointer-events-auto max-w-[94vw] max-h-16 overflow-hidden overflow-x-auto p-1.5 rounded-full cyber-glass border border-white/15 shadow-2xl backdrop-blur-2xl flex items-center gap-1">
             <button
               onClick={() => handleDockSelect("overview")}
               title="Room overview"
@@ -1324,7 +1326,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
 
       {/* ── MODE 2: ARCHITECTURAL CATALOG GRID VIEW (BOC Studio Style) ────── */}
       {viewMode === "catalog" && (
-        <div className="w-full h-full overflow-y-auto pt-24 pb-28 px-8 max-w-7xl mx-auto space-y-12 animate-fadeIn">
+        <div className="w-full h-full overflow-y-auto pt-24 pb-28 px-4 sm:px-8 max-w-7xl mx-auto space-y-12 animate-fadeIn">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
             <div className="max-w-2xl space-y-2">
               <div className="text-xs font-mono text-cyan-400 uppercase tracking-widest">
@@ -1352,7 +1354,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
           </div>
 
           {/* Exhibition Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {(Object.keys(ROOM_ZONES) as ZoneId[]).map((zid) => {
               const z = ROOM_ZONES[zid];
               return (
@@ -1405,9 +1407,9 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
       {phoneOpen && <PhoneExperience onClose={() => setPhoneOpen(false)} />}
 
       {/* ── LIVE LO-FI RADIO STATION / SOUND LAB DOCK (Available across all views) ── */}
-      <div className="absolute bottom-20 sm:bottom-4 right-3 sm:right-4 z-40 flex items-end gap-2 pointer-events-auto">
+      <div className="absolute bottom-[4.5rem] sm:bottom-4 right-3 sm:right-4 z-40 flex items-end gap-2 pointer-events-auto pb-[env(safe-area-inset-bottom,0px)]">
         {musicOpen && (
-          <div className="max-w-[min(94vw,28rem)] animate-fadeIn">
+          <div className="max-w-[min(94vw,28rem)] max-h-[85dvh] overflow-y-auto animate-fadeIn">
             <BedroomAudioPlayer onClose={() => setMusicOpen(false)} />
           </div>
         )}

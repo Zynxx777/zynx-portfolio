@@ -179,9 +179,17 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
       layer: Math.floor(Math.random() * waves.length),
     }));
 
+    // Cap to 30fps on mobile to save battery/CPU
+    const isMobile = window.innerWidth < 640;
+    let lastFrameTime = performance.now();
+
     const render = (time: number) => {
       if (!running) return;
       animFrameRef.current = requestAnimationFrame(render);
+
+      // Mobile: throttle to ~30fps
+      if (isMobile && time - lastFrameTime < 32) return;
+      lastFrameTime = time;
 
       const dt = Math.min((time - lastTime) / 1000, 0.1);
       lastTime = time;
@@ -313,7 +321,10 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
   }, [isActive, currentTrack, beatPulse]);
 
   return (
-    <div className="w-[min(94vw,27.5rem)] pointer-events-auto select-none transition-all duration-300">
+    <div
+      className="w-[min(94vw,27.5rem)] pointer-events-auto select-none transition-all duration-300"
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+    >
       {/* ── iPHONE FROSTED GLASS MEDIA CAPSULE ─────────────────────────── */}
       <div
         className="relative flex flex-col rounded-[32px] overflow-hidden backdrop-blur-3xl transition-all duration-500"
@@ -334,7 +345,7 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white/[0.08] via-transparent to-black/20 rounded-[32px]" />
 
         {/* ── 1. TOP HEADER: Status Bar & Dynamic Island Badge ─────────── */}
-        <div className="relative z-10 px-5 pt-4 pb-2 flex items-center justify-between gap-3">
+        <div className="relative z-10 px-3 sm:px-5 pt-4 pb-2 flex items-center justify-between gap-3">
           {/* Left: FM Radio / Live Broadcast Pill */}
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/10 backdrop-blur-md shadow-sm">
@@ -392,7 +403,7 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
 
         {/* ── 2. BUTTERY SMOOTH WAVY VISUALIZER DISPLAY ────────────────── */}
         <div className="relative z-10 px-4 py-1">
-          <div className="relative w-full h-[105px] rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-inner flex items-center justify-center">
+          <div className="relative w-full h-[80px] sm:h-[105px] rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-inner flex items-center justify-center">
             {/* Ambient Background Aura behind the wave */}
             <div
               className="absolute inset-0 opacity-40 blur-xl transition-all duration-700 pointer-events-none"
@@ -423,7 +434,7 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
         </div>
 
         {/* ── 3. TRACK & STATION METADATA ──────────────────────────────── */}
-        <div className="relative z-10 px-5 pt-3 pb-1 flex items-center gap-3.5">
+        <div className="relative z-10 px-3 sm:px-5 pt-3 pb-1 flex items-center gap-3.5">
           {/* iOS Squircle Album Tile */}
           <div
             className="relative w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center overflow-hidden border shadow-lg transition-transform duration-300"
@@ -469,11 +480,12 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
         </div>
 
         {/* ── 4. iPHONE MEDIA TRANSPORT CONTROLS ───────────────────────── */}
-        <div className="relative z-10 px-6 py-2.5 flex items-center justify-center gap-6">
+        <div className="relative z-10 px-4 sm:px-6 py-2.5 flex items-center justify-center gap-6">
           {/* Previous Station */}
           <button
             onClick={handlePrevTrack}
-            className="w-10 h-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/15 text-zinc-200 hover:text-white transition-all active:scale-90 shadow-md backdrop-blur-md"
+            className="w-11 h-11 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/15 text-zinc-200 hover:text-white transition-all active:scale-90 shadow-md backdrop-blur-md"
+            style={{ touchAction: "manipulation" }}
             title="Previous Radio Station"
             aria-label="Previous track"
           >
@@ -483,10 +495,11 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
           {/* Primary iOS Play / Pause Button */}
           <button
             onClick={handleTogglePlay}
-            className="w-13 h-13 p-3.5 rounded-full flex items-center justify-center text-black font-bold transition-all active:scale-95 shadow-xl group"
+            className="w-14 h-14 p-3.5 rounded-full flex items-center justify-center text-black font-bold transition-all active:scale-95 shadow-xl group"
             style={{
               backgroundColor: isActive ? "#FFFFFF" : currentPalette.glow,
               boxShadow: `0 8px 24px -4px ${isActive ? "rgba(255,255,255,0.4)" : currentPalette.shadow}`,
+              touchAction: "manipulation",
             }}
             title={isPlaying ? "Pause Broadcast" : "Tune in & Play"}
             aria-label={isPlaying ? "Pause" : "Play"}
@@ -503,7 +516,8 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
           {/* Next Station */}
           <button
             onClick={handleNextTrack}
-            className="w-10 h-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/15 text-zinc-200 hover:text-white transition-all active:scale-90 shadow-md backdrop-blur-md"
+            className="w-11 h-11 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/15 text-zinc-200 hover:text-white transition-all active:scale-90 shadow-md backdrop-blur-md"
+            style={{ touchAction: "manipulation" }}
             title="Next Radio Station"
             aria-label="Next track"
           >
@@ -512,10 +526,11 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
         </div>
 
         {/* ── 5. iPHONE SOUND & VOLUME SLIDER ──────────────────────────── */}
-        <div className="relative z-10 px-6 pt-1 pb-2 flex items-center gap-3">
+        <div className="relative z-10 px-4 sm:px-6 pt-1 pb-2 flex items-center gap-3">
           <button
             onClick={handleVolumeMuteToggle}
             className="text-zinc-400 hover:text-white transition-colors p-1"
+            style={{ touchAction: "manipulation" }}
             title={volume === 0 ? "Unmute" : "Mute"}
             aria-label="Toggle mute"
           >
@@ -546,7 +561,10 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
         </div>
 
         {/* ── 6. QUICK STATION PRESETS (Scrollable Chips) ──────────────── */}
-        <div className="relative z-10 px-4 pt-1 pb-3.5 border-t border-white/[0.08] flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <div
+          className="relative z-10 px-3 sm:px-4 pt-1 pb-3.5 border-t border-white/[0.08] flex items-center gap-1.5 overflow-x-auto no-scrollbar"
+          style={{ paddingBottom: "max(0.875rem, env(safe-area-inset-bottom, 0.875rem))" }}
+        >
           {BEDROOM_PLAYLIST.map((trk, idx) => {
             const isSelected = trackIndex === idx;
             return (
@@ -558,6 +576,7 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
                     ? "bg-white text-black font-bold border-white shadow-md shadow-white/20"
                     : "bg-white/5 hover:bg-white/15 text-zinc-300 border-white/10"
                 }`}
+                style={{ touchAction: "manipulation" }}
                 title={`Tune into ${trk.title}`}
               >
                 {trk.type === "stream" && <Radio size={9} className="inline mr-1 -mt-0.5" />}

@@ -8,7 +8,6 @@ import {
   Mail,
   Phone,
   ArrowUpRight,
-  Sparkles,
   Award,
 } from "lucide-react";
 import profileData from "../data/profile.json";
@@ -108,8 +107,7 @@ export const ProfileDossierDrawer: React.FC<ProfileDossierDrawerProps> = ({
             className="px-5 py-2.5 rounded-full bg-white hover:bg-zinc-200 text-black font-mono text-xs font-bold tracking-wider flex items-center gap-2 transition-all shadow-lg"
           >
             <FileText size={14} />
-            <span>Launch ATS Resume</span>
-            <Sparkles size={12} className="text-cyan-600 animate-pulse" />
+            <span>Open ATS Résumé</span>
           </button>
 
           <a
@@ -117,7 +115,7 @@ export const ProfileDossierDrawer: React.FC<ProfileDossierDrawerProps> = ({
             className="px-5 py-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/15 text-white font-mono text-xs tracking-wider flex items-center gap-2 transition-all"
           >
             <Mail size={14} className="text-cyan-400" />
-            <span>Direct Transmission</span>
+            <span>Send Email</span>
           </a>
         </div>
 
@@ -205,10 +203,10 @@ export const ProfileDossierDrawer: React.FC<ProfileDossierDrawerProps> = ({
           </div>
         </div>
 
-        {/* Social Coordinates & Communication */}
+        {/* Direct Links */}
         <div className="space-y-3 border-t border-white/10 pt-6">
           <span className="text-xs font-mono uppercase tracking-[0.2em] text-zinc-400 block">
-            TRANSMISSION CHANNELS
+            DIRECT LINKS
           </span>
 
           <div className="grid grid-cols-2 gap-2 text-xs font-mono">
@@ -274,9 +272,9 @@ export const ProfileDossierDrawer: React.FC<ProfileDossierDrawerProps> = ({
 
         {/* Footer Metadata */}
         <div className="pt-4 border-t border-white/10">
-          <div className="text-[10px] font-mono text-zinc-600 flex items-center justify-between">
-            <span>SYS TIME: 2026 // BENGALURU, IN</span>
-            <span>ZYNX ENGINE v2.4</span>
+          <div className="text-[10px] font-mono text-zinc-500 flex items-center justify-between">
+            <span>{profileData.basics.location.city}, {profileData.basics.location.region}</span>
+            <span>Joshua D · Portfolio</span>
           </div>
         </div>
       </aside>

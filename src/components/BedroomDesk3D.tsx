@@ -89,6 +89,13 @@ const bezierCurve = new THREE.CubicBezierCurve3(
 
 function getResponsiveCameraFrame(w: number, h: number): { pos: THREE.Vector3; lookAt: THREE.Vector3 } {
   const aspect = w / Math.max(1, h);
+  if (w < 400 && aspect < 0.75) {
+    // Very small phones (e.g. 360px wide) — push camera back further
+    return {
+      pos: new THREE.Vector3(0.0, 1.55, 2.80),
+      lookAt: new THREE.Vector3(0.0, 0.26, 0.0)
+    };
+  }
   if (h < 500 && aspect > 1.4) {
     // Mobile landscape (e.g. phone held sideways: 844x390)
     return {
@@ -731,10 +738,10 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     targetLookAt.current.copy(initialFrame.lookAt);
     cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    const renderer = new THREE.WebGLRenderer({ antialias: window.innerWidth >= 768, alpha: true, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.innerWidth < 768 ? 1.5 : 2));
+    renderer.shadowMap.enabled = window.innerWidth >= 640;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
@@ -2422,7 +2429,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
             title={itemData?.name || `Item ${idNum}`}
           >
             <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shadow-lg transition-all ${
+              className={`w-9 h-9 sm:w-7 sm:h-7 rounded-full flex items-center justify-center font-bold text-sm sm:text-xs shadow-lg transition-all ${
                 isSelected
                   ? 'bg-[#2563eb] text-white ring-4 ring-blue-400/40 shadow-blue-500/40'
                   : 'bg-white/95 text-zinc-900 border border-zinc-400/70 hover:border-blue-500 shadow-md'
@@ -2471,7 +2478,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
       {/* Bottom Bar Pills (Exact Navigation from pradiplabs.dev - scrollable on mobile, centered on desktop) */}
       {!isCardHeld && !focusedTarget && !isMonitorOpen && !isPhoneOpen && (
-        <div className="absolute bottom-3 sm:bottom-6 inset-x-0 z-30 flex items-center justify-start sm:justify-center gap-2 px-3 sm:px-4 pointer-events-auto animate-fade-in overflow-x-auto no-scrollbar py-1 scroll-smooth pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="absolute bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:bottom-6 inset-x-0 z-30 flex items-center justify-start sm:justify-center gap-2 px-3 sm:px-4 pointer-events-auto animate-fade-in overflow-x-auto no-scrollbar py-1 scroll-smooth pb-[max(0.75rem,env(safe-area-inset-bottom))]" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}>
           <button
             onClick={() => {
               soundFX.playClick();

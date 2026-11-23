@@ -8,7 +8,7 @@ export const ContactTerminal: React.FC = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const formBoxRef = useRef<HTMLDivElement | null>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0, active: false });
+  const sheenRef = useRef<HTMLDivElement | null>(null);
 
   const copyEmail = async () => {
     try {
@@ -22,54 +22,61 @@ export const ContactTerminal: React.FC = () => {
 
   const handleSendMail = (e: React.FormEvent) => {
     e.preventDefault();
-    const subject = encodeURIComponent(`Project Collaboration from ${name}`);
+    const subject = encodeURIComponent(`Inquiry from ${name}`);
     const body = encodeURIComponent(`Hi Joshua,\n\n${message}\n\nFrom: ${name} (${email})`);
     window.location.href = `mailto:${profileData.basics.email}?subject=${subject}&body=${body}`;
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!formBoxRef.current) return;
+    if ("ontouchstart" in window || !formBoxRef.current || !sheenRef.current) return;
     const rect = formBoxRef.current.getBoundingClientRect();
-    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top, active: true });
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    sheenRef.current.style.opacity = "1";
+    sheenRef.current.style.background = `radial-gradient(350px circle at ${x}px ${y}px, rgba(34, 211, 238, 0.08), transparent 70%)`;
+  };
+
+  const handleMouseLeave = () => {
+    if (sheenRef.current) sheenRef.current.style.opacity = "0";
   };
 
   return (
-    <section id="contact" className="py-24 px-6 sm:px-12 max-w-[1700px] mx-auto scroll-mt-20 border-t border-white/10">
-      <div className="mb-14 text-left">
-        <div className="flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.24em] text-cyan-300">
+    <section id="contact" className="py-20 sm:py-24 px-5 sm:px-12 max-w-[1600px] mx-auto scroll-mt-20 border-t border-white/10">
+      <div className="mb-12 text-left">
+        <div className="flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-300">
           <Terminal size={14} className="text-cyan-400" />
-          <span>06 // CONTACT &amp; OPPORTUNITIES</span>
+          <span>05 // CONTACT &amp; OPPORTUNITIES</span>
         </div>
-        <h2 className="text-3xl sm:text-5xl font-display font-medium tracking-[-0.05em] text-white mt-3">
-          Let’s talk about <span className="text-white/40">the next role.</span>
+        <h2 className="text-3xl sm:text-5xl font-display font-medium tracking-[-0.04em] text-white mt-3">
+          Get in <span className="text-white/40">touch.</span>
         </h2>
-        <p className="text-xs sm:text-sm text-zinc-400 font-sans mt-2 max-w-xl">
-          Interested in entry-level IT support, desktop support, junior Linux administration, and junior software roles.
+        <p className="text-xs sm:text-sm text-zinc-400 font-sans mt-2.5 max-w-xl leading-relaxed">
+          Open to entry-level IT support, desktop support, junior Linux administration, and junior web engineering roles.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-        {/* Left: Verified Endpoints */}
-        <div className="lg:col-span-5 p-8 rounded-3xl bg-white/[0.02] border border-white/10 flex flex-col justify-between space-y-8 shadow-2xl">
+        {/* Left: Direct Channels */}
+        <div className="lg:col-span-5 p-6 sm:p-8 rounded-3xl bg-white/[0.02] border border-white/10 flex flex-col justify-between space-y-8 shadow-2xl">
           <div className="space-y-6">
             <div>
-              <h3 className="font-display font-medium text-lg text-white">Direct Communication Endpoints</h3>
+              <h3 className="font-display font-medium text-lg text-white">Direct Channels</h3>
               <p className="text-xs text-zinc-400 font-sans mt-1">
-                Reach out directly across any verified channel below.
+                Reach out directly via email, phone, or messaging.
               </p>
             </div>
 
             <div className="space-y-3 font-mono text-xs">
               {/* Email */}
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between hover:border-cyan-400/40 transition-colors">
-                <div className="flex items-center gap-3">
-                  <Mail size={16} className="text-cyan-300" />
-                  <span className="text-zinc-200">{profileData.basics.email}</span>
+              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-3 hover:border-cyan-400/40 transition-colors">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Mail size={16} className="text-cyan-300 shrink-0" />
+                  <span className="text-zinc-200 truncate">{profileData.basics.email}</span>
                 </div>
                 <button
                   type="button"
                   onClick={copyEmail}
-                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white transition-all flex items-center gap-1.5"
+                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white transition-all flex items-center gap-1.5 shrink-0"
                   title="Copy email address"
                 >
                   {copied ? (
@@ -149,70 +156,69 @@ export const ContactTerminal: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Interactive Transmission Form with Mouse Spotlight */}
+        {/* Right: Contact Form with Mouse Spotlight */}
         <div
           ref={formBoxRef}
           onMouseMove={handleMouseMove}
-          onMouseLeave={() => setMousePos(prev => ({ ...prev, active: false }))}
-          className="lg:col-span-7 relative p-8 sm:p-10 rounded-3xl bg-white/[0.02] border border-white/10 overflow-hidden shadow-2xl"
+          onMouseLeave={handleMouseLeave}
+          className="lg:col-span-7 relative p-6 sm:p-10 rounded-3xl bg-white/[0.02] border border-white/10 overflow-hidden shadow-2xl"
         >
-          {mousePos.active && (
-            <div
-              className="pointer-events-none absolute -inset-px rounded-[inherit] transition-opacity duration-200"
-              style={{
-                background: `radial-gradient(350px circle at ${mousePos.x}px ${mousePos.y}px, rgba(34, 211, 238, 0.08), transparent 70%)`,
-              }}
-            />
-          )}
+          <div
+            ref={sheenRef}
+            className="pointer-events-none absolute -inset-px rounded-[inherit] opacity-0 transition-opacity duration-200"
+          />
 
-          <form onSubmit={handleSendMail} className="space-y-5 font-mono text-xs">
+          <form onSubmit={handleSendMail} className="relative z-10 space-y-5 font-mono text-xs">
             <div>
-              <label className="block text-zinc-400 mb-2 uppercase tracking-wider text-[11px]">
+              <label htmlFor="contact-name" className="block text-zinc-400 mb-2 uppercase tracking-wider text-[11px]">
                 Your Name / Organization
               </label>
               <input
+                id="contact-name"
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Elena Rostova"
+                placeholder="Your name or company"
                 className="w-full px-4 py-3.5 rounded-2xl bg-black/60 border border-white/15 text-white placeholder-zinc-600 focus:outline-none focus:border-cyan-400 transition-colors font-sans text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-zinc-400 mb-2 uppercase tracking-wider text-[11px]">
-                Your Email Address
+              <label htmlFor="contact-email" className="block text-zinc-400 mb-2 uppercase tracking-wider text-[11px]">
+                Email Address
               </label>
               <input
+                id="contact-email"
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="elena@company.com"
+                placeholder="name@company.com"
                 className="w-full px-4 py-3.5 rounded-2xl bg-black/60 border border-white/15 text-white placeholder-zinc-600 focus:outline-none focus:border-cyan-400 transition-colors font-sans text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-zinc-400 mb-2 uppercase tracking-wider text-[11px]">
-                Project Scope / Technical Requirement
+              <label htmlFor="contact-message" className="block text-zinc-400 mb-2 uppercase tracking-wider text-[11px]">
+                Message
               </label>
               <textarea
+                id="contact-message"
                 required
                 rows={4}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Brief us on your software engineering opportunity, system architecture, or timeline..."
+                placeholder="Share details about the role, team, or inquiry..."
                 className="w-full px-4 py-3.5 rounded-2xl bg-black/60 border border-white/15 text-white placeholder-zinc-600 focus:outline-none focus:border-cyan-400 transition-colors font-sans text-sm"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-4 rounded-2xl bg-white hover:bg-zinc-200 text-black font-bold tracking-wider uppercase transition-all shadow-xl flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01]"
+              className="w-full py-4 rounded-2xl bg-white hover:bg-zinc-200 text-black font-bold tracking-wider uppercase transition-all shadow-xl flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>Transmit Message</span>
+              <span>Send Message</span>
               <Send size={14} />
             </button>
           </form>

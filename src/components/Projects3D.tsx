@@ -979,18 +979,18 @@ export const Projects3D: React.FC<Projects3DProps> = ({ immersive = false, profi
 
   return (
     <section className="relative w-full bg-transparent text-white overflow-hidden">
-      {/* ── TOP HUD HEADER (Jesper Landberg Minimalist Swedish Aesthetic) ── */}
-      <div className="relative z-30 pt-[clamp(4rem,10vw,8rem)] pb-8 px-5 sm:px-12 max-w-[1900px] mx-auto flex flex-col md:flex-row items-start md:items-end justify-between gap-7 border-b border-white/10">
+      {/* ── TOP HEADER ── */}
+      <div className="relative z-30 pt-16 sm:pt-24 pb-8 px-5 sm:px-12 max-w-[1600px] mx-auto flex flex-col md:flex-row items-start md:items-end justify-between gap-7 border-b border-white/10">
         <div>
           <div className="flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.22em] text-cyan-300">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-            <span>01 // CURRENT PROJECTS</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+            <span>01 // SELECTED WORK</span>
           </div>
-          <h2 className="text-[clamp(2.25rem,6vw,5.75rem)] leading-[0.92] font-display font-medium tracking-[-0.06em] text-white mt-4">
-            Selected work <span className="text-white/40">& projects</span>
+          <h2 className="text-3xl sm:text-5xl leading-[0.96] font-display font-medium tracking-[-0.04em] text-white mt-3">
+            Selected work <span className="text-white/40">&amp; projects.</span>
           </h2>
-          <p className="mt-4 max-w-xl text-sm leading-relaxed text-zinc-400 sm:text-base">
-            A living index of the systems, interfaces, and experiments I am building now.
+          <p className="mt-2.5 max-w-xl text-xs sm:text-sm leading-relaxed text-zinc-400">
+            Hardware prototypes, Linux workstation practice, and production web engineering.
           </p>
         </div>
 

@@ -120,9 +120,9 @@
       "link": "https://github.com/Zynxx777/sm-english-school-web"
     },
     {
-      "id": "zynx-portfolio",
-      "name": "ZYNX Portfolio Ecosystem",
-      "subtitle": "Responsive portfolio and interactive 3D room",
+      "id": "zynx",
+      "name": "ZYNX",
+      "subtitle": "Responsive web experience and interactive 3D room",
       "category": "Web Development",
       "description": "Personal multi-page portfolio built with React, TypeScript, Vite, and Three.js. Iterates on AI-generated code through review, manual edits, UI redesign, and responsive adjustments across devices.",
       "skills": ["React", "TypeScript", "Vite", "Three.js", "Responsive UI"],

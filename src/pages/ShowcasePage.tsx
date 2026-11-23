@@ -61,7 +61,7 @@ export const ShowcasePage: React.FC<ShowcasePageProps> = ({
             type="button"
             onClick={onNavigatePortfolio}
             className="pointer-events-auto inline-flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.14em] text-white/85 transition hover:text-white"
-            aria-label="Return to ZYNX portfolio"
+            aria-label="Return to ZYNX"
           >
             <span className="font-semibold tracking-[0.12em]">ZYNX</span>
             <span className="text-white/40">/ Joshua D</span>
