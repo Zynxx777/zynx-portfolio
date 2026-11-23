@@ -12,7 +12,7 @@ import {
 import { SoundLab } from "../components/SoundLab";
 import { BedroomAudioPlayer } from "../components/BedroomAudioPlayer";
 import PhoneExperience from "../components/PhoneExperience";
-import { BedroomDesk3D } from "../components/BedroomDesk3D";
+import { BedroomDesk3D, SpectaclesIcon } from "../components/BedroomDesk3D";
 import { ProjectDetailModal } from "../components/ProjectDetailModal";
 import { ProfileSphereModal } from "../components/ProfileSphereModal";
 import { DiaryModal } from "../components/DiaryModal";
@@ -24,6 +24,7 @@ import {
   Terminal, Cpu, Music, Layers, Shield, ChevronRight,
   Monitor, Zap, BookOpen, Headphones, Save,
   Grid, Eye, BedDouble, Sparkles, Move, RotateCcw, Check, Laptop,
+  Sun, Moon,
 } from "lucide-react";
 
 interface BedroomSpacePageProps {
@@ -662,7 +663,7 @@ const ZoneModal: React.FC<ZoneModalProps> = ({ zoneId, onClose, onPosterClick })
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-stretch" role="presentation">
+    <div className="fixed top-[92px] sm:top-[100px] inset-x-0 bottom-0 z-[100] flex items-stretch" role="presentation">
       <div
         className="absolute inset-0 bg-black/75 backdrop-blur-md transition-opacity"
         onClick={() => {
@@ -678,11 +679,11 @@ const ZoneModal: React.FC<ZoneModalProps> = ({ zoneId, onClose, onPosterClick })
         aria-modal="true"
         aria-labelledby="zone-modal-title"
         onClick={(event) => event.stopPropagation()}
-        className="relative z-10 ml-auto flex h-full w-full sm:max-w-2xl max-w-full flex-col overflow-hidden border-l border-white/10 bg-[#06060e] shadow-2xl"
+        className="relative z-10 ml-auto flex h-full w-full sm:max-w-2xl max-w-full flex-col overflow-hidden rounded-t-2xl sm:rounded-tl-2xl border-t border-l border-white/15 bg-[#06060e] shadow-2xl"
         style={{ animation: "slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) both" }}
       >
         {/* Fixed panel header stays available while the detail content scrolls. */}
-        <div className="relative z-20 flex shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-[#06060e]/95 px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-4 backdrop-blur-md">
+        <div className="relative z-20 flex shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-[#06060e]/95 px-5 py-3 sm:py-3.5 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: zone.color }} />
             <div>
@@ -696,11 +697,11 @@ const ZoneModal: React.FC<ZoneModalProps> = ({ zoneId, onClose, onPosterClick })
               soundFX.playClick();
               onClose();
             }}
-            className="flex h-9 items-center justify-center gap-1.5 px-3.5 rounded-full border border-red-500/40 bg-red-500/15 text-red-100 transition-colors hover:bg-red-500/30 active:scale-95 text-xs font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+            className="flex h-8 sm:h-9 items-center justify-center gap-1.5 px-3.5 rounded-full border border-red-500/40 bg-red-500/15 text-red-100 transition-colors hover:bg-red-500/30 active:scale-95 text-xs font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
             aria-label="Close exhibition modal"
             title="Close details (ESC)"
           >
-            <X size={15} />
+            <X size={14} />
             <span className="font-bold">Close</span>
           </button>
         </div>
@@ -721,6 +722,8 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
   const [activePoster, setActivePoster] = useState<RoomPosterId | null>(null);
   const [targetZone, setTargetZone] = useState<ZoneId | "overview">("overview");
   const [viewMode, setViewMode] = useState<"desk" | "3d" | "catalog">("desk");
+  const [deskDayMode, setDeskDayMode] = useState(false);
+  const [deskXRayMode, setDeskXRayMode] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isDiaryOpen, setIsDiaryOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -863,20 +866,22 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
         }
       `}</style>
 
-      {/* Header controls aligned right so the top-left logo and hamburger menu are completely clear */}
-      <header className="absolute top-3 right-2 sm:right-6 z-30 flex items-center justify-end gap-1.5 sm:gap-2 pointer-events-none pt-[env(safe-area-inset-top,0px)]">
-        <div className="flex items-center gap-1 sm:gap-2 pointer-events-auto">
+      {/* Header controls unified and lifted up to top-1.5 sm:top-2 right-2 sm:right-4 */}
+      <header className="absolute top-1.5 sm:top-2 right-2 sm:right-4 z-30 flex items-center justify-end gap-1 sm:gap-1.5 pointer-events-none">
+        <div className="flex items-center gap-1 sm:gap-1.5 pointer-events-auto">
+          {/* Portfolio button */}
           <button
             onClick={() => { soundFX.playClick(); onNavigatePortfolio(); }}
-            className="hidden sm:flex h-8 sm:h-9 items-center gap-1.5 sm:gap-2 rounded-full border border-white/10 bg-black/60 px-2.5 sm:px-3 text-[11px] font-mono text-zinc-200 shadow-lg backdrop-blur-xl transition hover:border-cyan-300/60 hover:text-white"
+            className="flex h-7 sm:h-8 items-center gap-1 sm:gap-1.5 rounded-full border border-white/10 bg-black/60 px-2 sm:px-2.5 text-[10px] sm:text-[11px] font-mono text-zinc-200 shadow-md backdrop-blur-xl transition hover:border-cyan-300/60 hover:text-white"
             aria-label="Back to developer portfolio"
+            title="Portfolio"
           >
-            <ArrowLeft size={13} />
-            <span>Portfolio</span>
+            <ArrowLeft size={12} />
+            <span className="hidden xs:inline sm:inline">Portfolio</span>
           </button>
           
           {/* View Mode Switcher */}
-          <div className="flex items-center gap-0.5 sm:gap-1 bg-black/60 border border-white/10 rounded-full p-0.5 sm:p-1 shadow-lg backdrop-blur-xl">
+          <div className="flex items-center gap-0.5 bg-black/60 border border-white/10 rounded-full p-0.5 shadow-md backdrop-blur-xl">
             <button
               onClick={() => {
                 soundFX.playClick();
@@ -884,9 +889,9 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
                 setEditMode(false);
                 setSelectedFurniture(null);
               }}
-              className={`flex h-7 items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-2.5 text-[10px] font-mono transition ${viewMode === "desk" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
+              className={`flex h-6 sm:h-7 items-center gap-1 rounded-full px-2 sm:px-2.5 text-[10px] font-mono transition ${viewMode === "desk" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
             >
-              <Laptop size={12} />
+              <Laptop size={11} />
               <span>Desk</span>
             </button>
             <button
@@ -896,9 +901,9 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
                 setEditMode(false);
                 setSelectedFurniture(null);
               }}
-              className={`flex h-7 items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-2.5 text-[10px] font-mono transition ${viewMode === "3d" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
+              className={`flex h-6 sm:h-7 items-center gap-1 rounded-full px-2 sm:px-2.5 text-[10px] font-mono transition ${viewMode === "3d" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
             >
-              <BedDouble size={12} />
+              <BedDouble size={11} />
               <span className="hidden sm:inline">Room 3D</span>
               <span className="sm:hidden">Room</span>
             </button>
@@ -909,13 +914,46 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
                 setEditMode(false);
                 setSelectedFurniture(null);
               }}
-              className={`flex h-7 items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-2.5 text-[10px] font-mono transition ${viewMode === "catalog" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
+              className={`flex h-6 sm:h-7 items-center gap-1 rounded-full px-2 sm:px-2.5 text-[10px] font-mono transition ${viewMode === "catalog" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
             >
-              <Grid size={12} />
+              <Grid size={11} />
               <span className="hidden sm:inline">Catalog</span>
             </button>
           </div>
 
+          {/* Desk Mode specific controls: X-Ray & Day/Night */}
+          {viewMode === "desk" && (
+            <div className="flex items-center gap-0.5 sm:gap-1 bg-black/60 border border-white/10 rounded-full p-0.5 shadow-md backdrop-blur-xl">
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  setDeskXRayMode((prev) => !prev);
+                }}
+                className={`flex h-6 sm:h-7 items-center gap-1 rounded-full px-2 sm:px-2.5 text-[10px] font-mono transition-all ${
+                  deskXRayMode
+                    ? "bg-amber-400 text-black font-bold shadow-md shadow-amber-400/40"
+                    : "text-zinc-300 hover:text-white hover:bg-white/10"
+                }`}
+                title="Toggle X-Ray Anatomy Mode"
+              >
+                <SpectaclesIcon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{deskXRayMode ? "Glasses On" : "X-Ray"}</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  setDeskDayMode((prev) => !prev);
+                }}
+                className="flex h-6 sm:h-7 w-6 sm:w-7 items-center justify-center rounded-full text-amber-300 hover:text-white hover:bg-white/10 transition-all"
+                title={deskDayMode ? "Switch to Night Cozy Mode" : "Switch to Day Studio Mode"}
+              >
+                {deskDayMode ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          )}
+
+          {/* Room 3D Mode specific controls: Theme Switcher */}
           {viewMode === "3d" && (
             <button
               onClick={() => {
@@ -928,7 +966,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
                 setEditMode(false);
                 setSelectedFurniture(null);
               }}
-              className={`pointer-events-auto flex h-7 items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-2.5 text-[10px] font-mono border shadow-lg backdrop-blur-xl transition active:scale-95 ${
+              className={`pointer-events-auto flex h-7 sm:h-8 items-center gap-1 sm:gap-1.5 rounded-full px-2 sm:px-2.5 text-[10px] font-mono border shadow-md backdrop-blur-xl transition active:scale-95 ${
                 roomTheme === "cyberpunk"
                   ? "bg-cyan-500/20 border-cyan-400/40 text-cyan-200 hover:bg-cyan-500/30"
                   : "bg-rose-500/20 border-rose-400/40 text-rose-200 hover:bg-rose-500/30"
@@ -966,6 +1004,10 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
       {viewMode === "desk" && (
         <div className="w-full h-full relative">
           <BedroomDesk3D
+            isXRayMode={deskXRayMode}
+            onSetXRayMode={setDeskXRayMode}
+            dayMode={deskDayMode}
+            onSetDayMode={setDeskDayMode}
             onOpenProject={(projectId) => {
               const proj = PROJECTS.find((p) => p.id === projectId) || PROJECTS[0];
               setSelectedProject(proj);

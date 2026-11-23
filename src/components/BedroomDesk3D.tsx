@@ -514,6 +514,10 @@ interface BedroomDesk3DProps {
   onOpenPhone?: () => void;
   onToggleMusic?: () => void;
   isMusicPlaying?: boolean;
+  isXRayMode?: boolean;
+  onSetXRayMode?: (val: boolean | ((prev: boolean) => boolean)) => void;
+  dayMode?: boolean;
+  onSetDayMode?: (val: boolean | ((prev: boolean) => boolean)) => void;
 }
 
 export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
@@ -522,12 +526,34 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   onOpenAnatomy,
   onOpenMonitor,
   onOpenPhone,
+  isXRayMode: controlledXRayMode,
+  onSetXRayMode,
+  dayMode: controlledDayMode,
+  onSetDayMode,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const [hoveredObject, setHoveredObject] = useState<string | null>(null);
   const [lampOn, setLampOn] = useState(true);
-  const [dayMode, setDayMode] = useState(false); // Day Studio vs Cozy Night
-  const [isXRayMode, setIsXRayMode] = useState(false); // Matching pradiplabs X-Ray mode
+  const [internalDayMode, setInternalDayMode] = useState(false); // Day Studio vs Cozy Night
+  const [internalXRayMode, setInternalXRayMode] = useState(false); // Matching pradiplabs X-Ray mode
+
+  const dayMode = controlledDayMode !== undefined ? controlledDayMode : internalDayMode;
+  const setDayMode = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
+    if (onSetDayMode) {
+      onSetDayMode(val);
+    } else {
+      setInternalDayMode(val);
+    }
+  }, [onSetDayMode]);
+
+  const isXRayMode = controlledXRayMode !== undefined ? controlledXRayMode : internalXRayMode;
+  const setIsXRayMode = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
+    if (onSetXRayMode) {
+      onSetXRayMode(val);
+    } else {
+      setInternalXRayMode(val);
+    }
+  }, [onSetXRayMode]);
   const [printedReceipt, setPrintedReceipt] = useState(false);
   const [isMonitorOpen, setIsMonitorOpen] = useState(false);
   const [isPhoneOpen, setIsPhoneOpen] = useState(false);
@@ -2218,7 +2244,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     }`}>
       {/* Top Banner Headline (Clean & minimal on mobile, expanded on desktop) */}
       {!isXRayMode && !isCardHeld && (
-        <div className="absolute top-24 sm:top-16 inset-x-0 z-20 pointer-events-none text-center px-4 max-w-xl mx-auto transition-opacity duration-300">
+        <div className="absolute top-10 sm:top-12 inset-x-0 z-20 pointer-events-none text-center px-4 max-w-xl mx-auto transition-opacity duration-300">
           <h1 className={`text-base sm:text-3xl md:text-4xl font-extrabold tracking-tight drop-shadow-md font-display ${
             dayMode ? 'text-slate-900' : 'text-white'
           }`}>
@@ -2232,31 +2258,33 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         </div>
       )}
 
-      {/* Top HUD Controls: X-Ray, Day/Night */}
-      <div className="absolute top-14 sm:top-3 right-3 z-30 flex items-center gap-1 rounded-full bg-black/60 border border-white/10 p-1 backdrop-blur-xl shadow-lg pointer-events-auto">
-        {/* Spectacles (X-Ray Glasses Toggle) */}
-        <button
-          onClick={() => { soundFX.playClick(); setIsXRayMode(!isXRayMode); }}
-          className={`px-2.5 py-1 rounded-full text-[10px] font-mono transition-all flex items-center gap-1.5 ${
-            isXRayMode
-              ? 'bg-amber-400 text-black font-bold shadow-md shadow-amber-400/40'
-              : 'text-zinc-300 hover:text-white hover:bg-white/10'
-          }`}
-          title="X-ray glasses · see how it's made"
-        >
-          <SpectaclesIcon className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">{isXRayMode ? 'Glasses On' : 'X-Ray'}</span>
-        </button>
+      {/* Top HUD Controls: X-Ray, Day/Night (Rendered only if not externally controlled in page header) */}
+      {controlledXRayMode === undefined && (
+        <div className="absolute top-14 sm:top-3 right-3 z-30 flex items-center gap-1 rounded-full bg-black/60 border border-white/10 p-1 backdrop-blur-xl shadow-lg pointer-events-auto">
+          {/* Spectacles (X-Ray Glasses Toggle) */}
+          <button
+            onClick={() => { soundFX.playClick(); setIsXRayMode(!isXRayMode); }}
+            className={`px-2.5 py-1 rounded-full text-[10px] font-mono transition-all flex items-center gap-1.5 ${
+              isXRayMode
+                ? 'bg-amber-400 text-black font-bold shadow-md shadow-amber-400/40'
+                : 'text-zinc-300 hover:text-white hover:bg-white/10'
+            }`}
+            title="X-ray glasses · see how it's made"
+          >
+            <SpectaclesIcon className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{isXRayMode ? 'Glasses On' : 'X-Ray'}</span>
+          </button>
 
-        {/* Day Studio vs Cozy Night Toggle */}
-        <button
-          onClick={() => { soundFX.playClick(); setDayMode(!dayMode); }}
-          className="p-1.5 rounded-full text-amber-300 hover:text-white hover:bg-white/10 transition-all"
-          title={dayMode ? 'Switch to Night Cozy Mode' : 'Switch to Day Studio Mode'}
-        >
-          {dayMode ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
-        </button>
-      </div>
+          {/* Day Studio vs Cozy Night Toggle */}
+          <button
+            onClick={() => { soundFX.playClick(); setDayMode(!dayMode); }}
+            className="p-1.5 rounded-full text-amber-300 hover:text-white hover:bg-white/10 transition-all"
+            title={dayMode ? 'Switch to Night Cozy Mode' : 'Switch to Day Studio Mode'}
+          >
+            {dayMode ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      )}
 
       {/* ── FOCUSED OBJECT DEDICATED CLOSE & ACTION BAR (Accessible Bottom Center) ── */}
       {focusedTarget && !isCardHeld && (
