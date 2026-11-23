@@ -186,16 +186,18 @@ export const Navbar: React.FC<NavbarProps> = ({
           })}
         </nav>
 
-        {/* Right: ATS Resume */}
+        {/* Right: ATS Resume (visible only on the landing main page) */}
         <div className="pointer-events-auto flex items-center">
-          <button
-            onClick={openResume}
-            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full backdrop-blur-2xl bg-white/[0.06] hover:bg-white hover:text-black border border-white/15 hover:border-white text-zinc-100 font-mono text-[11px] sm:text-xs tracking-wider transition-all duration-200 flex items-center gap-1.5 sm:gap-2 shadow-lg active:scale-95"
-            aria-label="Open ATS Resume"
-          >
-            <FileText size={13} className="text-cyan-400 group-hover:text-black" />
-            <span>Résumé</span>
-          </button>
+          {currentView === "portfolio" && (
+            <button
+              onClick={openResume}
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full backdrop-blur-2xl bg-white/[0.06] hover:bg-white hover:text-black border border-white/15 hover:border-white text-zinc-100 font-mono text-[11px] sm:text-xs tracking-wider transition-all duration-200 flex items-center gap-1.5 sm:gap-2 shadow-lg active:scale-95"
+              aria-label="Open ATS Resume"
+            >
+              <FileText size={13} className="text-cyan-400 group-hover:text-black" />
+              <span>Résumé</span>
+            </button>
+          )}
         </div>
       </div>
 
