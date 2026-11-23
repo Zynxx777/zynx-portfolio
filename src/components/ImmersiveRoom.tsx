@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import * as THREE from "three";
 import { soundFX } from "../utils/audioFX";
+import { getRenderQuality } from "../utils/renderQuality";
 import { Sun, Moon } from "lucide-react";
 import { drawCardFront, drawCardBack, CARD_WIDTH, CARD_HEIGHT } from "../utils/cardCanvas";
 import {
@@ -37,9 +38,9 @@ interface ImmersiveRoomProps {
   onOpenDiary?: () => void;
 }
 
-const ROOM_LAYOUT_KEY = "zynx-bedroom-room-layout-v2";
-const ROOM_DEFAULT_LAYOUT_KEY = "zynx-bedroom-room-default-layout-v2";
-const ROOM_DEFAULT_CAPTURE_KEY = "zynx-bedroom-room-default-capture-v4";
+const ROOM_LAYOUT_KEY = "zynx-bedroom-room-layout-v4";
+const ROOM_DEFAULT_LAYOUT_KEY = "zynx-bedroom-room-default-layout-v4";
+const ROOM_DEFAULT_CAPTURE_KEY = "zynx-bedroom-room-default-capture-v5";
 const ROOM_LAYOUT_SHIFT_KEY = "zynx-bedroom-room-layout-workspace-shift-v2";
 
 // Helper: neon sign text canvas
@@ -301,19 +302,21 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     scene.fog = new THREE.FogExp2(roomBackground, nightMode ? (window.innerWidth < 768 ? 0.028 : 0.016) : isBedroomTheme ? (window.innerWidth < 768 ? 0.022 : 0.012) : (window.innerWidth < 768 ? 0.038 : 0.026));
 
     // ── Camera ──────────────────────────────────────────────────────────────
-    const W = container.clientWidth, H = container.clientHeight;
+    const W = Math.max(1, container.clientWidth), H = Math.max(1, container.clientHeight);
     const initialCam = getResponsiveOverview(W, H);
     const camera = new THREE.PerspectiveCamera(initialCam.fov, W / H, 0.1, 150);
     camera.position.set(...initialCam.cam);
     const roomOverviewLookAt = new THREE.Vector3(...initialCam.lookAt);
+    const currentLookAt = new THREE.Vector3(...initialCam.lookAt);
+    camera.lookAt(currentLookAt);
     targetCamPos.current.set(...initialCam.cam);
     targetLookAt.current.set(...initialCam.lookAt);
 
     // ── Renderer ────────────────────────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance", alpha: false });
     renderer.setSize(W, H);
-    const pixelRatio = () => Math.min(window.devicePixelRatio || 1, 2.0);
-    renderer.setPixelRatio(pixelRatio());
+    const renderQuality = getRenderQuality(W);
+    renderer.setPixelRatio(renderQuality.pixelRatio);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -375,12 +378,14 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     const deskLight = new THREE.PointLight(nightMode ? "#f2bd9c" : isBedroomTheme ? "#ffd9a8" : "#ffbb66", nightMode ? 1.5 : isBedroomTheme ? 2.5 : 3.2, 10);
     deskLight.position.set(0, 3.5, 0);
     deskLight.castShadow = true;
+    deskLight.shadow.mapSize.set(renderQuality.pointShadowMapSize, renderQuality.pointShadowMapSize);
     scene.add(deskLight);
 
     const cyanSpot = new THREE.SpotLight(isBedroomTheme ? "#f4cde5" : "#00F2FE", nightMode ? (isBedroomTheme ? 0.65 : 1.8) : isBedroomTheme ? 3.2 : 7, 26, Math.PI / 5, 0.5, 1.0);
     cyanSpot.position.set(-6, 8, 5);
     cyanSpot.target.position.set(0, 1, 0);
     cyanSpot.castShadow = true;
+    cyanSpot.shadow.mapSize.set(renderQuality.shadowMapSize, renderQuality.shadowMapSize);
     scene.add(cyanSpot);
     scene.add(cyanSpot.target);
 
@@ -2594,7 +2599,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     let shouldCaptureCurrentDefault = !hasRoomDefault;
     try {
       shouldCaptureCurrentDefault = shouldCaptureCurrentDefault
-        || window.localStorage.getItem(ROOM_DEFAULT_CAPTURE_KEY) !== "4";
+        || window.localStorage.getItem(ROOM_DEFAULT_CAPTURE_KEY) !== "5";
     } catch {
       shouldCaptureCurrentDefault = true;
     }
@@ -2617,7 +2622,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       hasRoomDefault = true;
       try {
         window.localStorage.setItem(ROOM_DEFAULT_LAYOUT_KEY, JSON.stringify(defaultLayout));
-        window.localStorage.setItem(ROOM_DEFAULT_CAPTURE_KEY, "4");
+        window.localStorage.setItem(ROOM_DEFAULT_CAPTURE_KEY, "5");
       } catch {
         // The refreshed default still works for this session if storage is disabled.
       }
@@ -2967,6 +2972,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     const onClick = (e: MouseEvent) => {
       // Ignore click if cursor was dragged (prevents accidental trigger / mistouch on drag release)
       if (mouseDragDistance > 6) return;
+      if (performance.now() - lastTouchEndTime < 500) return;
       setMouseFromEvent(e);
       handleInteractAtMouse();
     };
@@ -2983,11 +2989,12 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       if (cursorRef.current) cursorRef.current.style.transform = "translate(-50%,-50%) scale(1)";
     };
 
-    // Orbit Dragging with Inertia Damping
+    // Orbit Dragging & Panning with Smooth Damping
     let isDragging = false;
-    let orbitTargetSwitched = false;
+    let isPanning = false;
     let prevDrag = { x: 0, y: 0 };
     let mouseDragDistance = 0;
+    let lastTouchEndTime = 0;
     const spherical = new THREE.Spherical();
 
     // ── Mobile Touch Interaction (1-Finger Orbit, 2-Finger Pinch Zoom, Tap Interaction) ──
@@ -3043,13 +3050,11 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
             }
           }
 
-          orbitTargetSwitched = false;
           spherical.setFromVector3(camera.position.clone().sub(targetLookAt.current));
           touchMode = "orbit";
           return;
         }
 
-        orbitTargetSwitched = false;
         spherical.setFromVector3(camera.position.clone().sub(targetLookAt.current));
         touchMode = "orbit";
       } else if (e.touches.length === 2) {
@@ -3090,13 +3095,8 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         }
 
         if (touchMode === "orbit") {
-          if (!orbitTargetSwitched) {
-            targetLookAt.current.copy(roomOverviewLookAt);
-            spherical.setFromVector3(camera.position.clone().sub(roomOverviewLookAt));
-            orbitTargetSwitched = true;
-          }
-          spherical.theta -= dx * 0.007;
-          spherical.phi = Math.max(0.18, Math.min(Math.PI / 2 - 0.04, spherical.phi - dy * 0.007));
+          spherical.theta -= dx * 0.009;
+          spherical.phi = Math.max(0.06, Math.min(Math.PI * 0.94, spherical.phi - dy * 0.009));
           targetCamPos.current.copy(targetLookAt.current).add(new THREE.Vector3().setFromSpherical(spherical));
         }
       } else if (e.touches.length === 2 && touchMode === "pinch") {
@@ -3105,7 +3105,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
         if (initialPinchDist > 0 && currentDist > 0) {
           const factor = initialPinchDist / currentDist;
-          spherical.radius = THREE.MathUtils.clamp(initialPinchRadius * factor, 3.5, 48);
+          spherical.radius = THREE.MathUtils.clamp(initialPinchRadius * factor, 1.2, 42);
           targetCamPos.current.copy(targetLookAt.current).add(new THREE.Vector3().setFromSpherical(spherical));
         }
       }
@@ -3113,6 +3113,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
 
     const onTouchEnd = (e: TouchEvent) => {
       const duration = performance.now() - touchStartTime;
+      lastTouchEndTime = performance.now();
 
       if (touchMode === "drag-furniture") {
         if (movingFurniture) saveFurnitureLayout();
@@ -3143,10 +3144,9 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     const onMouseDown = (e: MouseEvent) => {
       mouseDragDistance = 0;
       if (editModeRef.current) {
-        if (e.button === 1) {
+        if (e.button === 1 || e.button === 2) {
           spherical.setFromVector3(camera.position.clone().sub(targetLookAt.current));
           isDragging = true;
-          orbitTargetSwitched = true;
           prevDrag = { x: e.clientX, y: e.clientY };
           if (renderer.domElement) renderer.domElement.style.cursor = "grabbing";
           e.preventDefault();
@@ -3184,22 +3184,39 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         e.preventDefault();
         return;
       }
-      orbitTargetSwitched = false;
-      spherical.setFromVector3(camera.position.clone().sub(targetLookAt.current));
-      isDragging = true;
-      prevDrag = { x: e.clientX, y: e.clientY };
+
+      if (e.button === 2 || e.button === 1 || e.shiftKey) {
+        // Free Pan in screen space
+        spherical.setFromVector3(camera.position.clone().sub(targetLookAt.current));
+        isPanning = true;
+        isDragging = false;
+        prevDrag = { x: e.clientX, y: e.clientY };
+        if (renderer.domElement) renderer.domElement.style.cursor = "grabbing";
+        e.preventDefault();
+        return;
+      }
+
+      if (e.button === 0) {
+        spherical.setFromVector3(camera.position.clone().sub(targetLookAt.current));
+        isDragging = true;
+        isPanning = false;
+        prevDrag = { x: e.clientX, y: e.clientY };
+        if (renderer.domElement) renderer.domElement.style.cursor = "grabbing";
+      }
     };
 
     const onWheel = (e: WheelEvent) => {
       if (editModeRef.current) return;
       e.preventDefault();
       spherical.setFromVector3(targetCamPos.current.clone().sub(targetLookAt.current));
-      spherical.radius = THREE.MathUtils.clamp(spherical.radius * Math.exp(e.deltaY * 0.001), 3.5, 48);
+      const factor = Math.exp(e.deltaY * 0.0015);
+      spherical.radius = THREE.MathUtils.clamp(spherical.radius * factor, 1.2, 42);
       targetCamPos.current.copy(targetLookAt.current).add(new THREE.Vector3().setFromSpherical(spherical));
     };
 
     const onMouseUp = () => {
       isDragging = false;
+      isPanning = false;
       if (movingFurniture) saveFurnitureLayout();
       movingFurniture = false;
       if (renderer.domElement) renderer.domElement.style.cursor = editModeRef.current ? "grab" : "none";
@@ -3216,19 +3233,25 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         moveFurniture(selectedItem, localPoint.x + dragOffset.x, localPoint.z + dragOffset.y, snapToGridRef.current ? 0.25 : 0, false);
         return;
       }
-      if (!isDragging) return;
-      if (!orbitTargetSwitched) {
-        targetLookAt.current.copy(roomOverviewLookAt);
-        spherical.setFromVector3(camera.position.clone().sub(roomOverviewLookAt));
-        orbitTargetSwitched = true;
-      }
+
       const dx = e.clientX - prevDrag.x;
       const dy = e.clientY - prevDrag.y;
       mouseDragDistance += Math.hypot(dx, dy);
       prevDrag = { x: e.clientX, y: e.clientY };
 
-      spherical.theta -= dx * 0.0055;
-      spherical.phi = Math.max(0.18, Math.min(Math.PI / 2 - 0.04, spherical.phi - dy * 0.0055));
+      if (isPanning) {
+        const panSpeed = 0.0028 * Math.max(3.5, spherical.radius);
+        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+        const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+        const panOffset = right.multiplyScalar(-dx * panSpeed).add(up.multiplyScalar(dy * panSpeed));
+        targetLookAt.current.add(panOffset);
+        targetCamPos.current.add(panOffset);
+        return;
+      }
+
+      if (!isDragging) return;
+      spherical.theta -= dx * 0.0085;
+      spherical.phi = Math.max(0.06, Math.min(Math.PI * 0.94, spherical.phi - dy * 0.0085));
       targetCamPos.current.copy(targetLookAt.current).add(new THREE.Vector3().setFromSpherical(spherical));
     };
 
@@ -3292,7 +3315,10 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       moveFurniture(selectedItem, selectedItem.group.position.x + delta.x, selectedItem.group.position.z + delta.z, step);
     };
 
+    const onContextMenu = (e: MouseEvent) => e.preventDefault();
+
     container.style.touchAction = "none";
+    container.addEventListener("contextmenu", onContextMenu);
     container.addEventListener("mousedown", onMouseDown);
     container.addEventListener("wheel", onWheel, { passive: false });
     window.addEventListener("mouseup", onMouseUp);
@@ -3308,19 +3334,26 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
 
     // ── Animation Loop ──────────────────────────────────────────────────────
     let animId = 0;
-    let frameCount = 0;
+    let lastFrameTime = 0;
+    let isInViewport = true;
     const startTime = performance.now();
+    const renderSize = new THREE.Vector2();
+    const projectedAnchor = new THREE.Vector3();
+    const lampWorldAnchor = new THREE.Vector3();
+    const deskLampAnchor = new THREE.Vector3(0.26, 2.38, 0);
+    const bedsideLampAnchor = new THREE.Vector3(0, 1.88, 0);
 
-    const animate = () => {
-      if (document.hidden) {
+    const animate = (time: number) => {
+      if (document.hidden || !isInViewport) {
         animId = 0;
         return;
       }
       animId = requestAnimationFrame(animate);
+      if (renderQuality.frameInterval && time - lastFrameTime < renderQuality.frameInterval) return;
+      lastFrameTime = time;
 
       const isMobileScreen = container.clientWidth < 768;
-      const now = performance.now();
-      frameCount++;
+      const now = time;
       const t = (now - startTime) / 1000;
 
       curtainPivots.forEach(({ pivot, phase }) => {
@@ -3401,37 +3434,38 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         pos.needsUpdate = true;
       }
 
-      // 4. Smooth Camera Lerp (Snappy 0.22 while actively dragging/orbiting to eliminate stickiness)
-      const camLerp = (isDragging || touchMode === "orbit") ? 0.22 : 0.055;
+      // 4. Smooth Camera Lerp (Snappy 0.35 while actively dragging/orbiting/panning to eliminate stickiness)
+      const camLerp = (isDragging || isPanning || touchMode === "orbit") ? 0.35 : 0.075;
       camera.position.lerp(targetCamPos.current, camLerp);
-      camera.lookAt(targetLookAt.current);
-      const viewVector = camera.position.clone().sub(targetLookAt.current);
+      currentLookAt.lerp(targetLookAt.current, camLerp);
+      camera.lookAt(currentLookAt);
+      const viewVector = camera.position.clone().sub(currentLookAt);
       const viewingFromSide = Math.abs(viewVector.x) > Math.abs(viewVector.z) * 0.9;
       const focusedOnOverview = targetLookAt.current.distanceToSquared(roomOverviewLookAt) < 0.01;
 
       // Dynamic 360° Architectural Cutaway:
       // Cull walls that are positioned between the camera and room interior so items are never blocked
-      const viewDirX = targetLookAt.current.x - camera.position.x;
-      const viewDirZ = targetLookAt.current.z - camera.position.z;
+      const viewDirX = currentLookAt.x - camera.position.x;
+      const viewDirZ = currentLookAt.z - camera.position.z;
 
-      // Left Wall & Window: Cull when camera is to the left and looking towards center
-      const isCameraOutsideLeft = camera.position.x < -3.0 && viewDirX > 0;
-      leftWall.visible = !isCameraOutsideLeft;
-      sideTrimLeft.visible = !isCameraOutsideLeft;
-      windowGroup.visible = !isCameraOutsideLeft;
+      // Left Wall & Window: Cull when camera is to the left and looking towards center or outside left
+      const isCameraNearOrOutsideLeft = (camera.position.x < -3.0 && viewDirX > 0) || camera.position.x < -6.8;
+      leftWall.visible = !isCameraNearOrOutsideLeft;
+      sideTrimLeft.visible = !isCameraNearOrOutsideLeft;
+      windowGroup.visible = !isCameraNearOrOutsideLeft;
 
-      // Right Wall: Cull when camera is to the right and looking towards center
-      const isCameraOutsideRight = camera.position.x > 3.0 && viewDirX < 0;
-      rightWall.visible = !isCameraOutsideRight;
-      sideTrimRight.visible = !isCameraOutsideRight;
+      // Right Wall: Cull when camera is to the right and looking towards center or outside right
+      const isCameraNearOrOutsideRight = (camera.position.x > 3.0 && viewDirX < 0) || camera.position.x > 6.8;
+      rightWall.visible = !isCameraNearOrOutsideRight;
+      sideTrimRight.visible = !isCameraNearOrOutsideRight;
 
-      // Back Wall, Gallery Art, Neon Sign & Back Trim: Cull when camera is behind and looking towards center
-      const isCameraOutsideBack = camera.position.z < -1.8 && viewDirZ > 0;
-      backWall.visible = !isCameraOutsideBack;
-      backTrim.visible = !isCameraOutsideBack;
-      sign.visible = !isCameraOutsideBack;
-      galleryGroup.visible = !isCameraOutsideBack;
-      if (bedroomDoor) bedroomDoor.visible = !isCameraOutsideBack;
+      // Back Wall, Gallery Art, Neon Sign & Back Trim: Cull when camera is behind and looking towards center or outside back
+      const isCameraNearOrOutsideBack = (camera.position.z < -1.8 && viewDirZ > 0) || camera.position.z < -4.2;
+      backWall.visible = !isCameraNearOrOutsideBack;
+      backTrim.visible = !isCameraNearOrOutsideBack;
+      sign.visible = !isCameraNearOrOutsideBack;
+      galleryGroup.visible = !isCameraNearOrOutsideBack;
+      if (bedroomDoor) bedroomDoor.visible = !isCameraNearOrOutsideBack;
 
       // Front Glazed Facade: Cull when camera is in front looking toward interior
       const isCameraInFront = camera.position.z > 1.0 && viewDirZ < 0;
@@ -3568,23 +3602,22 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       }
 
       // 10. Update DOM Zone Markers
-      const size = new THREE.Vector2();
-      renderer.getSize(size);
+      renderer.getSize(renderSize);
       labelRefs.current.forEach((el, zoneId) => {
-        const anchor = labelPositions[zoneId].clone();
+        projectedAnchor.copy(labelPositions[zoneId]);
         const furnitureId = ZONE_FURNITURE[zoneId];
         const furnitureItem = furnitureId ? furniture.get(furnitureId) : null;
         if (furnitureItem) {
           furnitureItem.group.updateMatrixWorld(true);
-          anchor.applyMatrix4(furnitureItem.group.matrixWorld);
+          projectedAnchor.applyMatrix4(furnitureItem.group.matrixWorld);
         }
-        const wp = anchor.project(camera);
-        const sx = (wp.x * 0.5 + 0.5) * size.x;
-        const sy = (-wp.y * 0.5 + 0.5) * size.y;
-        const inFront = wp.z < 1;
+        const dist = camera.position.distanceTo(projectedAnchor);
+        projectedAnchor.project(camera);
+        const sx = (projectedAnchor.x * 0.5 + 0.5) * renderSize.x;
+        const sy = (-projectedAnchor.y * 0.5 + 0.5) * renderSize.y;
+        const inFront = projectedAnchor.z < 1;
         el.style.transform = `translate(${sx}px,${sy}px) translate(-50%,-100%)`;
-        const dist = camera.position.distanceTo(anchor);
-        const vis = !editModeRef.current && hoveredZoneId === zoneId && inFront && dist < 12 && sy > 0 && sy < size.y;
+        const vis = !editModeRef.current && hoveredZoneId === zoneId && inFront && dist < 12 && sy > 0 && sy < renderSize.y;
         el.style.opacity = vis ? "1" : "0";
       });
 
@@ -3593,16 +3626,13 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         const targetObj = hoveredLampTarget === "desk" ? deskLamp : bedsideLamp;
         if (targetObj && (hoveredLamp || isLampTooltipHoveredRef.current) && !editModeRef.current) {
           targetObj.updateMatrixWorld(true);
-          const localAnchor = hoveredLampTarget === "desk"
-            ? new THREE.Vector3(0.26, 2.38, 0)
-            : new THREE.Vector3(0, 1.88, 0);
-          const worldAnchor = localAnchor.clone().applyMatrix4(targetObj.matrixWorld);
-          const wp = worldAnchor.project(camera);
-          const sx = (wp.x * 0.5 + 0.5) * size.x;
-          const sy = (-wp.y * 0.5 + 0.5) * size.y;
-          const inFront = wp.z < 1;
-          const dist = camera.position.distanceTo(worldAnchor);
-          const vis = inFront && dist < 16 && sy > 30 && sy < size.y - 10 && sx > 30 && sx < size.x - 30;
+          lampWorldAnchor.copy(hoveredLampTarget === "desk" ? deskLampAnchor : bedsideLampAnchor).applyMatrix4(targetObj.matrixWorld);
+          const dist = camera.position.distanceTo(lampWorldAnchor);
+          lampWorldAnchor.project(camera);
+          const sx = (lampWorldAnchor.x * 0.5 + 0.5) * renderSize.x;
+          const sy = (-lampWorldAnchor.y * 0.5 + 0.5) * renderSize.y;
+          const inFront = lampWorldAnchor.z < 1;
+          const vis = inFront && dist < 16 && sy > 30 && sy < renderSize.y - 10 && sx > 30 && sx < renderSize.x - 30;
           lampLabelRef.current.style.transform = `translate(${sx}px,${sy}px) translate(-50%,-100%)`;
           lampLabelRef.current.style.opacity = vis ? "1" : "0";
           lampLabelRef.current.style.pointerEvents = vis ? "auto" : "none";
@@ -3618,27 +3648,42 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
 
       renderer.render(scene, camera);
     };
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        cancelAnimationFrame(animId);
-        animId = 0;
-      } else if (!animId) {
-        animate();
-      }
+    const startAnimation = () => {
+      if (!animId && !document.hidden && isInViewport) animId = requestAnimationFrame(animate);
     };
+    const stopAnimation = () => {
+      if (animId) cancelAnimationFrame(animId);
+      animId = 0;
+    };
+    const handleVisibilityChange = () => {
+      if (document.hidden) stopAnimation();
+      else startAnimation();
+    };
+    const viewportObserver = typeof IntersectionObserver !== "undefined"
+      ? new IntersectionObserver(([entry]) => {
+          isInViewport = entry.isIntersecting;
+          if (isInViewport) startAnimation();
+          else stopAnimation();
+        }, { threshold: 0.01 })
+      : null;
+    viewportObserver?.observe(container);
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    animate();
+    startAnimation();
 
     const handleResize = () => {
       if (!container) return;
       const width = container.clientWidth;
       const height = container.clientHeight;
+      if (width < 1 || height < 1) return;
       const overview = getResponsiveOverview(width, height);
       camera.aspect = width / height;
       camera.fov = overview.fov;
       camera.updateProjectionMatrix();
       roomOverviewLookAt.set(...overview.lookAt);
-      renderer.setPixelRatio(pixelRatio());
+      const quality = getRenderQuality(width);
+      renderer.setPixelRatio(quality.pixelRatio);
+      deskLight.shadow.mapSize.set(quality.pointShadowMapSize, quality.pointShadowMapSize);
+      cyanSpot.shadow.mapSize.set(quality.shadowMapSize, quality.shadowMapSize);
       renderer.setSize(width, height);
 
       if (!activeZoneIdRef.current || activeZoneIdRef.current === "overview" || editModeRef.current) {
@@ -3646,13 +3691,18 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         targetLookAt.current.set(...overview.lookAt);
       }
     };
+    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(handleResize) : null;
+    resizeObserver?.observe(container);
     window.addEventListener("resize", handleResize);
 
     return () => {
       if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
-      cancelAnimationFrame(animId);
+      stopAnimation();
+      viewportObserver?.disconnect();
+      resizeObserver?.disconnect();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("resize", handleResize);
+      container.removeEventListener("contextmenu", onContextMenu);
       container.removeEventListener("wheel", onWheel);
       window.removeEventListener("mouseup", onMouseUp);
       window.removeEventListener("mousemove", onDrag);

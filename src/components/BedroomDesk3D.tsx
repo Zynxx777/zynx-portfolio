@@ -15,6 +15,7 @@ import {
   Clock
 } from 'lucide-react';
 import { soundFX } from '../utils/audioFX';
+import { getRenderQuality } from '../utils/renderQuality';
 import { MonitorDesktopModal } from './MonitorDesktopModal';
 import PhoneExperience from './PhoneExperience';
 import { TabletDocketModal, type DocketOrder } from './TabletDocketModal';
@@ -64,6 +65,7 @@ const CARD_DIM = { w: 0.086, h: 0.055, t: 0.0012 };
 const CARD_LAYOUT = { height: 0.50, width: 0.86 };
 const CARD_REST_POS = new THREE.Vector3(0, 0.024, 0.006);
 const CARD_REST_ROT = new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.28, 0, 0));
+const CARD_TURN_AXIS = new THREE.Vector3(0, 1, 0);
 
 const V_held = new THREE.Vector3();
 const W_held = new THREE.Vector3();
@@ -741,6 +743,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
     const width = container.clientWidth;
     const height = container.clientHeight || window.innerHeight;
+    const renderQuality = getRenderQuality(width);
 
     // 1. Scene & Camera Setup (Responsive framing)
     const scene = new THREE.Scene();
@@ -758,7 +761,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(renderQuality.pixelRatio);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -796,8 +799,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     const keyLight = new THREE.DirectionalLight(0xfffaed, dayMode ? 1.85 : 1.2);
     keyLight.position.set(1.5, 3.5, 2.0);
     keyLight.castShadow = true;
-    keyLight.shadow.mapSize.width = 2048;
-    keyLight.shadow.mapSize.height = 2048;
+    keyLight.shadow.mapSize.set(renderQuality.shadowMapSize, renderQuality.shadowMapSize);
     keyLight.shadow.bias = -0.0005;
     scene.add(keyLight);
     daySunLightRef.current = keyLight;
@@ -2200,12 +2202,28 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     window.addEventListener('keydown', onKeyDown);
 
     // Animation Render Loop
-    let animationFrameId: number;
-    let clock = new THREE.Clock();
+    let animationFrameId = 0;
+    let lastFrameTime = 0;
+    let lastBadgeUpdate = 0;
+    let isInViewport = true;
+    const startTime = performance.now();
+    const liveDate = new Date();
+    const projectedBadgePosition = new THREE.Vector3();
+    const deskGlassesPos = new THREE.Vector3(-0.20, 0.171, 0.17);
+    const deskGlassesQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.04, 0.22, 0));
+    const targetFacePos = new THREE.Vector3();
+    const targetFaceQuat = new THREE.Quaternion();
+    const containerSize = { width: 0, height: 0 };
 
-    const animate = () => {
+    const animate = (time: number) => {
+      if (document.hidden || !isInViewport) {
+        animationFrameId = 0;
+        return;
+      }
       animationFrameId = requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
+      if (renderQuality.frameInterval && time - lastFrameTime < renderQuality.frameInterval) return;
+      lastFrameTime = time;
+      const elapsedTime = (time - startTime) / 1000;
 
       // Camera Programmed Transitions / Free Movement Handling (Zero sticking!)
       if (isCameraTransitioningRef.current) {
@@ -2223,17 +2241,17 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       controls.update();
 
       // Dynamic 3D Object Projection for X-Ray Numbered Badges (1 to 12)
-      if (isXRayModeRef.current && container) {
+      if (isXRayModeRef.current && container && time - lastBadgeUpdate >= 40) {
+        lastBadgeUpdate = time;
         const rect = container.getBoundingClientRect();
-        const pVec = new THREE.Vector3();
         const newCoords: Record<number, { x: number; y: number; visible: boolean }> = {};
         for (const t of XRAY_TARGETS) {
-          pVec.copy(t.pos).project(camera);
-          if (pVec.z > 1) {
+          projectedBadgePosition.copy(t.pos).project(camera);
+          if (projectedBadgePosition.z > 1) {
             newCoords[t.id] = { x: 0, y: 0, visible: false };
           } else {
-            const px = (pVec.x * 0.5 + 0.5) * rect.width;
-            const py = (-pVec.y * 0.5 + 0.5) * rect.height;
+            const px = (projectedBadgePosition.x * 0.5 + 0.5) * rect.width;
+            const py = (-projectedBadgePosition.y * 0.5 + 0.5) * rect.height;
             newCoords[t.id] = { x: px, y: py, visible: true };
           }
         }
@@ -2241,7 +2259,8 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       }
 
       // Precision Chronometer Watch Live Movement (Smooth sweeping mechanical seconds)
-      const now = new Date();
+      const now = liveDate;
+      now.setTime(Date.now());
       const s = now.getSeconds() + now.getMilliseconds() / 1000;
       const m = now.getMinutes() + s / 60;
       const h = (now.getHours() % 12) + m / 60;
@@ -2256,8 +2275,6 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       }
 
       // Wearable Spectacles Cinematic Animation (Desk -> Eyes & Temples Unfold)
-      const deskGlassesPos = new THREE.Vector3(-0.20, 0.171, 0.17);
-      const deskGlassesQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.04, 0.22, 0));
       const targetProg = isWearingSpecsRef.current ? 1.0 : 0.0;
       specsWearProgressRef.current = THREE.MathUtils.lerp(specsWearProgressRef.current, targetProg, 0.075);
       const p = specsWearProgressRef.current;
@@ -2270,8 +2287,8 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           } else {
             glassesGroupRef.current.visible = true;
             camera.updateMatrixWorld();
-            const targetFacePos = new THREE.Vector3(0, -0.012, -0.16).applyMatrix4(camera.matrixWorld);
-            const targetFaceQuat = camera.quaternion.clone();
+            targetFacePos.set(0, -0.012, -0.16).applyMatrix4(camera.matrixWorld);
+            targetFaceQuat.copy(camera.quaternion);
             const arcY = Math.sin(p * Math.PI) * 0.14;
             glassesGroupRef.current.position.lerpVectors(deskGlassesPos, targetFacePos, p);
             glassesGroupRef.current.position.y += arcY;
@@ -2366,13 +2383,11 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         w.flip = w.flipFrom + (w.side - w.flipFrom) * Ca(fp);
 
         if (w.out > 0.0001) {
-          flipQ.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI * w.flip);
+          flipQ.setFromAxisAngle(CARD_TURN_AXIS, Math.PI * w.flip);
           turnQ.copy(tiltQ).multiply(flipQ);
 
-          const containerSize = {
-            width: container?.clientWidth || window.innerWidth,
-            height: container?.clientHeight || window.innerHeight
-          };
+          containerSize.width = container?.clientWidth || window.innerWidth;
+          containerSize.height = container?.clientHeight || window.innerHeight;
           computeHeldTransform(camera, containerSize, cardGroup, turnQ);
 
           aVec.copy(CARD_REST_POS).setY(CARD_REST_POS.y + 0.16);
@@ -2420,7 +2435,29 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
       renderer.render(scene, camera);
     };
-    animate();
+    const startAnimation = () => {
+      if (!animationFrameId && !document.hidden && isInViewport) {
+        animationFrameId = requestAnimationFrame(animate);
+      }
+    };
+    const stopAnimation = () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      animationFrameId = 0;
+    };
+    const handleVisibilityChange = () => {
+      if (document.hidden) stopAnimation();
+      else startAnimation();
+    };
+    const viewportObserver = typeof IntersectionObserver !== 'undefined'
+      ? new IntersectionObserver(([entry]) => {
+          isInViewport = entry.isIntersecting;
+          if (isInViewport) startAnimation();
+          else stopAnimation();
+        }, { threshold: 0.01 })
+      : null;
+    viewportObserver?.observe(container);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    startAnimation();
 
     const handleResize = () => {
       if (!container) return;
@@ -2438,9 +2475,12 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       }
 
       camera.updateProjectionMatrix();
+      renderer.setPixelRatio(getRenderQuality(w).pixelRatio);
       renderer.setSize(w, h);
     };
     handleResize(); // Initial setup on load
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(handleResize) : null;
+    resizeObserver?.observe(container);
     window.addEventListener('resize', handleResize);
 
     return () => {
@@ -2448,8 +2488,11 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       renderer.domElement.removeEventListener('pointerup', onPointerUp);
       renderer.domElement.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('resize', handleResize);
+      resizeObserver?.disconnect();
+      viewportObserver?.disconnect();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('keydown', onKeyDown);
-      cancelAnimationFrame(animationFrameId);
+      stopAnimation();
       renderer.dispose();
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);

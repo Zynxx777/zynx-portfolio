@@ -27,10 +27,6 @@ interface BedroomAudioPlayerProps {
 export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose }) => {
   const [playerState, setPlayerState] = useState<PlayerState>(() => musicPlayerEngine.getState());
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const animFrameRef = useRef<number>(0);
-  const smoothedEnergy = useRef<number>(0.15);
-  const phaseRef = useRef<number>(0);
-  const titleRef = useRef<HTMLDivElement | null>(null);
 
   // Subscribe to persistent player state
   useEffect(() => {
@@ -99,226 +95,125 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
     : nowPlaying || currentTrack.title;
   const displaySub = nowPlaying ? currentTrack.title : currentTrack.artist;
 
-  // ── BUTTERY SMOOTH MULTI-LAYERED WAVY VISUALIZER ────────────────────────
+  // Prism Tuner: a compact, low-cost spectrum that keeps its animation alive
+  // between player updates instead of rebuilding the canvas on every beat.
+  const visualizerStateRef = useRef({ isActive, currentTrack, beatPulse });
+  useEffect(() => {
+    visualizerStateRef.current = { isActive, currentTrack, beatPulse };
+  }, [isActive, currentTrack, beatPulse]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d", { alpha: true });
-    if (!ctx) return;
+    const ctx = canvas?.getContext("2d", { alpha: true });
+    if (!canvas || !ctx) return;
 
-    let running = true;
-    let lastTime = performance.now();
+    let width = 0;
+    let height = 0;
+    let pixelRatio = 1;
+    let barCount = 0;
+    let hues: number[] = [];
+    let frameId = 0;
+    let lastFrameTime = 0;
+    let phase = 0;
+    let energy = 0.16;
+    let isInView = true;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const frameInterval = window.innerWidth < 640 ? 1000 / 24 : 1000 / 40;
 
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const draw = (time: number, animate: boolean) => {
+      if (width < 1 || height < 1) return;
+      const state = visualizerStateRef.current;
+      const active = state.isActive;
+      const t = time / 1000;
+      const beat = active ? Math.max(0, Math.sin(t * (state.currentTrack.badge.includes("SYNTH") ? 13 : 9))) : 0;
+      const targetEnergy = active ? 0.58 + state.beatPulse * 0.16 + beat * 0.22 : 0.32;
+      energy += (targetEnergy - energy) * (animate ? 0.12 : 1);
+      if (animate) phase += active ? 0.035 : 0.012;
+
+      ctx.clearRect(0, 0, width, height);
+      const baseline = height * 0.78;
+      const gutter = 10;
+      const gap = width < 260 ? 2 : 3;
+      const usableWidth = Math.max(1, width - gutter * 2);
+      const barWidth = Math.max(1.5, (usableWidth - gap * (barCount - 1)) / barCount);
+      const maxHeight = height * 0.63;
+
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.fillRect(gutter, baseline, usableWidth, 1);
+      for (let index = 0; index < barCount; index += 1) {
+        const frequency = index / Math.max(1, barCount - 1);
+        const envelope = 0.22 + Math.pow(Math.sin(frequency * Math.PI), 0.72) * 0.78;
+        const wave = Math.abs(
+          Math.sin(index * 0.67 + phase) * 0.64 +
+          Math.sin(index * 0.29 - phase * 1.7) * 0.36
+        );
+        const kick = active ? beat * (0.12 + frequency * 0.08) : 0;
+        const barHeight = Math.max(2, maxHeight * envelope * (0.12 + wave * energy * 0.84 + kick));
+        const x = gutter + index * (barWidth + gap);
+        ctx.fillStyle = `hsl(${hues[index]}, 92%, ${active ? 66 : 52}%)`;
+        ctx.fillRect(x, baseline - barHeight, barWidth, barHeight);
+      }
+    };
 
     const resize = () => {
-      if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
-      const w = Math.floor(rect.width);
-      const h = Math.floor(rect.height);
-      if (w > 0 && h > 0) {
-        canvas.width = w * dpr;
-        canvas.height = h * dpr;
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.scale(dpr, dpr);
+      width = Math.floor(rect.width);
+      height = Math.floor(rect.height);
+      pixelRatio = Math.min(window.devicePixelRatio || 1, window.innerWidth < 640 ? 1.15 : 1.4);
+      if (width < 1 || height < 1) return;
+      canvas.width = Math.round(width * pixelRatio);
+      canvas.height = Math.round(height * pixelRatio);
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      barCount = Math.max(24, Math.min(64, Math.floor(width / 6)));
+      hues = Array.from({ length: barCount }, (_, index) => (index / barCount) * 330);
+      draw(performance.now(), false);
+    };
+
+    const animate = (time: number) => {
+      frameId = 0;
+      if (document.hidden || !isInView) return;
+      if (time - lastFrameTime >= frameInterval) {
+        lastFrameTime = time;
+        draw(time, true);
+      }
+      frameId = requestAnimationFrame(animate);
+    };
+    const start = () => {
+      if (!reducedMotion && !document.hidden && isInView && !frameId) {
+        frameId = requestAnimationFrame(animate);
       }
     };
+    const stop = () => {
+      if (frameId) cancelAnimationFrame(frameId);
+      frameId = 0;
+    };
+    const handleVisibility = () => document.hidden ? stop() : start();
+    const viewportObserver = typeof IntersectionObserver !== "undefined"
+      ? new IntersectionObserver(([entry]) => {
+          isInView = entry.isIntersecting;
+          if (isInView) start();
+          else stop();
+        }, { threshold: 0.01 })
+      : null;
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(resize)
+      : null;
+
     resize();
+    viewportObserver?.observe(canvas);
+    resizeObserver?.observe(canvas.parentElement ?? canvas);
     window.addEventListener("resize", resize);
-
-    // Dynamic wave layer specifications
-    const waves = [
-      {
-        freq: 0.014,
-        speed: 1.6,
-        phaseOffset: 0,
-        ampMult: 0.55,
-        colorStart: "rgba(0, 242, 254, 0.55)",
-        colorEnd: "rgba(79, 172, 254, 0.02)",
-        stroke: "rgba(0, 242, 254, 0.75)",
-        blur: 10,
-      },
-      {
-        freq: 0.019,
-        speed: -2.1,
-        phaseOffset: 1.8,
-        ampMult: 0.75,
-        colorStart: "rgba(247, 37, 133, 0.5)",
-        colorEnd: "rgba(114, 9, 183, 0.02)",
-        stroke: "rgba(247, 37, 133, 0.8)",
-        blur: 14,
-      },
-      {
-        freq: 0.025,
-        speed: 2.7,
-        phaseOffset: 3.4,
-        ampMult: 0.88,
-        colorStart: "rgba(251, 133, 0, 0.45)",
-        colorEnd: "rgba(217, 4, 41, 0.02)",
-        stroke: "rgba(255, 183, 3, 0.85)",
-        blur: 16,
-      },
-      {
-        freq: 0.032,
-        speed: 3.4,
-        phaseOffset: 5.1,
-        ampMult: 1.0,
-        colorStart: "rgba(16, 185, 129, 0.6)",
-        colorEnd: "rgba(6, 95, 70, 0.02)",
-        stroke: "rgba(52, 211, 153, 0.95)",
-        blur: 20,
-      },
-    ];
-
-    // Floating glowing particles
-    const particles = Array.from({ length: 22 }, () => ({
-      x: Math.random(),
-      speed: 0.0003 + Math.random() * 0.0007,
-      size: 1.2 + Math.random() * 2.2,
-      opacity: 0.2 + Math.random() * 0.7,
-      layer: Math.floor(Math.random() * waves.length),
-    }));
-
-    // Cap to 30fps on mobile to save battery/CPU
-    const isMobile = window.innerWidth < 640;
-    let lastFrameTime = performance.now();
-
-    const render = (time: number) => {
-      if (!running) return;
-      animFrameRef.current = requestAnimationFrame(render);
-
-      // Mobile: throttle to ~30fps
-      if (isMobile && time - lastFrameTime < 32) return;
-      lastFrameTime = time;
-
-      const dt = Math.min((time - lastTime) / 1000, 0.1);
-      lastTime = time;
-
-      const rect = canvas.getBoundingClientRect();
-      const w = rect.width;
-      const h = rect.height;
-      if (w <= 0 || h <= 0) return;
-
-      // Calculate target energy based on playback & track rhythm
-      let targetEnergy = 0.12; // calm baseline ambient breathing
-      if (isActive) {
-        const t = time / 1000;
-        const isSynth = currentTrack.badge.includes("SYNTH") || currentTrack.badge.includes("RETRO") || currentTrack.badge.includes("VAPOR");
-        const bpm = isSynth ? 124 : 92;
-        const beatCycle = (t * (bpm / 60)) % 4;
-
-        const kick = Math.pow(Math.max(0, Math.sin(beatCycle * Math.PI)), 5) * 0.75;
-        const snare = Math.pow(Math.max(0, Math.sin((beatCycle - 1) * Math.PI)), 7) * 0.55;
-        const rhythm = Math.sin(t * 7.5) * 0.2;
-        targetEnergy = Math.min(1.0, 0.25 + kick + snare + rhythm + (beatPulse * 0.4));
-      }
-
-      // Smooth buttery lerping
-      smoothedEnergy.current += (targetEnergy - smoothedEnergy.current) * (isActive ? 0.09 : 0.05);
-      phaseRef.current += dt * (isActive ? 2.4 : 1.0);
-
-      ctx.clearRect(0, 0, w, h);
-
-      const centerY = h * 0.62;
-      const maxAmplitude = (h * 0.46) * Math.min(1.2, smoothedEnergy.current * 1.35);
-
-      // Render each wave layer from back to front
-      waves.forEach((wave, idx) => {
-        const phase = phaseRef.current * wave.speed + wave.phaseOffset;
-        const currentAmp = maxAmplitude * wave.ampMult;
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(0, h);
-
-        const step = 4;
-        for (let x = 0; x <= w + step; x += step) {
-          // Organic tapering envelope so wave hugs edges smoothly (Apple iOS Siri waveform style)
-          const normX = Math.max(0, Math.min(1, x / w));
-          const envelope = Math.pow(Math.sin(normX * Math.PI), 1.25);
-
-          // Combined dual sine harmonic for buttery organic fluid motion
-          const primary = Math.sin(x * wave.freq + phase);
-          const secondary = Math.cos(x * (wave.freq * 0.55) + phase * 0.7);
-          const y = centerY + (primary * 0.7 + secondary * 0.3) * currentAmp * envelope;
-
-          if (x === 0) {
-            ctx.lineTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
-        }
-
-        ctx.lineTo(w, h);
-        ctx.closePath();
-
-        // Wave Fill Gradient
-        const grad = ctx.createLinearGradient(0, centerY - currentAmp, 0, h);
-        grad.addColorStop(0, wave.colorStart);
-        grad.addColorStop(1, wave.colorEnd);
-        ctx.fillStyle = grad;
-        ctx.globalCompositeOperation = "screen";
-        ctx.fill();
-
-        // Wave Crest Glow Line
-        ctx.beginPath();
-        for (let x = 0; x <= w + step; x += step) {
-          const normX = Math.max(0, Math.min(1, x / w));
-          const envelope = Math.pow(Math.sin(normX * Math.PI), 1.25);
-          const primary = Math.sin(x * wave.freq + phase);
-          const secondary = Math.cos(x * (wave.freq * 0.55) + phase * 0.7);
-          const y = centerY + (primary * 0.7 + secondary * 0.3) * currentAmp * envelope;
-
-          if (x === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
-        }
-
-        ctx.strokeStyle = wave.stroke;
-        ctx.lineWidth = idx === waves.length - 1 ? 2.6 : 1.8;
-        ctx.shadowColor = wave.stroke;
-        ctx.shadowBlur = wave.blur;
-        ctx.stroke();
-
-        ctx.restore();
-      });
-
-      // Floating particles riding the active energy field
-      ctx.save();
-      ctx.globalCompositeOperation = "lighter";
-      particles.forEach((p) => {
-        p.x = (p.x + p.speed * (isActive ? 1.8 : 0.6)) % 1;
-        const px = p.x * w;
-        const normX = p.x;
-        const envelope = Math.pow(Math.sin(normX * Math.PI), 1.25);
-
-        const activeWave = waves[p.layer];
-        const phase = phaseRef.current * activeWave.speed + activeWave.phaseOffset;
-        const primary = Math.sin(px * activeWave.freq + phase);
-        const secondary = Math.cos(px * (activeWave.freq * 0.55) + phase * 0.7);
-        const py = (centerY + (primary * 0.7 + secondary * 0.3) * maxAmplitude * activeWave.ampMult * envelope) - (p.size * 2);
-
-        ctx.beginPath();
-        ctx.arc(px, py, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = activeWave.stroke;
-        ctx.shadowColor = activeWave.stroke;
-        ctx.shadowBlur = 8;
-        ctx.globalAlpha = p.opacity * (isActive ? 0.9 : 0.35);
-        ctx.fill();
-      });
-      ctx.restore();
-    };
-
-    animFrameRef.current = requestAnimationFrame(render);
+    document.addEventListener("visibilitychange", handleVisibility);
+    start();
 
     return () => {
-      running = false;
+      stop();
+      viewportObserver?.disconnect();
+      resizeObserver?.disconnect();
       window.removeEventListener("resize", resize);
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [isActive, currentTrack, beatPulse]);
+  }, []);
 
   return (
     <div
@@ -421,7 +316,7 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
             {/* Center Subtle Freq Watermark */}
             <div className="absolute top-1.5 left-2.5 pointer-events-none text-[8px] sm:text-[9px] font-mono tracking-widest text-white/30 uppercase flex items-center gap-1">
               <Radio size={9} className="text-white/40" />
-              <span>AIRWAVE SPECTRUM</span>
+              <span>PRISM TUNER · CH {String(trackIndex + 1).padStart(2, "0")}</span>
             </div>
 
             {isBuffering && (
@@ -457,23 +352,17 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
           {/* Track Titles & Live Marquee */}
           <div className="flex-1 min-w-0">
             <div
-              ref={titleRef}
-              className="font-bold text-xs sm:text-[13px] text-white tracking-tight flex items-center gap-1.5 overflow-hidden"
+              className="font-bold text-xs sm:text-[13px] text-white tracking-tight overflow-hidden"
+              title={displayTitle}
+              aria-label={`Now playing: ${displayTitle}`}
             >
-              <span
-                className="whitespace-nowrap"
-                style={{
-                  animation: displayTitle.length > 28 && isActive
-                    ? "fm-marquee 12s linear infinite"
-                    : "none",
-                }}
-                title={displayTitle}
-              >
-                {displayTitle}
+              <span className={`inline-flex whitespace-nowrap ${displayTitle.length > 24 && isActive ? "fm-marquee" : ""}`}>
+                <span>{displayTitle}</span>
+                {displayTitle.length > 24 && isActive && <span aria-hidden="true">{displayTitle}</span>}
               </span>
             </div>
 
-            <p className="text-[10px] sm:text-[11px] text-zinc-400 font-medium truncate mt-0.5 tracking-normal">
+            <p className="text-[10px] sm:text-[11px] text-zinc-400 font-medium truncate mt-0.5 tracking-normal" title={displaySub}>
               {displaySub}
             </p>
           </div>
@@ -590,9 +479,10 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
 
       {/* Marquee Keyframes */}
       <style>{`
+        .fm-marquee { gap: 2rem; animation: fm-marquee 18s linear infinite; }
         @keyframes fm-marquee {
-          0% { transform: translateX(0%); }
-          100% { transform: translateX(-55%); }
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
         }
         .no-scrollbar::-webkit-scrollbar {
           display: none;
