@@ -863,8 +863,8 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
         }
       `}</style>
 
-      {/* Small corner controls keep the room as the main event. */}
-      <header className="absolute top-3 left-3 right-3 z-30 flex items-start justify-between gap-2 pointer-events-none">
+      {/* Small corner controls keep the room as the main event — placed below the top navbar logo on mobile */}
+      <header className="absolute top-14 sm:top-3 left-3 right-3 z-30 flex items-start justify-between gap-2 pointer-events-none pt-[env(safe-area-inset-top,0px)]">
         <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
           <button
             onClick={() => { soundFX.playClick(); onNavigatePortfolio(); }}

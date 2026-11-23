@@ -730,10 +730,10 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     targetLookAt.current.copy(initialFrame.lookAt);
     cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: window.innerWidth >= 768, alpha: true, powerPreference: 'high-performance' });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, window.innerWidth < 768 ? 1.0 : 1.75));
-    renderer.shadowMap.enabled = window.innerWidth >= 1024;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
@@ -2187,7 +2187,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     }`}>
       {/* Top Banner Headline (Clean & minimal on mobile, expanded on desktop) */}
       {!isXRayMode && !isCardHeld && (
-        <div className="absolute top-14 sm:top-16 inset-x-0 z-20 pointer-events-none text-center px-4 max-w-xl mx-auto transition-opacity duration-300">
+        <div className="absolute top-24 sm:top-16 inset-x-0 z-20 pointer-events-none text-center px-4 max-w-xl mx-auto transition-opacity duration-300">
           <h1 className={`text-base sm:text-3xl md:text-4xl font-extrabold tracking-tight drop-shadow-md font-display ${
             dayMode ? 'text-slate-900' : 'text-white'
           }`}>
@@ -2202,7 +2202,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       )}
 
       {/* Top HUD Controls: X-Ray, Day/Night */}
-      <div className="absolute top-3 right-3 sm:top-3 sm:right-3 z-30 flex items-center gap-1 rounded-full bg-black/60 border border-white/10 p-1 backdrop-blur-xl shadow-lg pointer-events-auto">
+      <div className="absolute top-14 sm:top-3 right-3 z-30 flex items-center gap-1 rounded-full bg-black/60 border border-white/10 p-1 backdrop-blur-xl shadow-lg pointer-events-auto">
         {/* Spectacles (X-Ray Glasses Toggle) */}
         <button
           onClick={() => { soundFX.playClick(); setIsXRayMode(!isXRayMode); }}

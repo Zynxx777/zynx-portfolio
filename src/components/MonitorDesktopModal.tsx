@@ -293,7 +293,7 @@ export const MonitorDesktopModal: React.FC<MonitorDesktopModalProps> = ({
     <div
       role="dialog"
       aria-label="Laptop Monitor Workstation"
-      className="fixed inset-0 z-[60] flex flex-col items-center justify-between p-3 sm:p-5 md:p-6 bg-[#161210]/65 backdrop-blur-[3px] animate-fade-in select-none overflow-hidden"
+      className="fixed inset-0 z-[60] flex flex-col items-center justify-between pt-16 px-3 pb-3 sm:p-5 md:p-6 bg-[#161210]/65 backdrop-blur-[3px] animate-fade-in select-none overflow-hidden"
     >
       {/* Top Outer Header Bar */}
       <div className="w-full flex items-center justify-between z-20">

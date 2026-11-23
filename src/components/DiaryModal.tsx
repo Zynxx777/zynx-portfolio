@@ -795,8 +795,8 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
       aria-label="My desk diary"
       className="fixed inset-0 z-[60] flex flex-col items-center bg-[#2A211B]/55 backdrop-blur-[2px] animate-fade-in"
     >
-      {/* Top Header Bar */}
-      <div className="flex w-full items-center justify-between gap-3 px-4 py-4 sm:px-6">
+      {/* Top Header Bar — safely below the navbar logo on mobile */}
+      <div className="flex w-full items-center justify-between gap-3 px-4 pt-16 pb-3 sm:py-4 sm:px-6">
         <button
           type="button"
           autoFocus

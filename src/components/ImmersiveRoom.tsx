@@ -309,12 +309,12 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     targetLookAt.current.set(...initialCam.lookAt);
 
     // ── Renderer ────────────────────────────────────────────────────────────
-    const renderer = new THREE.WebGLRenderer({ antialias: window.innerWidth >= 768, powerPreference: "high-performance", alpha: false });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance", alpha: false });
     renderer.setSize(W, H);
-    const pixelRatio = () => Math.min(window.devicePixelRatio || 1, window.innerWidth < 768 ? 1.0 : 1.75);
+    const pixelRatio = () => Math.min(window.devicePixelRatio || 1, 2.0);
     renderer.setPixelRatio(pixelRatio());
-    renderer.shadowMap.enabled = window.innerWidth >= 768;
-    renderer.shadowMap.type = window.innerWidth >= 768 ? THREE.PCFShadowMap : THREE.BasicShadowMap;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
     container.appendChild(renderer.domElement);
@@ -2648,7 +2648,6 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
 
     // ── Animation Loop ──────────────────────────────────────────────────────
     let animId = 0;
-    let lastFrameTime = 0;
     let frameCount = 0;
     const startTime = performance.now();
 
@@ -2659,15 +2658,8 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
       }
       animId = requestAnimationFrame(animate);
 
-      // Mobile frame throttle at the top before any heavy computations
       const isMobileScreen = container.clientWidth < 768;
       const now = performance.now();
-      if (isMobileScreen) {
-        if (now - lastFrameTime < 32) { // Cap at ~30fps on mobile to save battery and GPU
-          return;
-        }
-        lastFrameTime = now;
-      }
       frameCount++;
       const t = (now - startTime) / 1000;
 
@@ -2686,8 +2678,8 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         receiptPaperMesh.scale.y = THREE.MathUtils.lerp(receiptPaperMesh.scale.y, 1.0, 0.08);
       }
 
-      // 1. Decorative audio spectrum animation for the music workstation (throttled on mobile).
-      if (!isMobileScreen || frameCount % 3 === 0) {
+      // 1. Decorative audio spectrum animation for the music workstation.
+      {
         audioCtx.fillStyle = "#080410";
         audioCtx.fillRect(0, 0, 512, 288);
         audioCtx.fillStyle = "#9D4EDD";
@@ -2718,8 +2710,8 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
         audioTexture.needsUpdate = true;
       }
 
-      // 3. Floating Dust Particles upwards (throttled on mobile)
-      if (!isMobileScreen || frameCount % 2 === 0) {
+      // 3. Floating Dust Particles upwards
+      {
         const pos = pGeo.attributes.position as THREE.BufferAttribute;
         for (let i = 0; i < pCount; i++) {
           pos.array[i * 3]     += pVel[i * 3];
