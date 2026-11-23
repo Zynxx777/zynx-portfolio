@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight, Type, PenTool, Eraser, Undo2, Trash2, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Type, PenTool, Eraser, Undo2, Trash2, Loader2, BookOpen } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { type DiaryEntry, INITIAL_DIARY_ENTRIES } from '../data/portfolioData';
 
@@ -8,32 +8,13 @@ interface DiaryModalProps {
   onClose: () => void;
 }
 
-// Geometry types for realistic 3D paper curl
-interface Point {
-  x: number;
-  y: number;
-}
-
-interface FoldGeometry {
-  flat: Point[];
-  folded: Point[];
-  at: Point;
-  normal: Point;
-  amount: number;
-}
-
-interface PageTurn {
-  dir: number; // 1: next, -1: prev
-  corner: number; // Y coordinate of corner pulled
-}
-
 // Procedural soft paper sound synthesis using Web Audio API
 function playPageTurnSound() {
   try {
     const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtx) return;
     const ctx = new AudioCtx();
-    const bufferSize = ctx.sampleRate * 0.32;
+    const bufferSize = ctx.sampleRate * 0.28;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
@@ -44,100 +25,41 @@ function playPageTurnSound() {
 
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(2600, ctx.currentTime);
-    filter.frequency.exponentialRampToValueAtTime(700, ctx.currentTime + 0.32);
-    filter.Q.value = 0.8;
+    filter.frequency.setValueAtTime(2400, ctx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.28);
+    filter.Q.value = 0.9;
 
     const gain = ctx.createGain();
     gain.gain.setValueAtTime(0.001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.04);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.32);
+    gain.gain.exponentialRampToValueAtTime(0.22, ctx.currentTime + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.28);
 
     noise.connect(filter);
     filter.connect(gain);
     gain.connect(ctx.destination);
     noise.start(ctx.currentTime);
-    noise.stop(ctx.currentTime + 0.32);
+    noise.stop(ctx.currentTime + 0.28);
   } catch {
     // Ignore autoplay restriction errors
   }
 }
 
-// Constants matching pradiplabs.dev
+// Constants matching sketchbook standards
 const CANVAS_W = 750;
 const CANVAS_H = 1050;
 const INK_COLORS = ['#24304A', '#2456C9', '#C2410C', '#2F7D4E'];
 const PEN_SIZES = [4, 8, 16];
 const MAX_TEXT_CHARS = 420;
 const MAX_LINES = 14;
-const TEXT_BASE_CLASS = 'absolute left-[15cqw] right-[7cqw] top-[9.9cqw] font-hand text-[5.6cqw] leading-[7cqw] text-[#24304A]';
+const TEXT_BASE_CLASS = 'absolute left-[14cqw] right-[7cqw] top-[9.9cqw] font-hand text-[5.6cqw] leading-[7cqw] text-[#24304A]';
 
-// Math helpers for curling
-function clampDist(p: Point, o: Point, maxD: number): Point {
-  const d = Math.hypot(p.x - o.x, p.y - o.y);
-  return d <= maxD ? p : { x: o.x + ((p.x - o.x) * maxD) / d, y: o.y + ((p.y - o.y) * maxD) / d };
-}
-
-function clipPoly(poly: Point[], o: Point, n: Point, side: number): Point[] {
-  const res: Point[] = [];
-  const dist = (p: Point) => side * ((p.x - o.x) * n.x + (p.y - o.y) * n.y);
-  poly.forEach((p, i) => {
-    const next = poly[(i + 1) % poly.length];
-    const d1 = dist(p);
-    const d2 = dist(next);
-    if (d1 >= 0) res.push(p);
-    if ((d1 >= 0) !== (d2 >= 0)) {
-      const t = d1 / (d1 - d2);
-      res.push({ x: p.x + (next.x - p.x) * t, y: p.y + (next.y - p.y) * t });
-    }
-  });
-  return res;
-}
-
-function getCornerTarget(t: number, dir: number, cornerY: number, w: number, h: number, nudge = 0): Point {
-  const bend = (cornerY === 0 ? 1 : -1) * 0.16 * h * Math.sin(Math.PI * t);
-  const target = { x: dir * w * (1 - 2 * t), y: cornerY + bend + nudge };
-  return clampDist(
-    clampDist(target, { x: 0, y: cornerY }, w),
-    { x: 0, y: h - cornerY },
-    Math.hypot(w, h)
-  );
-}
-
-function computeFold(target: Point, dir: number, cornerY: number, w: number, h: number): FoldGeometry | null {
-  const corner = { x: dir * w, y: cornerY };
-  const dist = Math.hypot(corner.x - target.x, corner.y - target.y);
-  if (dist < 0.5) return null;
-  const normal = { x: (corner.x - target.x) / dist, y: (corner.y - target.y) / dist };
-  const midpoint = { x: (corner.x + target.x) / 2, y: (corner.y + target.y) / 2 };
-  const left = dir === 1 ? 0 : -w;
-  const pagePoly: Point[] = [
-    { x: left, y: 0 },
-    { x: left + w, y: 0 },
-    { x: left + w, y: h },
-    { x: left, y: h }
-  ];
-  return {
-    flat: clipPoly(pagePoly, midpoint, normal, -1),
-    folded: clipPoly(pagePoly, midpoint, normal, 1),
-    at: midpoint,
-    normal,
-    amount: Math.min(1, dist / (2 * w))
-  };
-}
-
-function toClipPath(poly: Point[], offset = 0, mirror = false): string {
-  if (poly.length < 3) return 'polygon(0 0, 0 0, 0 0)';
-  return `polygon(${poly.map(p => `${((mirror ? -p.x : p.x) + offset).toFixed(2)}px ${p.y.toFixed(2)}px`).join(', ')})`;
-}
-
-// Format date helper matching pradiplabs
+// Format date helper
 function formatDate(d: Date | string | number): string {
   try {
     const dateObj = typeof d === 'string' || typeof d === 'number' ? new Date(d) : d;
     return dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   } catch {
-    return '29 Oct 2026';
+    return '23 Nov 2026';
   }
 }
 
@@ -161,20 +83,25 @@ const PageSurface: React.FC<{ children?: React.ReactNode; side?: 'left' | 'right
         className="pointer-events-none absolute inset-x-0 bottom-[8cqw] top-[9cqw]"
         style={{
           backgroundImage:
-            'repeating-linear-gradient(to bottom, transparent 0, transparent calc(7cqw - 1px), rgba(86,120,170,0.22) calc(7cqw - 1px), rgba(86,120,170,0.22) 7cqw)'
+            'repeating-linear-gradient(to bottom, transparent 0, transparent calc(7cqw - 1px), rgba(86,120,170,0.20) calc(7cqw - 1px), rgba(86,120,170,0.20) 7cqw)'
         }}
       />
       {/* Red vertical margin rule line */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 left-[12cqw] w-px bg-[rgba(214,96,86,0.35)]"
+        className="pointer-events-none absolute inset-y-0 left-[11cqw] w-px bg-[rgba(214,96,86,0.32)]"
       />
       {/* Spine crease shadow */}
       <div
         aria-hidden="true"
-        className={`pointer-events-none absolute inset-y-0 w-[7cqw] ${
+        className={`pointer-events-none absolute inset-y-0 w-[8cqw] ${
           side === 'right' ? 'left-0 bg-gradient-to-r' : 'right-0 bg-gradient-to-l'
-        } from-black/[0.09] to-transparent`}
+        } from-black/[0.14] via-black/[0.05] to-transparent`}
+      />
+      {/* Paper micro texture overlay */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/[0.015] via-transparent to-black/[0.03]"
       />
       {children}
     </div>
@@ -196,22 +123,27 @@ const PageSignature: React.FC<{ children: React.ReactNode; mine?: boolean }> = (
 
 const InsideCover: React.FC = () => (
   <div className="relative flex aspect-[5/7] w-full items-center justify-center bg-[#F4EEE2] select-none" style={{ containerType: 'inline-size' }}>
-    <div className="text-center font-hand text-[#24304A]/75">
-      <p className="text-[5.4cqw]">If found, please return to</p>
-      <p className="mt-[2cqw] text-[9cqw] font-semibold text-[#24304A]">Joshua / ZYNX</p>
-      <p className="mt-[1cqw] text-[4.4cqw]">zynx-portfolio</p>
+    <div className="text-center font-hand text-[#24304A]/75 px-4">
+      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#1e1b18]/10">
+        <BookOpen className="h-6 w-6 text-[#1e1b18]/70" />
+      </div>
+      <p className="text-[5cqw] text-zinc-500 font-sans tracking-widest uppercase">Personal Guestbook</p>
+      <p className="mt-[2cqw] text-[8.5cqw] font-semibold text-[#1e1b18]">Joshua / ZYNX</p>
+      <p className="mt-[1cqw] text-[4.2cqw] text-zinc-600">Workstation Diary & Visitor Log</p>
+      <div className="mt-4 mx-auto w-24 h-px bg-zinc-400/40" />
+      <p className="mt-3 text-[3.8cqw] text-zinc-500 italic">"Leave a signature, a sketch, or your thoughts."</p>
     </div>
-    <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 w-[7cqw] bg-gradient-to-l from-black/[0.09] to-transparent" />
+    <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 w-[8cqw] bg-gradient-to-l from-black/[0.12] to-transparent" />
   </div>
 );
 
 const WelcomePage: React.FC<{ side: 'left' | 'right' }> = ({ side }) => (
   <PageSurface side={side}>
-    <p className="absolute left-[15cqw] right-[7cqw] top-[6.6cqw] font-hand text-[8cqw] font-semibold leading-[7cqw] text-[#24304A]">
+    <p className="absolute left-[14cqw] right-[7cqw] top-[6.6cqw] font-hand text-[8cqw] font-semibold leading-[7cqw] text-[#24304A]">
       My desk diary
     </p>
     <p className={`${TEXT_BASE_CLASS} !top-[16.9cqw]`}>
-      This notebook lives on my desk, and it's open to everyone. Leave a note, a doodle, a question for me, or just say hi. Every page gets preserved here in the guestbook, so feel free to make it yours.
+      This notebook lives on my work desk, and it's open to everyone who visits. Leave a note, a doodle, a question for me, or just say hello. Every page gets preserved here in the guestbook, so feel free to make it yours.
     </p>
     <PageSignature mine>Joshua</PageSignature>
   </PageSurface>
@@ -245,166 +177,6 @@ const BlankPage: React.FC<{ side: 'left' | 'right'; plain?: boolean }> = ({ side
   plain ? <div className="aspect-[5/7] w-full bg-[#F6F1E6]" /> : <PageSurface side={side} />;
 
 /* -------------------------------------------------------------------------
- * Realistic 3D Page Curl Component (Ke)
- * ------------------------------------------------------------------------- */
-
-interface PageCurlProps {
-  turn: PageTurn;
-  w: number;
-  h: number;
-  spread: boolean;
-  pose: React.MutableRefObject<{ t: number; nudge: number }>;
-  paint: React.MutableRefObject<(() => void) | null>;
-  start: React.ReactNode;
-  flap: React.ReactNode;
-  under: React.ReactNode;
-  onto: React.ReactNode;
-}
-
-const PageCurl: React.FC<PageCurlProps> = ({
-  turn,
-  w,
-  h,
-  spread,
-  pose,
-  paint,
-  start,
-  flap,
-  under,
-  onto
-}) => {
-  const flatRef = useRef<HTMLDivElement>(null);
-  const flatShadowRef = useRef<HTMLDivElement>(null);
-  const underShadowRef = useRef<HTMLDivElement>(null);
-  const flapRef = useRef<HTMLDivElement>(null);
-  const flapHighlightRef = useRef<HTMLDivElement>(null);
-  const dropShadowRef = useRef<HTMLDivElement>(null);
-
-  const dir = turn.dir;
-  const leftOffset = dir === 1 ? 0 : -w;
-  const pivotX = dir === 1 ? w : 0;
-  const shadowSpan = Math.ceil(Math.hypot(w, h) * 2.2);
-
-  useLayoutEffect(() => {
-    const update = () => {
-      const { t, nudge } = pose.current;
-      const progress = !spread && dir === -1 ? 0.5 + 0.5 * t : t;
-      const target = getCornerTarget(progress, dir, turn.corner, w, h, nudge);
-      const fold = computeFold(target, dir, turn.corner, w, h);
-      const flapEl = flapRef.current;
-      if (!flapEl) return;
-
-      if (!fold) {
-        flapEl.style.visibility = 'hidden';
-        if (flatRef.current) flatRef.current.style.clipPath = '';
-        if (flatShadowRef.current) flatShadowRef.current.style.opacity = '0';
-        if (underShadowRef.current) underShadowRef.current.style.opacity = '0';
-        return;
-      }
-
-      const { x: nx, y: ny } = fold.normal;
-      const angle = Math.atan2(ny, nx);
-      const intensity = Math.sin(Math.PI * fold.amount);
-
-      if (flatRef.current) {
-        flatRef.current.style.clipPath = toClipPath(fold.flat, -leftOffset);
-      }
-      if (flatShadowRef.current) {
-        flatShadowRef.current.style.transform = `translate(${fold.at.x - leftOffset}px, ${fold.at.y}px) rotate(${angle}rad) translate(-${w * 0.2}px, ${-shadowSpan / 2}px)`;
-        flatShadowRef.current.style.opacity = String(intensity);
-      }
-      if (underShadowRef.current) {
-        underShadowRef.current.style.transform = `translate(${fold.at.x - leftOffset}px, ${fold.at.y}px) rotate(${angle}rad) translate(0px, ${-shadowSpan / 2}px)`;
-        underShadowRef.current.style.opacity = String(intensity);
-      }
-
-      const lineDist = nx * fold.at.x + ny * fold.at.y;
-      const a11 = 2 * nx * nx - 1;
-      const a12 = 2 * nx * ny;
-      const tx = pivotX * (1 - 2 * nx * nx) + 2 * lineDist * nx;
-      const ty = -2 * pivotX * nx * ny + 2 * lineDist * ny;
-
-      flapEl.style.transform = `matrix(${a11}, ${a12}, ${-a12}, ${a11}, ${tx}, ${ty})`;
-      flapEl.style.clipPath = toClipPath(fold.folded, pivotX, true);
-      flapEl.style.visibility = 'visible';
-      flapEl.style.opacity = spread ? '1' : String(dir === 1 ? 1 - Math.max(0, (t - 0.6) / 0.4) : Math.min(1, (progress - 0.5) / 0.15));
-
-      if (flapHighlightRef.current) {
-        flapHighlightRef.current.style.transform = `translate(${pivotX - fold.at.x}px, ${fold.at.y}px) rotate(${Math.atan2(ny, -nx)}rad) translate(0px, ${-shadowSpan / 2}px)`;
-        flapHighlightRef.current.style.opacity = String(intensity);
-      }
-      if (dropShadowRef.current) {
-        dropShadowRef.current.style.filter = `drop-shadow(0 ${2 + 6 * intensity}px ${4 + 10 * intensity}px rgba(0,0,0,${0.28 * intensity}))`;
-      }
-    };
-
-    paint.current = update;
-    update();
-    return () => {
-      if (paint.current === update) paint.current = null;
-    };
-  }, [pose, paint, dir, turn.corner, w, h, spread, leftOffset, pivotX, shadowSpan]);
-
-  const shadowClass = 'pointer-events-none absolute left-0 top-0 origin-top-left';
-  const pageSize = { width: w, height: h };
-
-  return (
-    <div className="pointer-events-none absolute top-0" style={{ left: spread ? w : 0, width: 0, height: h }}>
-      {onto && (
-        <div className="absolute top-0 overflow-hidden" style={{ left: dir === 1 ? -w : 0, ...pageSize }}>
-          {onto}
-        </div>
-      )}
-      {under && (
-        <div className="absolute top-0 overflow-hidden" style={{ left: leftOffset, ...pageSize }}>
-          {under}
-          <div
-            ref={underShadowRef}
-            className={shadowClass}
-            style={{
-              width: w * 0.3,
-              height: shadowSpan,
-              opacity: 0,
-              background: 'linear-gradient(to right, rgba(0,0,0,0.32), rgba(0,0,0,0.1) 35%, transparent)'
-            }}
-          />
-        </div>
-      )}
-      {start && (
-        <div ref={flatRef} className="absolute top-0 overflow-hidden" style={{ left: leftOffset, ...pageSize }}>
-          {start}
-          <div
-            ref={flatShadowRef}
-            className={shadowClass}
-            style={{
-              width: w * 0.2,
-              height: shadowSpan,
-              opacity: 0,
-              background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.12))'
-            }}
-          />
-        </div>
-      )}
-      <div ref={dropShadowRef} className="absolute left-0 top-0">
-        <div ref={flapRef} className="absolute left-0 top-0 origin-top-left overflow-hidden" style={{ ...pageSize, visibility: 'hidden' }}>
-          {flap}
-          <div
-            ref={flapHighlightRef}
-            className={shadowClass}
-            style={{
-              width: w * 0.45,
-              height: shadowSpan,
-              opacity: 0,
-              background: 'linear-gradient(to right, rgba(0,0,0,0.2), rgba(255,255,255,0.18) 18%, rgba(255,255,255,0.05) 45%, transparent)'
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-/* -------------------------------------------------------------------------
  * Main Diary Modal Component
  * ------------------------------------------------------------------------- */
 
@@ -427,18 +199,18 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
 
   // Responsive page sizing & spread state
   const stageContainerRef = useRef<HTMLDivElement>(null);
-  const [isSpread, setIsSpread] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 900 && window.innerWidth / window.innerHeight > 1.1);
-  const [pageW, setPageW] = useState(420);
+  const [isSpread, setIsSpread] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 680);
+  const [pageW, setPageW] = useState(380);
   const pageH = Math.round(pageW * 1.4);
 
   const measure = useCallback(() => {
     if (typeof window === 'undefined') return;
-    const spread = window.innerWidth >= 900 && window.innerWidth / window.innerHeight > 1.1;
+    const spread = window.innerWidth >= 680;
     const availableW = window.innerWidth - 16;
-    const availableH = window.innerHeight - 72 - (spread ? 112 : 172);
-    const maxW = spread ? (availableW - 2 * 72 - 24) / 2 : availableW - 24;
-    const maxH = (availableH - 28) / 1.4;
-    const w = Math.max(160, Math.floor(Math.min(spread ? 470 : 440, maxW, maxH)));
+    const availableH = window.innerHeight - 72 - (spread ? 112 : 160);
+    const maxW = spread ? (availableW - 2 * 60 - 24) / 2 : Math.min(availableW - 32, 420);
+    const maxH = (availableH - 24) / 1.4;
+    const w = Math.max(150, Math.floor(Math.min(spread ? 460 : 400, maxW, maxH)));
     setIsSpread(spread);
     setPageW(w);
   }, []);
@@ -496,57 +268,82 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
   const pointerStateRef = useRef<{ id: number; x: number; y: number; mx: number; my: number } | null>(null);
   const [canUndo, setCanUndo] = useState(false);
 
-  // Page turn & interactive curl state
-  const [activeTurn, setActiveTurn] = useState<PageTurn | null>(null);
-  const turnPoseRef = useRef({ t: 0, nudge: 0 });
-  const paintCallbackRef = useRef<(() => void) | null>(null);
-  const isTurningRef = useRef(false);
-
-  const applyPose = (tVal: number, nudgeVal: number) => {
-    turnPoseRef.current = { t: tVal, nudge: nudgeVal };
-    paintCallbackRef.current?.();
-  };
-
-  const animateCurl = useCallback((turn: PageTurn, shouldComplete: boolean, startT: number, startNudge: number) => {
-    isTurningRef.current = true;
-    if (shouldComplete) {
-      playPageTurnSound();
-    }
-    const endT = shouldComplete ? 1 : 0;
-    const duration = shouldComplete ? 0.38 : 0.25;
-    const startTime = performance.now();
-
-    const frame = (now: number) => {
-      const elapsed = (now - startTime) / 1000;
-      const p = Math.min(1, elapsed / duration);
-      // Ease out cubic
-      const ease = 1 - Math.pow(1 - p, 3);
-      const currentT = startT + (endT - startT) * ease;
-      const currentNudge = startNudge * (1 - ease);
-      applyPose(currentT, currentNudge);
-
-      if (p < 1) {
-        requestAnimationFrame(frame);
-      } else {
-        if (shouldComplete) {
-          setSpreadIndex(idx => idx + turn.dir);
-        }
-        setActiveTurn(null);
-        applyPose(0, 0);
-        isTurningRef.current = false;
-      }
-    };
-    requestAnimationFrame(frame);
-  }, []);
+  // 3D Smooth Page Flip Animation State
+  const [flippingState, setFlippingState] = useState<{
+    dir: number; // 1: next, -1: prev
+    progress: number; // 0 to 1
+  } | null>(null);
+  const isAnimatingRef = useRef(false);
 
   const flip = useCallback((dir: number) => {
-    if (activeTurn || isTurningRef.current) return;
+    if (isAnimatingRef.current) return;
     if (spreadIndex + dir < 0 || spreadIndex + dir > maxSpreadIndex) return;
-    const turn: PageTurn = { dir, corner: pageH };
-    turnPoseRef.current = { t: 0, nudge: 0 };
-    setActiveTurn(turn);
-    animateCurl(turn, true, 0, 0);
-  }, [activeTurn, spreadIndex, maxSpreadIndex, pageH, animateCurl]);
+
+    isAnimatingRef.current = true;
+    playPageTurnSound();
+
+    const startTime = performance.now();
+    const duration = 400; // ms
+
+    const step = (now: number) => {
+      const elapsed = now - startTime;
+      const rawProg = Math.min(1, elapsed / duration);
+      // Natural cubic bezier easing: cubic-bezier(0.25, 1, 0.5, 1)
+      const ease = 1 - Math.pow(1 - rawProg, 3);
+      setFlippingState({ dir, progress: ease });
+
+      if (rawProg < 1) {
+        requestAnimationFrame(step);
+      } else {
+        setSpreadIndex(idx => idx + dir);
+        setFlippingState(null);
+        isAnimatingRef.current = false;
+      }
+    };
+    requestAnimationFrame(step);
+  }, [spreadIndex, maxSpreadIndex]);
+
+  // Touchscreen swipe gesture handling
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const isSwipingHorizRef = useRef(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (toolMode === 'draw' && isCurrentOnWriter) {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'CANVAS') return;
+    }
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY, time: Date.now() };
+    isSwipingHorizRef.current = false;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const t = e.touches[0];
+    const dx = t.clientX - touchStartRef.current.x;
+    const dy = t.clientY - touchStartRef.current.y;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 12) {
+      isSwipingHorizRef.current = true;
+      if (e.cancelable) e.preventDefault();
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartRef.current.x;
+    const dy = t.clientY - touchStartRef.current.y;
+    const dt = Date.now() - touchStartRef.current.time;
+    touchStartRef.current = null;
+
+    if (Math.abs(dx) > 35 && Math.abs(dx) > Math.abs(dy) && dt < 600) {
+      if (dx < 0) {
+        flip(1); // Swiped left -> next page
+      } else {
+        flip(-1); // Swiped right -> prev page
+      }
+    }
+  };
 
   // Keyboard navigation
   useEffect(() => {
@@ -655,7 +452,7 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
     if (!textTrimmed && !drawingDataUrl) return;
 
     setStatusMessage({ kind: 'sending' });
-    await new Promise(r => setTimeout(r, 650)); // Tactile feedback delay
+    await new Promise(r => setTimeout(r, 650));
 
     const newEntry: DiaryEntry = {
       id: `entry-${Date.now()}`,
@@ -680,7 +477,7 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
       origin: { y: 0.6 }
     });
 
-    setStatusMessage({ kind: 'done', message: 'Your page is in the diary. Thank you!' });
+    setStatusMessage({ kind: 'done', message: 'Your page is preserved in the diary. Thank you!' });
     setTimeout(() => {
       setStatusMessage({ kind: 'idle' });
     }, 4000);
@@ -747,40 +544,6 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
     return <BlankPage side={side} />;
   };
 
-  // Determine curl layers during page turn
-  const curlSetup = (() => {
-    if (!activeTurn) return null;
-    const { dir } = activeTurn;
-    if (isSpread) {
-      return dir === 1
-        ? {
-            start: renderPageItem(2 * spreadIndex, 'right'),
-            flap: renderPageItem(2 * spreadIndex + 1, 'left'),
-            under: renderPageItem(2 * spreadIndex + 2, 'right'),
-            onto: renderPageItem(2 * spreadIndex - 1, 'left')
-          }
-        : {
-            start: renderPageItem(2 * spreadIndex - 1, 'left'),
-            flap: renderPageItem(2 * spreadIndex - 2, 'right'),
-            under: renderPageItem(2 * spreadIndex - 3, 'left'),
-            onto: renderPageItem(2 * spreadIndex, 'right')
-          };
-    }
-    return dir === 1
-      ? {
-          start: renderPageItem(spreadIndex, 'right'),
-          flap: <BlankPage side="right" plain />,
-          under: renderPageItem(spreadIndex + 1, 'right'),
-          onto: null
-        }
-      : {
-          start: null,
-          flap: renderPageItem(spreadIndex - 1, 'right'),
-          under: null,
-          onto: renderPageItem(spreadIndex, 'right')
-        };
-  })();
-
   const isCurrentOnWriter = isSpread
     ? [2 * spreadIndex - 1, 2 * spreadIndex].includes(lastIndex)
     : spreadIndex === lastIndex;
@@ -793,19 +556,25 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
     <div
       role="dialog"
       aria-label="My desk diary"
-      className="fixed inset-0 z-[60] flex flex-col items-center bg-[#2A211B]/55 backdrop-blur-[2px] animate-fade-in"
+      className="fixed inset-0 z-[60] flex flex-col items-center bg-[#191411]/70 backdrop-blur-[4px] animate-fade-in select-none"
     >
-      {/* Top Header Bar — aligned right so it never overlaps the left logo/hamburger */}
-      <div className="flex w-full items-center justify-end gap-3 px-4 py-3 sm:py-4 sm:px-6 z-20">
-        <p className="hidden font-hand text-[22px] text-white/85 sm:block mr-auto">
-          {entries.length} {entries.length === 1 ? 'page' : 'pages'} written
-        </p>
+      {/* Top Header Bar — aligned right with Back to Desk */}
+      <div className="flex w-full items-center justify-between gap-3 px-4 py-3 sm:py-4 sm:px-8 z-20">
+        <div className="flex items-center gap-2 text-white/90">
+          <BookOpen className="h-5 w-5 text-amber-300" />
+          <span className="font-mono text-xs sm:text-sm font-bold tracking-wider text-amber-200 uppercase">
+            Workstation Diary // Guestbook
+          </span>
+          <span className="hidden sm:inline-block text-xs text-white/60 font-mono">
+            ({entries.length} {entries.length === 1 ? 'entry' : 'entries'})
+          </span>
+        </div>
 
         <button
           type="button"
           autoFocus
           onClick={onClose}
-          className="inline-flex h-9 sm:h-10 items-center gap-1.5 sm:gap-2 rounded-full bg-white/95 px-3.5 sm:px-4 text-[13px] sm:text-[15px] font-medium text-[#1D1D1F] shadow-sm ring-1 ring-black/10 backdrop-blur-xl transition-colors hover:bg-white active:scale-95"
+          className="inline-flex h-9 sm:h-10 items-center gap-1.5 sm:gap-2 rounded-full bg-white/95 px-4 text-[13px] sm:text-[14px] font-medium text-[#1D1D1F] shadow-lg ring-1 ring-black/10 backdrop-blur-xl transition-all hover:bg-white active:scale-95"
           title="Back to desk (Esc)"
         >
           <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
@@ -813,104 +582,235 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
         </button>
       </div>
 
-      {/* Main Book Viewing Stage */}
-      <div ref={stageContainerRef} className="flex min-h-0 w-full flex-1 items-center justify-center px-2">
-        {/* Left Side Chevron Button */}
-        {isSpread && (
-          <button
-            type="button"
-            onClick={() => flip(-1)}
-            disabled={!!activeTurn || spreadIndex === 0}
-            aria-label="Previous page"
-            className="grid shrink-0 place-items-center rounded-full bg-white/90 text-[#1D1D1F] shadow-sm ring-1 ring-black/5 transition-opacity hover:bg-white disabled:opacity-30 mx-3 h-12 w-12"
-          >
-            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-          </button>
-        )}
+      {/* Main Book Viewing Stage (Touchscreen Swiping Enabled) */}
+      <div
+        ref={stageContainerRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="flex min-h-0 w-full flex-1 items-center justify-center px-2 py-1 touch-pan-y"
+      >
+        {/* Left Side Navigation Button */}
+        <button
+          type="button"
+          onClick={() => flip(-1)}
+          disabled={!!flippingState || spreadIndex === 0}
+          aria-label="Previous page"
+          className="grid shrink-0 place-items-center rounded-full bg-white/90 text-[#1D1D1F] shadow-lg ring-1 ring-black/10 transition-opacity hover:bg-white disabled:opacity-20 mx-2 sm:mx-4 h-10 w-10 sm:h-12 sm:w-12 active:scale-90"
+        >
+          <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+        </button>
 
-        {/* Notebook Cover Backing & Content Area */}
+        {/* ── REALISTIC OPENED BOOK CONTAINER ── */}
         <div
           className="relative select-none"
-          style={{ width: isSpread ? pageW * 2 : pageW, height: pageH, touchAction: 'pan-y' }}
+          style={{
+            width: isSpread ? pageW * 2 : pageW,
+            height: pageH,
+            perspective: '1600px'
+          }}
         >
-          {/* Realistic Dark Charcoal Leather Cover Backing */}
+          {/* Hardcover Leather Backing with Brass Corners & Depth Stacking */}
           <div
             aria-hidden="true"
-            className="absolute -inset-[10px] rounded-[14px] bg-[#1D1D20] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)]"
+            className="absolute -inset-[10px] sm:-inset-[14px] rounded-[14px] sm:rounded-[18px] bg-[#221812] border border-amber-900/30 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.75)]"
+          >
+            {/* Antique Brass Corner Rivets */}
+            <div className="absolute top-2 left-2 w-3 h-3 rounded-full bg-[#d4af37]/40 border border-[#d4af37]/60 shadow-sm" />
+            <div className="absolute top-2 right-2 w-3 h-3 rounded-full bg-[#d4af37]/40 border border-[#d4af37]/60 shadow-sm" />
+            <div className="absolute bottom-2 left-2 w-3 h-3 rounded-full bg-[#d4af37]/40 border border-[#d4af37]/60 shadow-sm" />
+            <div className="absolute bottom-2 right-2 w-3 h-3 rounded-full bg-[#d4af37]/40 border border-[#d4af37]/60 shadow-sm" />
+
+            {/* Perimeter Stitching Line */}
+            <div className="absolute inset-1.5 sm:inset-2 rounded-[10px] sm:rounded-[14px] border border-dashed border-amber-800/30 pointer-events-none" />
+          </div>
+
+          {/* Paper Edge Deckle Stacking (Simulates 50+ bound paper leaves) */}
+          <div
+            aria-hidden="true"
+            className="absolute -inset-x-[3px] inset-y-[2px] rounded-[6px] bg-[#ede5d3] shadow-[0_4px_12px_rgba(0,0,0,0.35)] -z-10"
           />
 
-          {curlSetup ? (
-            <PageCurl
-              turn={activeTurn!}
-              w={pageW}
-              h={pageH}
-              spread={isSpread}
-              pose={turnPoseRef}
-              paint={paintCallbackRef}
-              {...curlSetup}
-            />
-          ) : isSpread ? (
-            <div className="relative grid grid-cols-2 overflow-visible rounded-[4px]">
-              <div className="overflow-hidden rounded-l-[4px]">{renderPageItem(2 * spreadIndex - 1, 'left')}</div>
-              <div className="overflow-hidden rounded-r-[4px]">{renderPageItem(2 * spreadIndex, 'right')}</div>
-            </div>
-          ) : (
-            <div className="relative overflow-hidden rounded-[4px]">{renderPageItem(spreadIndex, 'right')}</div>
-          )}
+          {/* Red Satin Ribbon Bookmark trailing down from top spine */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-3 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center"
+          >
+            <div className="w-4 h-10 sm:h-14 bg-gradient-to-b from-[#881337] to-[#be123c] rounded-b-[2px] shadow-md border-x border-[#9f1239]" />
+            <div className="w-0 h-0 border-x-[8px] border-x-transparent border-t-[8px] border-t-[#be123c]" />
+          </div>
+
+          {/* Book Open Spread Surface */}
+          <div className="relative w-full h-full rounded-[4px] overflow-hidden shadow-inner">
+            {isSpread ? (
+              /* DUAL PAGE OPEN SPREAD (Desktop / Tablet) */
+              <div className="relative grid grid-cols-2 w-full h-full">
+                {/* Left Page */}
+                <div className="relative w-full h-full overflow-hidden">
+                  {renderPageItem(2 * spreadIndex - 1, 'left')}
+                </div>
+
+                {/* Right Page */}
+                <div className="relative w-full h-full overflow-hidden">
+                  {renderPageItem(2 * spreadIndex, 'right')}
+                </div>
+
+                {/* Center Book Spine Binding Groove & Shadow */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-6 sm:w-8 bg-gradient-to-r from-black/25 via-black/45 to-black/25 shadow-lg flex flex-col items-center justify-around py-4 z-20"
+                >
+                  {/* Subtle spine thread stitch marks */}
+                  <div className="w-1.5 h-3 border-x border-white/20 rounded-full" />
+                  <div className="w-1.5 h-3 border-x border-white/20 rounded-full" />
+                  <div className="w-1.5 h-3 border-x border-white/20 rounded-full" />
+                  <div className="w-1.5 h-3 border-x border-white/20 rounded-full" />
+                </div>
+
+                {/* 3D Animated Page Flip Layer during page turn */}
+                {flippingState && (
+                  <div
+                    className="absolute inset-y-0 pointer-events-none z-30"
+                    style={{
+                      left: flippingState.dir === 1 ? '50%' : 0,
+                      width: '50%',
+                      transformStyle: 'preserve-3d',
+                      transformOrigin: flippingState.dir === 1 ? 'left center' : 'right center',
+                      transform: `rotateY(${
+                        flippingState.dir === 1
+                          ? -flippingState.progress * 180
+                          : (1 - flippingState.progress) * 180
+                      }deg)`
+                    }}
+                  >
+                    {/* Front Face of Turning Leaf */}
+                    <div
+                      className="absolute inset-0 overflow-hidden"
+                      style={{ backfaceVisibility: 'hidden' }}
+                    >
+                      {flippingState.dir === 1
+                        ? renderPageItem(2 * spreadIndex, 'right')
+                        : renderPageItem(2 * spreadIndex - 1, 'left')}
+                      {/* Dynamic shading sweep as page lifts */}
+                      <div
+                        className="absolute inset-0 pointer-events-none bg-gradient-to-r from-black/30 via-transparent to-black/10 transition-opacity"
+                        style={{ opacity: Math.sin(flippingState.progress * Math.PI) }}
+                      />
+                    </div>
+
+                    {/* Back Face of Turning Leaf (Verso) */}
+                    <div
+                      className="absolute inset-0 overflow-hidden"
+                      style={{
+                        backfaceVisibility: 'hidden',
+                        transform: 'rotateY(180deg)'
+                      }}
+                    >
+                      {flippingState.dir === 1
+                        ? renderPageItem(2 * spreadIndex + 1, 'left')
+                        : renderPageItem(2 * spreadIndex - 2, 'right')}
+                      {/* Dynamic shading sweep as page lands */}
+                      <div
+                        className="absolute inset-0 pointer-events-none bg-gradient-to-l from-black/30 via-transparent to-black/10 transition-opacity"
+                        style={{ opacity: Math.sin(flippingState.progress * Math.PI) }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* SINGLE ADAPTIVE OPEN JOURNAL PAGE (Mobile) */
+              <div className="relative w-full h-full overflow-hidden">
+                {renderPageItem(spreadIndex, 'right')}
+
+                {/* Left Edge Spine Binding Depression (Looks like open journal) */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-black/30 via-black/15 to-transparent z-20 flex flex-col items-center justify-around py-3"
+                >
+                  <div className="w-1 h-2.5 border-x border-amber-900/40 rounded-full" />
+                  <div className="w-1 h-2.5 border-x border-amber-900/40 rounded-full" />
+                  <div className="w-1 h-2.5 border-x border-amber-900/40 rounded-full" />
+                </div>
+
+                {/* 3D Animated Flip for Mobile Single Page */}
+                {flippingState && (
+                  <div
+                    className="absolute inset-0 pointer-events-none z-30"
+                    style={{
+                      transformStyle: 'preserve-3d',
+                      transformOrigin: flippingState.dir === 1 ? 'left center' : 'right center',
+                      transform: `rotateY(${
+                        flippingState.dir === 1
+                          ? -flippingState.progress * 120
+                          : (1 - flippingState.progress) * 120
+                      }deg) scale(${1 - Math.sin(flippingState.progress * Math.PI) * 0.05})`
+                    }}
+                  >
+                    <div className="absolute inset-0 overflow-hidden" style={{ backfaceVisibility: 'hidden' }}>
+                      {renderPageItem(spreadIndex, 'right')}
+                      <div
+                        className="absolute inset-0 pointer-events-none bg-gradient-to-r from-black/40 via-transparent to-black/20"
+                        style={{ opacity: Math.sin(flippingState.progress * Math.PI) }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Right Side Chevron Button */}
-        {isSpread && (
-          <button
-            type="button"
-            onClick={() => flip(1)}
-            disabled={!!activeTurn || spreadIndex >= maxSpreadIndex}
-            aria-label="Next page"
-            className="grid shrink-0 place-items-center rounded-full bg-white/90 text-[#1D1D1F] shadow-sm ring-1 ring-black/5 transition-opacity hover:bg-white disabled:opacity-30 mx-3 h-12 w-12"
-          >
-            <ChevronRight className="h-5 w-5" aria-hidden="true" />
-          </button>
-        )}
+        {/* Right Side Navigation Button */}
+        <button
+          type="button"
+          onClick={() => flip(1)}
+          disabled={!!flippingState || spreadIndex >= maxSpreadIndex}
+          aria-label="Next page"
+          className="grid shrink-0 place-items-center rounded-full bg-white/90 text-[#1D1D1F] shadow-lg ring-1 ring-black/10 transition-opacity hover:bg-white disabled:opacity-20 mx-2 sm:mx-4 h-10 w-10 sm:h-12 sm:w-12 active:scale-90"
+        >
+          <ChevronRight className="h-5 w-5" aria-hidden="true" />
+        </button>
       </div>
 
       {/* Bottom Floating Control Bar */}
       <div
-        className="w-full px-3 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3"
-        style={{ minHeight: `calc(${isSpread ? 112 : 172}px + env(safe-area-inset-bottom))` }}
+        className="w-full px-3 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-2"
+        style={{ minHeight: `calc(${isSpread ? 100 : 140}px + env(safe-area-inset-bottom))` }}
       >
-        {isCurrentOnWriter && !activeTurn ? (
+        {isCurrentOnWriter && !flippingState ? (
           <div className="mx-auto flex max-w-[1100px] flex-col items-center gap-2">
             <div className="flex flex-wrap items-center justify-center gap-2">
               {/* Writer Mode / Drawing Pill Selector */}
-              <div className="flex flex-wrap items-center justify-center gap-0.5 rounded-[22px] bg-white/95 p-1.5 shadow-lg ring-1 ring-black/5 sm:gap-1">
+              <div className="flex flex-wrap items-center justify-center gap-1 rounded-full bg-white/95 p-1.5 shadow-xl ring-1 ring-black/10">
                 <button
                   type="button"
-                  className={`inline-flex h-10 items-center gap-1.5 rounded-full px-3 text-[14px] sm:px-3.5 font-medium transition-colors ${
-                    toolMode === 'write' ? 'bg-[#1D1D1F] text-white' : 'text-[#1D1D1F]/75 hover:bg-black/[0.05]'
+                  className={`inline-flex h-9 sm:h-10 items-center gap-1.5 rounded-full px-3.5 text-[13px] sm:text-[14px] font-medium transition-all ${
+                    toolMode === 'write' ? 'bg-[#1D1D1F] text-white shadow-sm' : 'text-[#1D1D1F]/75 hover:bg-black/[0.05]'
                   }`}
                   onClick={() => setToolMode('write')}
                   aria-pressed={toolMode === 'write'}
                 >
-                  <Type className="h-4 w-4" aria-hidden="true" />
-                  <span className="sr-only sm:not-sr-only">Write</span>
+                  <Type className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
+                  <span>Write</span>
                 </button>
 
                 <button
                   type="button"
-                  className={`inline-flex h-10 items-center gap-1.5 rounded-full px-3 text-[14px] sm:px-3.5 font-medium transition-colors ${
-                    toolMode === 'draw' ? 'bg-[#1D1D1F] text-white' : 'text-[#1D1D1F]/75 hover:bg-black/[0.05]'
+                  className={`inline-flex h-9 sm:h-10 items-center gap-1.5 rounded-full px-3.5 text-[13px] sm:text-[14px] font-medium transition-all ${
+                    toolMode === 'draw' ? 'bg-[#1D1D1F] text-white shadow-sm' : 'text-[#1D1D1F]/75 hover:bg-black/[0.05]'
                   }`}
                   onClick={() => setToolMode('draw')}
                   aria-pressed={toolMode === 'draw'}
                 >
-                  <PenTool className="h-4 w-4" aria-hidden="true" />
-                  <span className="sr-only sm:not-sr-only">Draw</span>
+                  <PenTool className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
+                  <span>Draw</span>
                 </button>
 
                 {/* Draw mode ink colors, sizes, eraser, undo, and clear */}
                 {toolMode === 'draw' && (
                   <>
-                    <span className="mx-1 h-6 w-px bg-black/10" aria-hidden="true" />
+                    <span className="mx-1 h-5 w-px bg-black/15" aria-hidden="true" />
                     {INK_COLORS.map(c => (
                       <button
                         key={c}
@@ -921,11 +821,11 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
                         }}
                         aria-label="Ink colour"
                         aria-pressed={!isEraser && inkColor === c}
-                        className={`grid h-9 w-8 place-items-center rounded-full sm:w-9 ${
-                          !isEraser && inkColor === c ? 'ring-2 ring-[#1D1D1F]/70' : ''
+                        className={`grid h-8 w-8 place-items-center rounded-full transition-transform ${
+                          !isEraser && inkColor === c ? 'scale-110 ring-2 ring-[#1D1D1F]' : ''
                         }`}
                       >
-                        <span className="h-5 w-5 rounded-full" style={{ background: c }} />
+                        <span className="h-4 w-4 rounded-full shadow-inner" style={{ background: c }} />
                       </button>
                     ))}
                     {PEN_SIZES.map(sz => (
@@ -935,40 +835,40 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
                         onClick={() => setPenSize(sz)}
                         aria-label={`Pen size ${sz}`}
                         aria-pressed={penSize === sz}
-                        className={`hidden h-9 w-9 place-items-center rounded-full sm:grid ${
-                          penSize === sz ? 'bg-black/[0.07]' : ''
+                        className={`hidden h-8 w-8 place-items-center rounded-full sm:grid ${
+                          penSize === sz ? 'bg-black/[0.08]' : ''
                         }`}
                       >
-                        <span className="rounded-full bg-[#1D1D1F]/80" style={{ width: 3 + sz / 2, height: 3 + sz / 2 }} />
+                        <span className="rounded-full bg-[#1D1D1F]/80" style={{ width: 2.5 + sz / 2, height: 2.5 + sz / 2 }} />
                       </button>
                     ))}
                     <button
                       type="button"
-                      className={`inline-flex h-10 items-center gap-1.5 rounded-full px-3 text-[14px] font-medium transition-colors ${
+                      className={`inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-medium transition-colors ${
                         isEraser ? 'bg-[#1D1D1F] text-white' : 'text-[#1D1D1F]/75 hover:bg-black/[0.05]'
                       }`}
                       onClick={() => setIsEraser(prev => !prev)}
                       aria-pressed={isEraser}
                       aria-label="Eraser"
                     >
-                      <Eraser className="h-4 w-4" aria-hidden="true" />
+                      <Eraser className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
                     <button
                       type="button"
-                      className="inline-flex h-10 items-center gap-1.5 rounded-full px-3 text-[14px] font-medium transition-colors text-[#1D1D1F]/75 hover:bg-black/[0.05] disabled:opacity-30"
+                      className="inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-medium transition-colors text-[#1D1D1F]/75 hover:bg-black/[0.05] disabled:opacity-30"
                       onClick={handleUndo}
                       disabled={!canUndo}
                       aria-label="Undo"
                     >
-                      <Undo2 className="h-4 w-4" aria-hidden="true" />
+                      <Undo2 className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
                     <button
                       type="button"
-                      className="hidden sm:inline-flex h-10 items-center gap-1.5 rounded-full px-3 text-[14px] font-medium transition-colors text-[#1D1D1F]/75 hover:bg-black/[0.05]"
+                      className="hidden sm:inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-medium transition-colors text-[#1D1D1F]/75 hover:bg-black/[0.05]"
                       onClick={handleClearDrawing}
-                      aria-label="Clear the drawing"
+                      aria-label="Clear drawing"
                     >
-                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
                   </>
                 )}
@@ -979,57 +879,38 @@ export const DiaryModal: React.FC<DiaryModalProps> = ({ isOpen, onClose }) => {
                 type="button"
                 onClick={handleAddPage}
                 disabled={isFormEmpty || statusMessage.kind === 'sending'}
-                className="inline-flex h-[52px] items-center justify-center gap-2 rounded-full bg-[#2F5BEA] hover:bg-[#2449C7] px-6 text-[15px] font-medium text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-40"
+                className="inline-flex h-[48px] sm:h-[50px] items-center justify-center gap-2 rounded-full bg-[#2F5BEA] hover:bg-[#2449C7] px-6 text-[14px] sm:text-[15px] font-semibold text-white shadow-xl transition-all active:scale-[0.97] disabled:opacity-40"
               >
                 {statusMessage.kind === 'sending' ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                    Checking your page
+                    <span>Adding entry...</span>
                   </>
                 ) : (
-                  'Add my page'
+                  <span>Add my page</span>
                 )}
               </button>
             </div>
 
             {/* Status / feedback line */}
             <p
-              className={`min-h-[1.5rem] text-center font-hand text-[20px] ${
-                statusMessage.kind === 'error' ? 'text-[#FFB4A8]' : 'text-white/85'
+              className={`min-h-[1.4rem] text-center font-hand text-[17px] sm:text-[19px] ${
+                statusMessage.kind === 'error' ? 'text-[#FFB4A8]' : 'text-amber-100/90'
               }`}
             >
               {statusMessage.kind === 'done' || statusMessage.kind === 'error'
                 ? statusMessage.message
-                : isSpread
-                ? 'Lift a corner or use arrows to turn the page'
-                : 'Swipe or use arrows to turn the page'}
+                : 'Swipe left/right or tap arrows to flip pages'}
             </p>
           </div>
         ) : (
-          <div className="flex items-center justify-center gap-3">
-            {!isSpread && (
-              <button
-                type="button"
-                onClick={() => flip(-1)}
-                disabled={!!activeTurn || spreadIndex === 0}
-                className="grid shrink-0 place-items-center rounded-full bg-white/90 text-[#1D1D1F] shadow-sm ring-1 ring-black/5 h-10 w-10 disabled:opacity-30"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-            )}
-            <p className="font-hand text-[20px] text-white/85">
-              {isSpread ? 'Lift a corner or use arrows to turn the page' : 'Swipe to turn the page'}
+          <div className="flex flex-col items-center justify-center gap-1">
+            <p className="font-hand text-[17px] sm:text-[20px] text-amber-100/90 text-center">
+              Swipe left / right or tap arrows to flip through pages
             </p>
-            {!isSpread && (
-              <button
-                type="button"
-                onClick={() => flip(1)}
-                disabled={!!activeTurn || spreadIndex >= maxSpreadIndex}
-                className="grid shrink-0 place-items-center rounded-full bg-white/90 text-[#1D1D1F] shadow-sm ring-1 ring-black/5 h-10 w-10 disabled:opacity-30"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            )}
+            <p className="font-mono text-[11px] text-white/50">
+              Page {isSpread ? `${Math.max(1, 2 * spreadIndex)} - ${2 * spreadIndex + 1}` : spreadIndex + 1} of {pageItems.length}
+            </p>
           </div>
         )}
       </div>

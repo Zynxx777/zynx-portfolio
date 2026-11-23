@@ -85,48 +85,47 @@ const bezierCurve = new THREE.CubicBezierCurve3(
 
 function getResponsiveCameraFrame(w: number, h: number): { pos: THREE.Vector3; lookAt: THREE.Vector3 } {
   const aspect = w / Math.max(1, h);
-  if (w < 400 && aspect < 0.75) {
-    // Very small phones (e.g. 360px wide) — push camera back further
+  if (aspect < 0.6) {
+    // Narrow mobile portrait (iPhone SE, 13/14/15/16 Pro, Galaxy S portrait) — zoomed out so full desk fits
     return {
-      pos: new THREE.Vector3(0.0, 1.55, 2.80),
-      lookAt: new THREE.Vector3(0.0, 0.26, 0.0)
+      pos: new THREE.Vector3(0.0, 1.85, 3.65),
+      lookAt: new THREE.Vector3(0.0, 0.16, 0.0)
     };
-  }
-  if (h < 500 && aspect > 1.4) {
-    // Mobile landscape (e.g. phone held sideways: 844x390)
-    return {
-      pos: new THREE.Vector3(0.0, 0.78, 1.70),
-      lookAt: new THREE.Vector3(0.0, 0.22, 0.0)
-    };
-  } else if (aspect < 0.75) {
-    // Tall mobile portrait (e.g. modern iPhone / Android: 390x844)
-    return {
-      pos: new THREE.Vector3(0.0, 1.35, 2.45),
-      lookAt: new THREE.Vector3(0.0, 0.28, 0.0)
-    };
-  } else if (aspect < 1.0) {
+  } else if (aspect < 0.8) {
     // Standard mobile portrait
     return {
-      pos: new THREE.Vector3(0.0, 1.25, 2.20),
-      lookAt: new THREE.Vector3(0.0, 0.30, 0.0)
+      pos: new THREE.Vector3(0.0, 1.65, 3.15),
+      lookAt: new THREE.Vector3(0.0, 0.18, 0.0)
+    };
+  } else if (aspect < 1.0) {
+    // Square / foldable devices
+    return {
+      pos: new THREE.Vector3(0.0, 1.35, 2.45),
+      lookAt: new THREE.Vector3(0.0, 0.22, 0.0)
     };
   } else if (aspect < 1.35) {
-    // Tablet / iPad / Foldable screens
+    // Tablet portrait / iPad
     return {
-      pos: new THREE.Vector3(0.0, 1.08, 1.75),
-      lookAt: new THREE.Vector3(0.0, 0.30, 0.0)
+      pos: new THREE.Vector3(0.0, 1.18, 1.95),
+      lookAt: new THREE.Vector3(0.0, 0.25, 0.0)
+    };
+  } else if (h < 520 && aspect > 1.3) {
+    // Mobile landscape
+    return {
+      pos: new THREE.Vector3(0.0, 0.85, 1.75),
+      lookAt: new THREE.Vector3(0.0, 0.22, 0.0)
     };
   } else if (aspect > 2.0) {
     // Ultra-wide displays (21:9 / 32:9)
     return {
-      pos: new THREE.Vector3(0.0, 0.90, 1.35),
-      lookAt: new THREE.Vector3(0.0, 0.32, 0.0)
+      pos: new THREE.Vector3(0.0, 0.95, 1.45),
+      lookAt: new THREE.Vector3(0.0, 0.28, 0.0)
     };
   } else {
     // Standard desktop (16:9 / 16:10)
     return {
-      pos: new THREE.Vector3(0.0, 0.95, 1.45),
-      lookAt: new THREE.Vector3(0.0, 0.32, 0.0)
+      pos: new THREE.Vector3(0.0, 1.05, 1.65),
+      lookAt: new THREE.Vector3(0.0, 0.28, 0.0)
     };
   }
 }
@@ -498,12 +497,12 @@ const XRAY_TARGETS: { id: number; key: string; pos: THREE.Vector3 }[] = [
   { id: 4, key: 'laptop', pos: new THREE.Vector3(0.0, 0.35, -0.10) },    // 4: Laptop (MacBook)
   { id: 5, key: 'notes', pos: new THREE.Vector3(-0.16, 0.36, -0.09) },   // 5: Sticky Notes
   { id: 6, key: 'card', pos: new THREE.Vector3(0.0, 0.19, 0.01) },       // 6: Z Business Card
-  { id: 7, key: 'diary', pos: new THREE.Vector3(0.24, 0.18, 0.14) },     // 7: Guestbook Diary & Stylus
+  { id: 7, key: 'diary', pos: new THREE.Vector3(0.14, 0.18, 0.18) },     // 7: Opened Guestbook Diary
   { id: 8, key: 'photo', pos: new THREE.Vector3(0.14, 0.23, -0.20) },    // 8: Picture Frame
-  { id: 9, key: 'mug', pos: new THREE.Vector3(0.38, 0.21, -0.08) },      // 9: Coffee Mug
-  { id: 10, key: 'lamp', pos: new THREE.Vector3(0.58, 0.28, -0.04) },    // 10: Mushroom Desk Lamp
-  { id: 11, key: 'phone', pos: new THREE.Vector3(0.27, 0.24, 0.05) },    // 11: Smartphone & Stand
-  { id: 12, key: 'plant', pos: new THREE.Vector3(0.48, 0.28, -0.20) },   // 12: Succulent Plant
+  { id: 9, key: 'mug', pos: new THREE.Vector3(0.32, 0.21, 0.18) },       // 9: Coffee Mug (Front)
+  { id: 10, key: 'lamp', pos: new THREE.Vector3(0.48, 0.28, -0.24) },    // 10: Mushroom Desk Lamp (Back)
+  { id: 11, key: 'phone', pos: new THREE.Vector3(0.40, 0.24, -0.05) },    // 11: Smartphone & Stand (Right)
+  { id: 12, key: 'plant', pos: new THREE.Vector3(0.48, 0.28, 0.18) },    // 12: Succulent Plant (Front)
 ];
 
 interface BedroomDesk3DProps {
@@ -760,7 +759,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     sceneRef.current = scene;
 
     const initialFrame = getResponsiveCameraFrame(width, height);
-    const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
+    const initialAspect = width / Math.max(1, height);
+    const initialFov = initialAspect < 0.6 ? 48 : initialAspect < 0.8 ? 45 : 42;
+    const camera = new THREE.PerspectiveCamera(initialFov, initialAspect, 0.1, 100);
     camera.position.copy(initialFrame.pos);
     camera.lookAt(initialFrame.lookAt);
     targetCamPos.current.copy(initialFrame.pos);
@@ -788,8 +789,8 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     controls.panSpeed = 0.85;
     controls.screenSpacePanning = true;
     // Free-size zoom range: inspect close-up to wide full-room overview
-    controls.minDistance = 0.12;
-    controls.maxDistance = 5.5;
+    controls.minDistance = 0.10;
+    controls.maxDistance = 6.2;
     controls.minPolarAngle = 0.02;
     controls.maxPolarAngle = Math.PI * 0.95;
     controls.target.copy(initialFrame.lookAt);
@@ -817,9 +818,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     fillLight.position.set(-2, 1.5, 1);
     scene.add(fillLight);
 
-    // Warm Mushroom Desk Lamp Point Light
+    // Warm Mushroom Desk Lamp Point Light (Back of table)
     const lampLight = new THREE.PointLight(0xffaa55, lampOn ? 3.6 : 0.0, 1.8, 1.8);
-    lampLight.position.set(0.58, 0.34, -0.04);
+    lampLight.position.set(0.48, 0.34, -0.24);
     lampLight.castShadow = true;
     lampLight.shadow.bias = -0.001;
     scene.add(lampLight);
@@ -1472,10 +1473,10 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     registerClickable(dialMesh, 'watch');
     registerClickable(standBase, 'watch');
 
-    // 11. Smartphone & Stand (Right of Laptop)
+    // 11. Smartphone & Stand (Moved to the Right of the Desk)
     const phoneGroup = new THREE.Group();
-    phoneGroup.position.set(0.27, 0.17, 0.07);
-    phoneGroup.rotation.y = -Math.PI / 12;
+    phoneGroup.position.set(0.40, 0.17, -0.05);
+    phoneGroup.rotation.y = -Math.PI / 10;
 
     const phoneStand = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.01), silverMetal);
     phoneStand.position.set(0.0, 0.035, -0.02);
@@ -1501,31 +1502,146 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     registerClickable(phoneScreen, 'phone');
     registerClickable(phoneStand, 'phone');
 
-    // 12. Personal Guestbook Diary (Front Right)
+    // 12. Personal Guestbook Diary (Front Row - Realistic Opened Leather Journal)
     const diaryGroup = new THREE.Group();
-    diaryGroup.position.set(0.12, 0.17, 0.17);
-    diaryGroup.rotation.y = -0.15;
+    diaryGroup.position.set(0.14, 0.17, 0.18);
+    diaryGroup.rotation.y = -0.08;
 
-    const diaryBook = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.016, 0.22), diaryLeather);
-    diaryBook.castShadow = true;
-    diaryGroup.add(diaryBook);
+    const coverW = 0.105;
+    const coverH = 0.003;
+    const coverD = 0.165;
+    const bookOpenAngle = 0.035;
 
-    const diaryPages = new THREE.Mesh(
-      new THREE.BoxGeometry(0.174, 0.012, 0.214),
-      new THREE.MeshStandardMaterial({ color: 0xf2ebd9, roughness: 0.8 })
+    // Leather open cover backing: left and right boards angled gently in open V-shape
+    const leftCover = new THREE.Mesh(new THREE.BoxGeometry(coverW, coverH, coverD), diaryLeather);
+    leftCover.position.set(-coverW / 2 - 0.002, 0.002, 0);
+    leftCover.rotation.z = bookOpenAngle;
+    leftCover.castShadow = true;
+    leftCover.receiveShadow = true;
+    diaryGroup.add(leftCover);
+
+    const rightCover = new THREE.Mesh(new THREE.BoxGeometry(coverW, coverH, coverD), diaryLeather);
+    rightCover.position.set(coverW / 2 + 0.002, 0.002, 0);
+    rightCover.rotation.z = -bookOpenAngle;
+    rightCover.castShadow = true;
+    rightCover.receiveShadow = true;
+    diaryGroup.add(rightCover);
+
+    // Rounded central spine ridge
+    const spineMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.005, 0.005, coverD, 16, 1, false, 0, Math.PI),
+      diaryLeather
     );
-    diaryPages.position.set(0.002, 0.0, 0.0);
-    diaryGroup.add(diaryPages);
+    spineMesh.position.set(0, 0.003, 0);
+    spineMesh.rotation.x = Math.PI / 2;
+    diaryGroup.add(spineMesh);
 
-    const pen = new THREE.Mesh(new THREE.CylinderGeometry(0.0035, 0.0035, 0.15, 16), silverMetal);
-    pen.position.set(0.01, 0.012, 0.0);
-    pen.rotation.z = Math.PI / 2;
+    // Thick creamy multi-page leaf stacks (Left and Right page blocks)
+    const pageStackW = 0.098;
+    const pageStackH = 0.007;
+    const pageStackD = 0.155;
+    const pageStackMat = new THREE.MeshStandardMaterial({
+      color: 0xf5eedb,
+      roughness: 0.9,
+      metalness: 0.0
+    });
+
+    const leftPageStack = new THREE.Mesh(
+      new THREE.BoxGeometry(pageStackW, pageStackH, pageStackD),
+      pageStackMat
+    );
+    leftPageStack.position.set(-pageStackW / 2 - 0.003, 0.006, 0);
+    leftPageStack.rotation.z = bookOpenAngle;
+    leftPageStack.castShadow = true;
+    diaryGroup.add(leftPageStack);
+
+    const rightPageStack = new THREE.Mesh(
+      new THREE.BoxGeometry(pageStackW, pageStackH, pageStackD),
+      pageStackMat
+    );
+    rightPageStack.position.set(pageStackW / 2 + 0.003, 0.006, 0);
+    rightPageStack.rotation.z = -bookOpenAngle;
+    rightPageStack.castShadow = true;
+    diaryGroup.add(rightPageStack);
+
+    // Exposed top pages with faint ruled lines, red margin, and simulated script
+    const pageCanvas = document.createElement('canvas');
+    pageCanvas.width = 256;
+    pageCanvas.height = 256;
+    const diaryCtx = pageCanvas.getContext('2d');
+    if (diaryCtx) {
+      diaryCtx.fillStyle = '#fbf7ee';
+      diaryCtx.fillRect(0, 0, 256, 256);
+      diaryCtx.strokeStyle = 'rgba(214, 96, 86, 0.35)';
+      diaryCtx.lineWidth = 2;
+      diaryCtx.beginPath();
+      diaryCtx.moveTo(34, 0);
+      diaryCtx.lineTo(34, 256);
+      diaryCtx.stroke();
+      diaryCtx.strokeStyle = 'rgba(86, 120, 170, 0.22)';
+      diaryCtx.lineWidth = 1;
+      for (let y = 30; y < 240; y += 18) {
+        diaryCtx.beginPath();
+        diaryCtx.moveTo(10, y);
+        diaryCtx.lineTo(246, y);
+        diaryCtx.stroke();
+        if (y > 40 && y < 190 && Math.sin(y) > -0.2) {
+          diaryCtx.strokeStyle = 'rgba(36, 48, 74, 0.32)';
+          diaryCtx.beginPath();
+          diaryCtx.moveTo(42, y - 4);
+          diaryCtx.bezierCurveTo(70, y - 8, 110, y - 1, 140, y - 5);
+          diaryCtx.bezierCurveTo(170, y - 8, 200, y - 2, 230, y - 5);
+          diaryCtx.stroke();
+          diaryCtx.strokeStyle = 'rgba(86, 120, 170, 0.22)';
+        }
+      }
+    }
+    const openPageTexture = new THREE.CanvasTexture(pageCanvas);
+    const openPageMat = new THREE.MeshBasicMaterial({ map: openPageTexture });
+
+    const leftTopPage = new THREE.Mesh(new THREE.PlaneGeometry(pageStackW, pageStackD), openPageMat);
+    leftTopPage.position.set(-pageStackW / 2 - 0.003, 0.010, 0);
+    leftTopPage.rotation.x = -Math.PI / 2;
+    leftTopPage.rotation.y = bookOpenAngle;
+    diaryGroup.add(leftTopPage);
+
+    const rightTopPage = new THREE.Mesh(new THREE.PlaneGeometry(pageStackW, pageStackD), openPageMat);
+    rightTopPage.position.set(pageStackW / 2 + 0.003, 0.010, 0);
+    rightTopPage.rotation.x = -Math.PI / 2;
+    rightTopPage.rotation.y = -bookOpenAngle;
+    diaryGroup.add(rightTopPage);
+
+    // Silk Crimson Ribbon Bookmark trailing across the right page & hanging off front edge
+    const ribbonMat = new THREE.MeshStandardMaterial({
+      color: 0xaa1c1c,
+      roughness: 0.35,
+      metalness: 0.1
+    });
+    const ribbonBody = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.001, 0.16), ribbonMat);
+    ribbonBody.position.set(0.025, 0.011, 0.0);
+    ribbonBody.rotation.y = -0.06;
+    diaryGroup.add(ribbonBody);
+
+    const ribbonDrape = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.014, 0.001), ribbonMat);
+    ribbonDrape.position.set(0.030, 0.004, 0.081);
+    diaryGroup.add(ribbonDrape);
+
+    // Fine Executive Pen resting inside the book gutter
+    const pen = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.14, 16), silverMetal);
+    pen.position.set(0.0, 0.009, 0.0);
+    pen.rotation.x = Math.PI / 2;
     pen.castShadow = true;
     diaryGroup.add(pen);
 
     scene.add(diaryGroup);
-    registerClickable(diaryBook, 'diary');
+    registerClickable(leftCover, 'diary');
+    registerClickable(rightCover, 'diary');
+    registerClickable(leftPageStack, 'diary');
+    registerClickable(rightPageStack, 'diary');
+    registerClickable(leftTopPage, 'diary');
+    registerClickable(rightTopPage, 'diary');
     registerClickable(pen, 'diary');
+    registerClickable(ribbonBody, 'diary');
 
     // 13. Interactive Walnut Business Card Holder & Brushed Titanium Card
     const cardHolderGroup = new THREE.Group();
@@ -1628,9 +1744,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
     scene.add(cardHolderGroup);
 
-    // 14. Mushroom Desk Lamp (Moved to the far right, illuminating the desk)
+    // 14. Mushroom Desk Lamp (Moved to the back of the table)
     const lampGroup = new THREE.Group();
-    lampGroup.position.set(0.58, 0.17, -0.04);
+    lampGroup.position.set(0.48, 0.17, -0.24);
 
     const lampBase = new THREE.Mesh(
       new THREE.CylinderGeometry(0.05, 0.055, 0.012, 24),
@@ -1654,9 +1770,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     registerClickable(lampDome, 'lamp');
     registerClickable(lampBase, 'lamp');
 
-    // 15. Ceramic Coffee Mug with Rising Steam (Unobstructed between smartphone & lamp)
+    // 15. Ceramic Coffee Mug with Rising Steam (Brought to the Front of the Desk)
     const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.035, 0.085, 20), ceramicMat);
-    mug.position.set(0.38, 0.21, -0.08);
+    mug.position.set(0.32, 0.21, 0.18);
     mug.castShadow = true;
     scene.add(mug);
     registerClickable(mug, 'mug');
@@ -1665,7 +1781,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       new THREE.CircleGeometry(0.034, 16),
       new THREE.MeshBasicMaterial({ color: 0x3d2314 })
     );
-    coffeeSurface.position.set(0.38, 0.25, -0.08);
+    coffeeSurface.position.set(0.32, 0.25, 0.18);
     coffeeSurface.rotation.x = -Math.PI / 2;
     scene.add(coffeeSurface);
 
@@ -1674,9 +1790,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     const steamGeo = new THREE.BufferGeometry();
     const steamPositions = new Float32Array(steamCount * 3);
     for (let s = 0; s < steamCount; s++) {
-      steamPositions[s * 3] = 0.38 + (Math.random() - 0.5) * 0.03;
+      steamPositions[s * 3] = 0.32 + (Math.random() - 0.5) * 0.03;
       steamPositions[s * 3 + 1] = 0.26 + Math.random() * 0.08;
-      steamPositions[s * 3 + 2] = -0.08 + (Math.random() - 0.5) * 0.03;
+      steamPositions[s * 3 + 2] = 0.18 + (Math.random() - 0.5) * 0.03;
     }
     steamGeo.setAttribute('position', new THREE.BufferAttribute(steamPositions, 3));
     const steamMat = new THREE.PointsMaterial({
@@ -1690,17 +1806,17 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     scene.add(steamParticles);
     steamParticlesRef.current = steamParticles;
 
-    // 16. Succulent Plant in Terracotta Pot (Unobstructed behind coffee mug)
+    // 16. Succulent Plant in Terracotta Pot (Brought to the Front Right of the Desk)
     const plantGroup = new THREE.Group();
     const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.032, 0.07, 16), terracottaMat);
-    pot.position.set(0.48, 0.20, -0.20);
+    pot.position.set(0.48, 0.20, 0.18);
     pot.castShadow = true;
     plantGroup.add(pot);
 
     succulentLeavesRef.current = [];
     for (let i = 0; i < 8; i++) {
       const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.09, 8), plantGreen);
-      leaf.position.set(0.48 + (Math.cos(i * 0.785) * 0.018), 0.265, -0.20 + (Math.sin(i * 0.785) * 0.018));
+      leaf.position.set(0.48 + (Math.cos(i * 0.785) * 0.018), 0.265, 0.18 + (Math.sin(i * 0.785) * 0.018));
       leaf.rotation.set((Math.sin(i) * 0.28), i * 0.785, (Math.cos(i) * 0.28));
       leaf.castShadow = true;
       leaf.userData = { initialRot: leaf.rotation.clone(), leafIndex: i };
@@ -2160,17 +2276,23 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
       if (glassesGroupRef.current) {
         if (p > 0.002) {
-          camera.updateMatrixWorld();
-          const targetFacePos = new THREE.Vector3(0, -0.012, -0.16).applyMatrix4(camera.matrixWorld);
-          const targetFaceQuat = camera.quaternion.clone();
-          const arcY = Math.sin(p * Math.PI) * 0.14;
-          glassesGroupRef.current.position.lerpVectors(deskGlassesPos, targetFacePos, p);
-          glassesGroupRef.current.position.y += arcY;
-          glassesGroupRef.current.quaternion.slerpQuaternions(deskGlassesQuat, targetFaceQuat, p);
-          const sc = THREE.MathUtils.lerp(1.0, 3.4, p);
-          glassesGroupRef.current.scale.set(sc, sc, sc);
-          if (leftTempleRef.current) leftTempleRef.current.rotation.y = THREE.MathUtils.lerp(-0.32, 0.08, p);
-          if (rightTempleRef.current) rightTempleRef.current.rotation.y = THREE.MathUtils.lerp(0.32, -0.08, p);
+          if (p >= 0.88) {
+            // Once worn over the eyes, spectacles do NOT stay visible on screen to block view
+            glassesGroupRef.current.visible = false;
+          } else {
+            glassesGroupRef.current.visible = true;
+            camera.updateMatrixWorld();
+            const targetFacePos = new THREE.Vector3(0, -0.012, -0.16).applyMatrix4(camera.matrixWorld);
+            const targetFaceQuat = camera.quaternion.clone();
+            const arcY = Math.sin(p * Math.PI) * 0.14;
+            glassesGroupRef.current.position.lerpVectors(deskGlassesPos, targetFacePos, p);
+            glassesGroupRef.current.position.y += arcY;
+            glassesGroupRef.current.quaternion.slerpQuaternions(deskGlassesQuat, targetFaceQuat, p);
+            const sc = THREE.MathUtils.lerp(1.0, 3.4, p);
+            glassesGroupRef.current.scale.set(sc, sc, sc);
+            if (leftTempleRef.current) leftTempleRef.current.rotation.y = THREE.MathUtils.lerp(-0.32, 0.08, p);
+            if (rightTempleRef.current) rightTempleRef.current.rotation.y = THREE.MathUtils.lerp(0.32, -0.08, p);
+          }
 
           if (p > 0.85 && !isWireframeOnRef.current) {
             setIsXRayMode(true);
@@ -2180,6 +2302,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
             isWireframeOnRef.current = false;
           }
         } else {
+          glassesGroupRef.current.visible = true;
           glassesGroupRef.current.position.copy(deskGlassesPos);
           glassesGroupRef.current.quaternion.copy(deskGlassesQuat);
           glassesGroupRef.current.scale.set(1.0, 1.0, 1.0);
@@ -2226,8 +2349,8 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           arr[s * 3 + 2] += Math.cos(elapsedTime * 2.1 + s) * 0.00025;
           if (arr[s * 3 + 1] > 0.35) {
             arr[s * 3 + 1] = 0.255;
-            arr[s * 3] = 0.38 + (Math.random() - 0.5) * 0.025;
-            arr[s * 3 + 2] = -0.08 + (Math.random() - 0.5) * 0.025;
+            arr[s * 3] = 0.32 + (Math.random() - 0.5) * 0.025;
+            arr[s * 3 + 2] = 0.18 + (Math.random() - 0.5) * 0.025;
           }
         }
         posAttr.needsUpdate = true;
@@ -2315,7 +2438,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       if (!container) return;
       const w = container.clientWidth;
       const h = container.clientHeight || window.innerHeight;
-      camera.aspect = w / h;
+      const aspect = w / Math.max(1, h);
+      camera.aspect = aspect;
+      camera.fov = aspect < 0.6 ? 48 : aspect < 0.8 ? 45 : 42;
 
       // Adapt camera FOV / distance based on viewport aspect ratio (Mobile & ultrawide compatibility)
       const frame = getResponsiveCameraFrame(w, h);
@@ -2378,8 +2503,8 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       targetLookAt.current.set(-0.50, 0.19, 0.14);
     } else if (target === 'phone') {
       setFocusedTarget('phone');
-      targetCamPos.current.set(0.27, 0.36, 0.32);
-      targetLookAt.current.set(0.27, 0.24, 0.07);
+      targetCamPos.current.set(0.40, 0.36, 0.22);
+      targetLookAt.current.set(0.40, 0.24, -0.05);
       if (onOpenPhone) onOpenPhone();
       else setIsPhoneOpen(true);
     } else if (target === 'zcard') {
@@ -2493,9 +2618,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
       {/* Floating Hover Tooltips (Matching pradiplabs.dev) */}
       {hoveredObject === 'diary' && (
-        <div className="absolute top-[52%] left-[58%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
-          <div className="px-3.5 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-white/20 text-white text-xs font-sans shadow-xl flex items-center gap-2">
-            <span>Open my diary · anyone can write in it</span>
+        <div className="absolute top-[60%] left-[57%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+          <div className="px-3.5 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/40 text-amber-100 text-xs font-sans shadow-xl flex items-center gap-2">
+            <span>📖 Open guestbook diary · anyone can write in it</span>
           </div>
         </div>
       )}
@@ -2527,7 +2652,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       )}
 
       {hoveredObject === 'mug' && (
-        <div className="absolute top-[52%] left-[62%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+        <div className="absolute top-[62%] left-[65%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
           <div className="px-3.5 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-amber-500/40 text-amber-200 text-xs font-sans shadow-xl flex items-center gap-2">
             <span>☕ Hot Brew Coffee · Fresh & Steaming</span>
           </div>
@@ -2535,7 +2660,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       )}
 
       {hoveredObject === 'lamp' && (
-        <div className="absolute top-[48%] left-[80%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+        <div className="absolute top-[38%] left-[75%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
           <div className="px-3 py-1 rounded-full bg-black/80 backdrop-blur-md border border-amber-400/40 text-amber-300 text-xs font-sans shadow-xl">
             Click to toggle desk lamp {lampOn ? 'OFF' : 'ON'}
           </div>
@@ -2561,7 +2686,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       )}
 
       {hoveredObject === 'phone' && !isCardHeld && !isPhoneOpen && (
-        <div className="absolute top-[48%] left-[68%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+        <div className="absolute top-[44%] left-[70%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
           <div className="px-3.5 py-1.5 rounded-full bg-black/90 backdrop-blur-md border border-cyan-400/50 text-cyan-300 text-xs font-mono shadow-xl flex items-center gap-2">
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
             <span>7YNX Smartphone · Live Audio & AI Chat</span>
@@ -2571,7 +2696,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
       {/* Plant Hover Tooltip (Matching v2_03.png) */}
       {hoveredObject === 'plant' && (
-        <div className="absolute top-[48%] left-[72%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+        <div className="absolute top-[60%] left-[76%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
           <div className="px-3.5 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-emerald-400/50 text-emerald-300 text-xs font-sans shadow-xl flex items-center gap-2">
             <Droplets className="w-3.5 h-3.5 text-emerald-400" />
             <span>Water the plant · watered {plantWaterCount} times</span>
@@ -2581,7 +2706,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
       {/* Plant Watering Floating Drop Animation */}
       {waterDropAnim && (
-        <div className="absolute top-[45%] left-[72%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-bounce">
+        <div className="absolute top-[56%] left-[76%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-bounce">
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500 text-white font-mono font-bold text-xs shadow-xl shadow-emerald-500/40">
             <Droplets className="w-3.5 h-3.5" />
             <span>+1 Hydrated! ({plantWaterCount})</span>
@@ -2592,8 +2717,8 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       {/* ── WEARABLE SPECTACLES FIRST-PERSON HUD & CONTROLS ── */}
       {isWearingSpecs && (
         <div className="pointer-events-none fixed inset-0 z-40 overflow-hidden animate-fadeIn">
-          {/* Subtle Acetate Eyewear Vignette & Optic Lens Tint */}
-          <div className="absolute inset-0 border-[14px] sm:border-[24px] border-black/80 rounded-[32px] sm:rounded-[44px] pointer-events-none shadow-[inset_0_0_80px_rgba(34,211,238,0.18)]" />
+          {/* Subtle Ambient Optics Glow — no obstructive frame border blocking the desk view */}
+          <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_90px_rgba(34,211,238,0.14)]" />
           
           {/* Tech Optics Telemetry HUD Header */}
           <div className="absolute top-3 sm:top-4 inset-x-0 flex justify-center pointer-events-none">
