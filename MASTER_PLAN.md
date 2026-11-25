@@ -1,7 +1,7 @@
 # ZYNX Portfolio — Master Plan & Progress
 
-> **Updated:** 2026-10-22
-> **Status:** Local refinements are in progress; deployment and push remain deferred until Joshua's review
+> **Updated:** 2026-11-24
+> **Status:** Work Desk reference refinements are in local review; deployment and push remain deferred until Joshua's review
 > **Repository:** `/home/zynx/Projects/zynx-portfolio`
 > **Primary audience:** Entry-level IT support and junior Linux administration employers, with software development as a continued interest.
 
@@ -64,6 +64,27 @@ Do not restore older showcase items as current projects without evidence. In par
 - [ ] Review the local site and résumé wording before release.
 - [ ] Resolve the Tailwind CSS v3 build-tool findings before deployment. `npm audit fix --force` proposes a Tailwind CSS 4 major upgrade, so no automatic upgrade was applied during this pass.
 
+### Work Desk close-match pass — 2026-11-24
+
+- [x] Compared the live `pradiplabs.dev` desk and diary on a phone-sized viewport; used the page as visual reference and kept Joshua's content and branding.
+- [x] Brought the Work Desk into a closer mobile crop, with the tabletop and props filling more of the opening view.
+- [x] Added a restrained canvas wood-grain texture and made the natural daylight desk the first-visit view; night mode remains available.
+- [x] Tuned portrait camera distance so the desk surface and legs remain in frame, and checked the full desk at desktop size.
+- [x] Replaced the diary's single-plane page turn with a two-phase perspective curl, page lift/bow, moving shadow, and swept paper highlight; the turn no longer re-renders the diary every animation frame.
+- [x] Rebuilt the desk tablet with rounded hardware, front camera and volume key, aluminium foot, hinge and angled kickstand. Its screen now shows the same Demo Metals sample docket as the interactive docket UI, and selecting the tablet focuses it before opening the app.
+- [x] Refined and documented the laptop, diary, tablet, phone, speaker, mug, glasses, plant, lamp, receipt printer, bills, sticky notes, and contact card interactions.
+- [x] Kept the two-page diary turn responsive. Diary writes remain local in this environment; cross-device sync activates only when a server-side Vercel KV/Upstash or private Gist store is configured.
+- [x] Replaced invented X-ray panel triangle/code-line totals and non-existent source-file paths with descriptions of the actual scene implementation and interactions.
+- [x] Production build succeeds, the Vite preview responds with HTTP 200, and the local diary endpoint reports `isCloud: false` as configured.
+- [x] Reviewed the updated phone layout, diary spread and object inspector; returned the browser to the opening desk view.
+- [x] Lint completes with 18 warnings across diary, phone, receipt, sticky-note, monitor-modal and desk event-listener code; no lint errors block the build.
+- [x] Reviewed a diary page turn and tablet focus/docket interaction in the local browser; closed the overlays and restored the opening desk composition afterward.
+- [ ] Split the Three.js bundle, currently 590 kB minified, and address the existing lint warnings in a follow-up cleanup pass.
+- [ ] Review tablet portrait sizing and compare the local result with the reference before release.
+- [ ] Configure a private server-side diary store before claiming cross-device cloud sync is live.
+
+Gemini 3.8 Flash was not available as an execution target in this session, so no work was attributed to it.
+
 ## 2026-10-22 showcase and scroll update
 
 - [x] Rebuilt `#showcase` around the reference page's full-screen dark project wave, inward-curved film-roll cards, perspective floor grid, and project labels embedded in the card artwork.
@@ -98,6 +119,22 @@ Do not restore older showcase items as current projects without evidence. In par
 - [x] Tuned the lens placement for portrait screens so the biography and links sit inside the glass effect.
 - [x] Verified desktop and phone presentation, Profile close behavior, and vertical scrolling into the next section; ran `npm run lint` and `npm run build` successfully.
 - [ ] Review tablet sizing and continue visual refinement before deployment.
+
+### Work Desk reference and performance pass — 2026-11-23
+
+- [x] Revisited the supplied `pradiplabs.dev` recording and compared its landing composition, warm desk palette, compact device actions, share control, and sound toggle with the local Work Desk.
+- [x] Removed the global portfolio navbar from the full-screen Work Desk route; the local Portfolio control remains the route back to the wider site.
+- [x] Reframed the greeting and desk copy, added compact shortcuts for the laptop, tablet, phone, diary, and build details, and added share-link and desk-sound controls.
+- [x] Softened the desk finish and background toward the reference's warm neutral lighting while retaining Joshua's own desk objects and project content. No cat is included.
+- [x] Replaced the radio's beat-triggered canvas restarts with a persistent, multicolor “Prism Tuner” spectrum; the selected station number and full current track title are shown, with the complete title available to assistive technology.
+- [x] Added adaptive pixel density, mobile/constrained-device shadow budgets, viewport-aware resize handling, and pause behavior for hidden or off-screen 3D scenes.
+- [x] Reduced recurring allocations in the desk and room render loops and limited x-ray badge DOM updates to 25 Hz.
+- [x] Restarted the local preview as a persistent user service at `http://localhost:5174/#space`; production build succeeds and the route responds with HTTP 200.
+- [x] Reviewed the local Work Desk at desktop and tall phone sizes; checked the X-ray walkthrough, the radio overlay, full station title, and multicolor visualizer.
+- [x] `npm run lint` completes with existing warnings in legacy modal/phone code and a recursive desk callback; no lint errors block the build.
+- [ ] Review tablet sizing and adjust object framing if anything is clipped.
+- [ ] Exact visual parity still depends on further original modeling and texture work; keep the current desk content and avoid copying the reference owner's branding or project assets.
+- [ ] Review the local site before deployment or push.
 
 ## Later release roadmap
 

@@ -40,6 +40,8 @@ npm run preview
 
 For this review session, the development server is already running at [http://localhost:5174/](http://localhost:5174/) because port 5173 was occupied.
 
+The Work Desk diary saves to a local JSON file while developing with Vite. Cross-visitor cloud writes on Vercel require a server-side Upstash/Vercel KV pair (`KV_REST_API_URL` and `KV_REST_API_TOKEN`, or the equivalent `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`). Writes use an atomic Redis append, which preserves entries when visitors post at the same time. Keep credentials out of `VITE_*` client variables. A legacy Gist can remain configured as a read-only migration source; the first Redis write imports its entries. Until Redis credentials are added to the Vercel project and the new API is deployed, the diary clearly reports that shared cloud saving is unavailable and keeps an unsaved draft on screen.
+
 ## Project notes
 
 - The current plan and progress tracker is [`MASTER_PLAN.md`](./MASTER_PLAN.md).

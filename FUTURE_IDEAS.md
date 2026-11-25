@@ -48,6 +48,17 @@ Offer a short, optional “Start here” sequence for the school project, Linux 
 - [Joshua's earlier bedroom portfolio](https://zynxx777.github.io/Portfolio/) for the painted, moonlit blue palette and quiet room mood.
 - Keep the existing S.M. School badge and verified project details as the gallery's evidence. If a live site screenshot is added later, capture it from the actual website and update it when that site changes.
 
+## Work Desk ideas for a later pass
+
+The current Work Desk now uses a closer mobile crop, natural daylight by default, a light wood surface, and direct device shortcuts while keeping Joshua's own scene and project details. These ideas would add the most value after the current local review:
+
+1. **Create original optimized high-detail prop models.** The current objects use procedural Three.js meshes. Replacing the laptop, phone, printer, speaker and mug with original optimized models and physically based materials would be the biggest next visual gain. Keep polygon counts modest and reuse materials so phones stay responsive.
+2. **Enable cross-visitor diary writes.** Configure a server-side Upstash/Vercel KV pair on the deployment environment. The API uses atomic Redis appends; legacy Gist data can be read and imported on the first write. Local Vite saves remain development-only.
+3. **Add a short first-visit guide.** One dismissible hint can show that the devices are interactive, then get out of the way. Keep the current action pills available as a direct alternative.
+4. **Record a small original sound set.** The current interface uses generated interaction sounds and radio streams; a few short, self-recorded desk, paper and device sounds could make the scene feel more personal without increasing UI clutter.
+
+Keep any further visual matching focused on composition, movement, and material quality. Use Joshua's identity, project screens, and verified project content rather than the reference creator's assets or branding.
+
 ## Suggested order
 
 1. Capture accurate screenshots and write the S.M. English School case study.
