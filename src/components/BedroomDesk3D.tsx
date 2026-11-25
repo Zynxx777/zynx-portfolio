@@ -213,6 +213,58 @@ function computeHeldTransform(
   }
 }
 
+/** Build a 2D rounded rectangle shape with large arbitrary corner radius. */
+function createRoundedRectShape(width: number, height: number, radius: number): THREE.Shape {
+  const shape = new THREE.Shape();
+  const hw = width / 2;
+  const hh = height / 2;
+  const r = Math.min(radius, hw - 0.0001, hh - 0.0001);
+  shape.moveTo(-hw + r, -hh);
+  shape.lineTo(hw - r, -hh);
+  shape.absarc(hw - r, -hh + r, r, -Math.PI / 2, 0, false);
+  shape.lineTo(hw, hh - r);
+  shape.absarc(hw - r, hh - r, r, 0, Math.PI / 2, false);
+  shape.lineTo(-hw + r, hh);
+  shape.absarc(-hw + r, hh - r, r, Math.PI / 2, Math.PI, false);
+  shape.lineTo(-hw, -hh + r);
+  shape.absarc(-hw + r, -hh + r, r, Math.PI, Math.PI * 1.5, false);
+  return shape;
+}
+
+/** Flat rounded-corner quad with normalized 0..1 planar UV mapping for displays & decals. */
+function createRoundedPanelGeometry(width: number, height: number, radius: number): THREE.ShapeGeometry {
+  const geo = new THREE.ShapeGeometry(createRoundedRectShape(width, height, radius), 12);
+  const pos = geo.attributes.position;
+  const uv = new Float32Array(pos.count * 2);
+  for (let i = 0; i < pos.count; i += 1) {
+    uv[i * 2] = (pos.getX(i) + width / 2) / width;
+    uv[i * 2 + 1] = (pos.getY(i) + height / 2) / height;
+  }
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  return geo;
+}
+
+/** Extruded rounded-corner slab with smooth chamfered aluminum edge bevels. */
+function createRoundedSlabGeometry(
+  width: number,
+  height: number,
+  cornerRadius: number,
+  depth: number,
+  bevelThickness: number,
+  bevelSize: number
+): THREE.ExtrudeGeometry {
+  const geo = new THREE.ExtrudeGeometry(createRoundedRectShape(width, height, cornerRadius), {
+    depth,
+    curveSegments: 14,
+    bevelEnabled: true,
+    bevelThickness,
+    bevelSize,
+    bevelSegments: 5,
+  });
+  geo.center();
+  return geo;
+}
+
 // Renders the authentic live Z OS desktop interface onto the 3D laptop screen
 function drawLiveLaptopDisplay(
   ctx: CanvasRenderingContext2D,
@@ -1510,52 +1562,50 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       }).catch(() => {});
     }
 
-    // 7. Apple MacBook Pro 14" (Center of Desk)
+    // 7. Apple MacBook Pro 14" (Curved CNC Unibody Base, Keyboard Deck, & Curved Retina Display)
     const laptopGroup = new THREE.Group();
     laptopGroup.position.set(0.0, 0.169, -0.04);
 
-    // 4 low-profile black rubber feet lifting the aluminum unibody off the desk
+    // 4 low-profile black rubber feet lifting the curved aluminum unibody off the desk
     const footMat = new THREE.MeshStandardMaterial({ color: 0x16181d, roughness: 0.75, metalness: 0.05 });
     const footGeo = new THREE.CylinderGeometry(0.0065, 0.0065, 0.0014, 16);
     [
-      [-0.132, 0.0007, -0.084],
-      [0.132, 0.0007, -0.084],
-      [-0.132, 0.0007, 0.084],
-      [0.132, 0.0007, 0.084],
+      [-0.124, 0.0007, -0.078],
+      [0.124, 0.0007, -0.078],
+      [-0.124, 0.0007, 0.078],
+      [0.124, 0.0007, 0.078],
     ].forEach(([fx, fy, fz]) => {
       const foot = new THREE.Mesh(footGeo, footMat);
       foot.position.set(fx, fy, fz);
       laptopGroup.add(foot);
     });
 
-    // Precision CNC-milled flat unibody base (0.318 x 0.0082 x 0.218)
-    const laptopBase = new THREE.Mesh(
-      new RoundedBoxGeometry(0.318, 0.0082, 0.218, 3, 0.0032),
-      laptopAlu
-    );
-    laptopBase.position.y = 0.0052;
+    // Precision CNC-milled curved unibody base with true 13mm corner curves & beveled outer lip
+    const laptopBaseGeo = createRoundedSlabGeometry(0.314, 0.214, 0.013, 0.0046, 0.0022, 0.0024);
+    laptopBaseGeo.rotateX(-Math.PI / 2);
+    const laptopBase = new THREE.Mesh(laptopBaseGeo, laptopAlu);
+    laptopBase.position.y = 0.0053;
     laptopBase.castShadow = true;
     laptopBase.receiveShadow = true;
     laptopGroup.add(laptopBase);
 
-    // Signature curved anodized front thumb scoop
+    // Signature curved anodized front thumb scoop nestled smoothly into the front lip
     const wellDarkMat = new THREE.MeshStandardMaterial({ color: 0x0e1014, roughness: 0.54, metalness: 0.16 });
-    const frontGroove = new THREE.Mesh(
-      new RoundedBoxGeometry(0.056, 0.0022, 0.006, 2, 0.0011),
-      wellDarkMat
-    );
-    frontGroove.position.set(0.0, 0.0086, 0.1068);
+    const frontGrooveGeo = createRoundedSlabGeometry(0.054, 0.007, 0.0035, 0.0016, 0.0004, 0.0005);
+    frontGrooveGeo.rotateX(-Math.PI / 2);
+    const frontGroove = new THREE.Mesh(frontGrooveGeo, wellDarkMat);
+    frontGroove.position.set(0.0, 0.0091, 0.1066);
     laptopGroup.add(frontGroove);
 
-    // Side edge ports: Left (MagSafe 3 + Dual Thunderbolt USB-C + Audio Jack), Right (HDMI + USB-C + SDXC)
+    // Side edge ports along curved flanks: MagSafe 3 + Dual Thunderbolt, HDMI + USB-C + SDXC
     const portMat = new THREE.MeshStandardMaterial({ color: 0x181a20, roughness: 0.4, metalness: 0.3 });
     const portSizes: [number, number, number, number, number][] = [
-      [-0.1592, 0.0052, -0.068, 0.011, 0.0032], // MagSafe 3
-      [-0.1592, 0.0052, -0.044, 0.008, 0.0022], // USB-C 1
-      [-0.1592, 0.0052, -0.028, 0.008, 0.0022], // USB-C 2
-      [0.1592, 0.0052, -0.062, 0.012, 0.0028],  // HDMI
-      [0.1592, 0.0052, -0.040, 0.008, 0.0022],  // USB-C 3
-      [0.1592, 0.0052, -0.014, 0.020, 0.0020],  // SDXC slot
+      [-0.1594, 0.0053, -0.066, 0.011, 0.0030],
+      [-0.1594, 0.0053, -0.043, 0.008, 0.0022],
+      [-0.1594, 0.0053, -0.027, 0.008, 0.0022],
+      [0.1594, 0.0053, -0.060, 0.012, 0.0028],
+      [0.1594, 0.0053, -0.039, 0.008, 0.0022],
+      [0.1594, 0.0053, -0.014, 0.019, 0.0020],
     ];
     portSizes.forEach(([px, py, pz, pLen, pH]) => {
       const port = new THREE.Mesh(new THREE.BoxGeometry(0.001, pH, pLen), portMat);
@@ -1563,22 +1613,21 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       laptopGroup.add(port);
     });
 
-    // Blackout anodized Magic Keyboard recessed well
-    const keyboard = new THREE.Mesh(
-      new RoundedBoxGeometry(0.244, 0.0014, 0.105, 2, 0.004),
-      wellDarkMat
-    );
-    keyboard.position.set(0.0, 0.0090, -0.032);
+    // Blackout anodized Magic Keyboard recessed well with curved corners matching the palm rest
+    const keyboardWellGeo = createRoundedSlabGeometry(0.244, 0.104, 0.0068, 0.0010, 0.0003, 0.0004);
+    keyboardWellGeo.rotateX(-Math.PI / 2);
+    const keyboard = new THREE.Mesh(keyboardWellGeo, wellDarkMat);
+    keyboard.position.set(0.0, 0.0094, -0.032);
     laptopGroup.add(keyboard);
 
     // Authentic 6-row MacBook Pro keyboard: Full Function row + QWERTY rows + Modifier bottom row + Touch ID
-    const keyMaterial = new THREE.MeshStandardMaterial({ color: 0x1c1e24, roughness: 0.48, metalness: 0.08 });
-    const keyGeometry = new RoundedBoxGeometry(0.0132, 0.0014, 0.0122, 1, 0.0012);
+    const keyMaterial = new THREE.MeshStandardMaterial({ color: 0x1c1e24, roughness: 0.46, metalness: 0.08 });
+    const keyGeometry = new RoundedBoxGeometry(0.0132, 0.0014, 0.0122, 1, 0.0015);
     const alphaRows = [
-      { z: -0.056, count: 13, startX: -0.108, spacing: 0.0168 }, // Number row
-      { z: -0.041, count: 13, startX: -0.102, spacing: 0.0168 }, // QWERTY row
-      { z: -0.026, count: 12, startX: -0.097, spacing: 0.0168 }, // Home row
-      { z: -0.011, count: 11, startX: -0.088, spacing: 0.0168 }, // Z row
+      { z: -0.056, count: 13, startX: -0.108, spacing: 0.0168 },
+      { z: -0.041, count: 13, startX: -0.102, spacing: 0.0168 },
+      { z: -0.026, count: 12, startX: -0.097, spacing: 0.0168 },
+      { z: -0.011, count: 11, startX: -0.088, spacing: 0.0168 },
     ];
     const fnCount = 12;
     const totalStandardKeys = fnCount + alphaRows.reduce((acc, r) => acc + r.count, 0);
@@ -1586,9 +1635,8 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     const keyTransform = new THREE.Object3D();
     let keyIndex = 0;
 
-    // Function row keys (F1..F12)
     for (let col = 0; col < fnCount; col += 1) {
-      keyTransform.position.set(-0.088 + col * 0.0166, 0.0099, -0.072);
+      keyTransform.position.set(-0.088 + col * 0.0166, 0.0103, -0.072);
       keyTransform.rotation.set(0, 0, 0);
       keyTransform.scale.set(0.98, 0.85, 0.72);
       keyTransform.updateMatrix();
@@ -1596,10 +1644,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       keyIndex += 1;
     }
 
-    // Standard alphanumeric keys
     alphaRows.forEach((row) => {
       for (let col = 0; col < row.count; col += 1) {
-        keyTransform.position.set(row.startX + col * row.spacing, 0.0101, row.z);
+        keyTransform.position.set(row.startX + col * row.spacing, 0.0105, row.z);
         keyTransform.rotation.set(0, 0, 0);
         keyTransform.scale.set(1, 1, 1);
         keyTransform.updateMatrix();
@@ -1612,28 +1659,28 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     keyCaps.receiveShadow = false;
     laptopGroup.add(keyCaps);
 
-    // Wide MacBook special keys (Esc, Touch ID ring, Spacebar, Modifiers & Inverted-T Arrow cluster)
+    // Wide MacBook special keys (Esc, Touch ID key, Spacebar, Modifiers & Inverted-T Arrow cluster)
     const wideKeys: [number, number, number, number, number][] = [
-      [-0.107, 0.0099, -0.072, 0.020, 0.0088], // Esc
-      [0.111, 0.0099, -0.072, 0.011, 0.0088],  // Touch ID power button
-      [0.111, 0.0101, -0.056, 0.018, 0.0122],  // Delete
-      [-0.111, 0.0101, -0.041, 0.018, 0.0122], // Tab
-      [-0.109, 0.0101, -0.026, 0.021, 0.0122], // Caps Lock
-      [0.107, 0.0101, -0.026, 0.022, 0.0122],  // Return
-      [-0.105, 0.0101, -0.011, 0.029, 0.0122], // Left Shift
-      [0.103, 0.0101, -0.011, 0.030, 0.0122],  // Right Shift
-      [-0.088, 0.0101, 0.004, 0.056, 0.0122],  // Fn/Ctrl/Opt cluster
-      [-0.047, 0.0101, 0.004, 0.019, 0.0122],  // Left Command
-      [0.0, 0.0101, 0.004, 0.072, 0.0122],     // Spacebar
-      [0.048, 0.0101, 0.004, 0.019, 0.0122],   // Right Command
-      [0.068, 0.0101, 0.004, 0.014, 0.0122],   // Right Option
-      [0.098, 0.0099, 0.001, 0.012, 0.0056],   // Up arrow
-      [0.098, 0.0099, 0.0072, 0.012, 0.0056],  // Down arrow
-      [0.084, 0.0099, 0.0072, 0.012, 0.0056],  // Left arrow
-      [0.112, 0.0099, 0.0072, 0.012, 0.0056],  // Right arrow
+      [-0.107, 0.0103, -0.072, 0.020, 0.0088],
+      [0.111, 0.0103, -0.072, 0.011, 0.0088],
+      [0.111, 0.0105, -0.056, 0.018, 0.0122],
+      [-0.111, 0.0105, -0.041, 0.018, 0.0122],
+      [-0.109, 0.0105, -0.026, 0.021, 0.0122],
+      [0.107, 0.0105, -0.026, 0.022, 0.0122],
+      [-0.105, 0.0105, -0.011, 0.029, 0.0122],
+      [0.103, 0.0105, -0.011, 0.030, 0.0122],
+      [-0.088, 0.0105, 0.004, 0.056, 0.0122],
+      [-0.047, 0.0105, 0.004, 0.019, 0.0122],
+      [0.0, 0.0105, 0.004, 0.072, 0.0122],
+      [0.048, 0.0105, 0.004, 0.019, 0.0122],
+      [0.068, 0.0105, 0.004, 0.014, 0.0122],
+      [0.098, 0.0103, 0.001, 0.012, 0.0056],
+      [0.098, 0.0103, 0.0072, 0.012, 0.0056],
+      [0.084, 0.0103, 0.0072, 0.012, 0.0056],
+      [0.112, 0.0103, 0.0072, 0.012, 0.0056],
     ];
     wideKeys.forEach(([kx, ky, kz, kw, kd]) => {
-      const cap = new THREE.Mesh(new RoundedBoxGeometry(kw, 0.0014, kd, 1, 0.0011), keyMaterial);
+      const cap = new THREE.Mesh(new RoundedBoxGeometry(kw, 0.0014, kd, 1, 0.0014), keyMaterial);
       cap.position.set(kx, ky, kz);
       laptopGroup.add(cap);
     });
@@ -1644,10 +1691,10 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       new THREE.MeshBasicMaterial({ color: 0x3b404c })
     );
     touchIdRing.rotation.x = -Math.PI / 2;
-    touchIdRing.position.set(0.111, 0.0107, -0.072);
+    touchIdRing.position.set(0.111, 0.0111, -0.072);
     laptopGroup.add(touchIdRing);
 
-    // Flush Micro-Perforated Speaker Grilles flanking keyboard well
+    // Flush Curved Micro-Perforated Speaker Grilles flanking keyboard well
     const grilleCanvas = document.createElement('canvas');
     grilleCanvas.width = 64;
     grilleCanvas.height = 256;
@@ -1664,48 +1711,52 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     }
     const grilleTex = new THREE.CanvasTexture(grilleCanvas);
     const grilleMat = new THREE.MeshStandardMaterial({ map: grilleTex, roughness: 0.45, metalness: 0.35 });
-    const speakerL = new THREE.Mesh(new THREE.PlaneGeometry(0.022, 0.104), grilleMat);
+    const speakerGeo = createRoundedPanelGeometry(0.021, 0.102, 0.0035);
+    const speakerL = new THREE.Mesh(speakerGeo, grilleMat);
     speakerL.rotation.x = -Math.PI / 2;
-    speakerL.position.set(-0.138, 0.0094, -0.032);
+    speakerL.position.set(-0.137, 0.0099, -0.032);
     laptopGroup.add(speakerL);
-    const speakerR = new THREE.Mesh(new THREE.PlaneGeometry(0.022, 0.104), grilleMat);
+    const speakerR = new THREE.Mesh(speakerGeo, grilleMat);
     speakerR.rotation.x = -Math.PI / 2;
-    speakerR.position.set(0.138, 0.0094, -0.032);
+    speakerR.position.set(0.137, 0.0099, -0.032);
     laptopGroup.add(speakerR);
 
-    // Oversized Apple Force Touch Trackpad (wide recessed glass pad + hairline moat)
+    // Oversized Curved Force Touch Trackpad (true curved glass corners + hairline moat)
+    const trackpadSeamGeo = createRoundedSlabGeometry(0.123, 0.078, 0.0075, 0.0004, 0.0001, 0.0002);
+    trackpadSeamGeo.rotateX(-Math.PI / 2);
     const trackpadSeam = new THREE.Mesh(
-      new RoundedBoxGeometry(0.124, 0.0005, 0.080, 2, 0.004),
+      trackpadSeamGeo,
       new THREE.MeshStandardMaterial({ color: 0x8f96a0, roughness: 0.4, metalness: 0.4 })
     );
-    trackpadSeam.position.set(0.0, 0.0092, 0.064);
+    trackpadSeam.position.set(0.0, 0.00975, 0.064);
     laptopGroup.add(trackpadSeam);
 
+    const trackpadGeo = createRoundedSlabGeometry(0.120, 0.075, 0.0070, 0.0005, 0.0001, 0.0002);
+    trackpadGeo.rotateX(-Math.PI / 2);
     const trackpad = new THREE.Mesh(
-      new RoundedBoxGeometry(0.121, 0.0007, 0.077, 2, 0.0038),
+      trackpadGeo,
       new THREE.MeshStandardMaterial({ color: 0xcfd5dd, roughness: 0.24, metalness: 0.45 })
     );
-    trackpad.position.set(0.0, 0.0093, 0.064);
+    trackpad.position.set(0.0, 0.00988, 0.064);
     laptopGroup.add(trackpad);
 
     // Recessed continuous black clutch hinge barrel
     const hingeCylinder = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.0044, 0.0044, 0.232, 18),
+      new THREE.CylinderGeometry(0.0044, 0.0044, 0.230, 18),
       wellDarkMat
     );
     hingeCylinder.rotation.z = Math.PI / 2;
-    hingeCylinder.position.set(0.0, 0.0085, -0.104);
+    hingeCylinder.position.set(0.0, 0.0092, -0.104);
     laptopGroup.add(hingeCylinder);
 
-    // Screen Assembly (Ultra-slim MacBook Pro Display Lid)
+    // Screen Assembly (Ultra-Slim Curved Apple MacBook Pro Display Lid & Retina Panel)
     const screenHinge = new THREE.Group();
-    screenHinge.position.set(0.0, 0.0086, -0.104);
+    screenHinge.position.set(0.0, 0.0092, -0.104);
     screenHinge.rotation.x = -0.21;
 
-    const screenLid = new THREE.Mesh(
-      new RoundedBoxGeometry(0.318, 0.212, 0.0042, 2, 0.002),
-      laptopAlu
-    );
+    // Outer thin anodized aluminum lid with generous 13.5mm rounded top corners & beveled rim
+    const screenLidGeo = createRoundedSlabGeometry(0.316, 0.210, 0.0135, 0.0022, 0.0010, 0.0010);
+    const screenLid = new THREE.Mesh(screenLidGeo, laptopAlu);
     screenLid.position.set(0.0, 0.107, 0.0);
     screenLid.castShadow = true;
     screenHinge.add(screenLid);
@@ -1741,40 +1792,49 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     backLogo.position.set(0, 0.110, -0.0023);
     screenHinge.add(backLogo);
 
-    // Edge-to-Edge Obsidian Display Bezel Glass
+    // Edge-to-Edge Curved Obsidian Display Bezel Glass
     const bezelGlassMat = new THREE.MeshStandardMaterial({ color: 0x050608, roughness: 0.12, metalness: 0.16 });
-    const bezel = new THREE.Mesh(
-      new RoundedBoxGeometry(0.314, 0.208, 0.0008, 2, 0.004),
-      bezelGlassMat
-    );
+    const bezelGeo = createRoundedSlabGeometry(0.312, 0.206, 0.0120, 0.0006, 0.0002, 0.0003);
+    const bezel = new THREE.Mesh(bezelGeo, bezelGlassMat);
     bezel.position.set(0.0, 0.107, 0.0020);
     screenHinge.add(bezel);
 
-    // Luminous Liquid Retina Display Panel (thin top & side borders + clean lower chin)
+    // Curved Liquid Retina Display Panel (0.302 x 0.189 with 9.5mm rounded screen corners)
+    const screenDisplayGeo = createRoundedPanelGeometry(0.302, 0.189, 0.0095);
     const screenDisplay = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.302, 0.189),
+      screenDisplayGeo,
       new THREE.MeshBasicMaterial({
         map: laptopTexture,
         toneMapped: false
       })
     );
-    screenDisplay.position.set(0.0, 0.1115, 0.0026);
+    screenDisplay.position.set(0.0, 0.1115, 0.0027);
     screenHinge.add(screenDisplay);
 
-    // Authentic MacBook Pro Center Notch integrated at top center of the display
-    const cameraNotch = new THREE.Mesh(
-      new RoundedBoxGeometry(0.036, 0.0074, 0.0006, 2, 0.0022),
-      bezelGlassMat
-    );
-    cameraNotch.position.set(0.0, 0.2024, 0.0030);
+    // Curved-bottom Apple MacBook Pro Camera Notch integrated cleanly at top center (CCW front-facing winding)
+    const nw = 0.036;
+    const nh = 0.0074;
+    const nr = 0.0026;
+    const notchShape = new THREE.Shape();
+    notchShape.moveTo(-nw / 2, nh / 2);
+    notchShape.lineTo(-nw / 2, -nh / 2 + nr);
+    notchShape.absarc(-nw / 2 + nr, -nh / 2 + nr, nr, Math.PI, Math.PI * 1.5, false);
+    notchShape.lineTo(nw / 2 - nr, -nh / 2);
+    notchShape.absarc(nw / 2 - nr, -nh / 2 + nr, nr, -Math.PI / 2, 0, false);
+    notchShape.lineTo(nw / 2, nh / 2);
+    notchShape.closePath();
+
+    const cameraNotchGeo = new THREE.ShapeGeometry(notchShape, 8);
+    const cameraNotch = new THREE.Mesh(cameraNotchGeo, bezelGlassMat);
+    cameraNotch.position.set(0.0, 0.2023, 0.0029);
     screenHinge.add(cameraNotch);
 
-    // Coated sapphire FaceTime HD camera lens inside the notch
+    // Coated sapphire FaceTime HD camera lens inside the curved notch
     const camLens = new THREE.Mesh(
       new THREE.CircleGeometry(0.0014, 14),
       new THREE.MeshBasicMaterial({ color: 0x162b4d })
     );
-    camLens.position.set(0.0, 0.2024, 0.0034);
+    camLens.position.set(0.0, 0.2023, 0.00315);
     screenHinge.add(camLens);
 
     // Subtle soft ambient screen glow casting onto the keyboard & trackpad
