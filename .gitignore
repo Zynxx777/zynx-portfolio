@@ -23,4 +23,4 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
-.diary-storage.json
+.diary-storage.json*
