@@ -1,6 +1,13 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import {
+  createBlueSpeaker,
+  createBobblehead,
+  createOakTexture,
+  createTurntable,
+} from './desk/ReferenceDeskProps';
 import { 
   ExternalLink,
   Printer,
@@ -12,15 +19,22 @@ import {
   Mail,
   X,
   Droplets,
-  Clock
+  Disc3,
+  Play,
+  Pause,
+  SkipForward,
+  Tablet,
 } from 'lucide-react';
 import { soundFX } from '../utils/audioFX';
 import { getRenderQuality } from '../utils/renderQuality';
 import { MonitorDesktopModal } from './MonitorDesktopModal';
 import PhoneExperience from './PhoneExperience';
-import { TabletDocketModal, type DocketOrder } from './TabletDocketModal';
+import { TabletDocketModal, type DocketOrder, type TabletAppId } from './TabletDocketModal';
+import { fetchLiveDiaryEntries } from '../services/diaryCloud';
+import { musicPlayerEngine } from '../utils/musicPlayerEngine';
 import { ThermalReceiptModal } from './ThermalReceiptModal';
-import { XRayDeskInspector, XRAY_DESK_ITEMS, type XRayDeskItem } from './XRayDeskInspector';
+import { XRayDeskInspector } from './XRayDeskInspector';
+import { XRAY_DESK_ITEMS, type XRayDeskItem } from '../data/deskInspectorData';
 import { StickyNotesModal } from './StickyNotesModal';
 import { 
   drawCardFront, 
@@ -60,6 +74,35 @@ export const SpectaclesIcon: React.FC<{ className?: string }> = ({ className = '
 // Smootherstep Perlin Easing (6t^5 - 15t^4 + 10t^3)
 const Ca = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
+const BASE_PLANT_LEAVES = 8;
+const NEW_PLANT_LEAVES = 10;
+const HOUR_MS = 60 * 60 * 1000;
+const plantLeafCount = (waters: number) => {
+  const safeWaters = Number.isFinite(waters) ? Math.max(0, waters) : 0;
+  return BASE_PLANT_LEAVES + Math.floor(NEW_PLANT_LEAVES * Math.min(1, Math.log10(1 + safeWaters) / 2.5) + 1e-6);
+};
+const plantThirst = (lastWateredAt: number | null, now = Date.now()) =>
+  lastWateredAt
+    ? THREE.MathUtils.clamp((now - lastWateredAt - 2 * HOUR_MS) / (10 * HOUR_MS), 0, 1)
+    : 1;
+
+function createSteamPuffTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const context = canvas.getContext('2d');
+  if (!context) return new THREE.Texture();
+
+  const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gradient.addColorStop(0, 'rgba(255,255,255,0.55)');
+  gradient.addColorStop(1, 'rgba(255,255,255,0)');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 64, 64);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
 
 const CARD_DIM = { w: 0.086, h: 0.055, t: 0.0012 };
 const CARD_LAYOUT = { height: 0.50, width: 0.86 };
@@ -83,18 +126,25 @@ const bezierCurve = new THREE.CubicBezierCurve3(
   new THREE.Vector3()
 );
 
+function getResponsiveCameraFov(aspect: number): number {
+  if (aspect < 0.6) return 47;
+  if (aspect < 0.8) return 45;
+  if (aspect < 1) return 50;
+  return 42;
+}
+
 function getResponsiveCameraFrame(w: number, h: number): { pos: THREE.Vector3; lookAt: THREE.Vector3 } {
   const aspect = w / Math.max(1, h);
   if (aspect < 0.6) {
-    // Narrow mobile portrait (iPhone SE, 13/14/15/16 Pro, Galaxy S portrait) — zoomed out so full desk fits
+    // Narrow phones use the reference's close, overhead desk framing.
     return {
-      pos: new THREE.Vector3(0.0, 1.85, 3.65),
+      pos: new THREE.Vector3(0.14, 1.73, 1.58),
       lookAt: new THREE.Vector3(0.0, 0.16, 0.0)
     };
   } else if (aspect < 0.8) {
-    // Standard mobile portrait
+    // Standard phones keep the full tabletop and its key props inside the frame.
     return {
-      pos: new THREE.Vector3(0.0, 1.65, 3.15),
+      pos: new THREE.Vector3(0.16, 1.69, 1.49),
       lookAt: new THREE.Vector3(0.0, 0.18, 0.0)
     };
   } else if (aspect < 1.0) {
@@ -124,7 +174,7 @@ function getResponsiveCameraFrame(w: number, h: number): { pos: THREE.Vector3; l
   } else {
     // Standard desktop (16:9 / 16:10)
     return {
-      pos: new THREE.Vector3(0.0, 1.05, 1.65),
+      pos: new THREE.Vector3(0.28, 1.05, 1.58),
       lookAt: new THREE.Vector3(0.0, 0.28, 0.0)
     };
   }
@@ -206,80 +256,110 @@ function drawLiveLaptopDisplay(
   ctx.fillStyle = g3;
   ctx.fillRect(0, 0, w, h);
 
-  // 2. Top Menu Bar
+  // 2. macOS Top Menu Bar (with clean centered gap for the 3D MacBook Pro notch)
   ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
-  ctx.fillRect(0, 0, w, 36);
+  ctx.fillRect(0, 0, w, 38);
   ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
-  ctx.fillRect(0, 35, w, 1);
+  ctx.fillRect(0, 37, w, 1);
 
-  // Z OS Badge
-  ctx.fillStyle = '#2F5BEA';
-  round(16, 8, 20, 20, 4);
+  // Crisp vector Apple emblem (cross-platform, avoids Linux tofu glyph)
+  const ax = 24;
+  const ay = 19;
+  ctx.fillStyle = '#1D1D1F';
+  ctx.beginPath();
+  ctx.arc(ax - 2.6, ay + 0.5, 4.4, Math.PI * 0.4, Math.PI * 1.65);
+  ctx.arc(ax + 2.6, ay + 0.5, 4.4, Math.PI * 1.35, Math.PI * 0.6);
   ctx.fill();
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = '900 11px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('Z', 26, 22);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.86)';
+  ctx.beginPath();
+  ctx.arc(ax + 6.4, ay - 0.6, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#1D1D1F';
+  ctx.beginPath();
+  ctx.ellipse(ax + 1.2, ay - 6.0, 2.2, 1.3, -0.65, 0, Math.PI * 2);
+  ctx.fill();
 
-  // Menu Items
+  // Left Menu Items (stay cleanly left of center notch)
   ctx.textAlign = 'left';
   ctx.fillStyle = '#1D1D1F';
   ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-  ctx.fillText('Z OS', 44, 23);
+  ctx.fillText('Finder', 46, 23);
 
-  ctx.fillStyle = '#2F5BEA';
-  ctx.fillText('Work', 104, 23);
-  ctx.fillStyle = '#55555A';
   ctx.font = '500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-  ctx.fillText('About', 158, 23);
-  ctx.fillText('Contact', 214, 23);
+  ctx.fillStyle = '#2F5BEA';
+  ctx.fillText('Work', 102, 23);
+  ctx.fillStyle = '#4B5563';
+  ctx.fillText('About', 150, 23);
+  ctx.fillText('Contact', 204, 23);
+  ctx.fillText('Window', 268, 23);
 
-  // Right Menu Status: Live pulse dot + Bengaluru Time
-  ctx.textAlign = 'right';
-  const dotAlpha = 0.4 + 0.6 * Math.abs(Math.sin(pulse * 3));
+  // Right Menu Status: Live pulse, Control Center, Battery & Clock (cleanly right of notch)
+  const dotAlpha = 0.45 + 0.55 * Math.abs(Math.sin(pulse * 3));
   ctx.fillStyle = `rgba(16, 185, 129, ${dotAlpha})`;
   ctx.beginPath();
-  ctx.arc(1110, 18, 4.5, 0, Math.PI * 2);
+  ctx.arc(1032, 19, 3.8, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#059669';
-  ctx.font = 'bold 11px monospace';
-  ctx.fillText('LIVE', 1100, 22);
 
+  // Battery icon
+  ctx.strokeStyle = '#1D1D1F';
+  ctx.lineWidth = 1.4;
+  round(1048, 12, 22, 12, 3);
+  ctx.stroke();
   ctx.fillStyle = '#1D1D1F';
-  ctx.font = '500 12px monospace';
-  ctx.fillText(`Bengaluru ${timeStr || '1:20 am'}`, 1260, 22);
+  round(1050.5, 14.5, 17, 7, 1.5);
+  ctx.fill();
+  ctx.fillRect(1071, 15.5, 2, 5);
+
+  // Wi-Fi arcs
+  ctx.strokeStyle = '#1D1D1F';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.arc(1092, 23, 2, Math.PI * 1.2, Math.PI * 1.8);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(1092, 23, 5.5, Math.PI * 1.2, Math.PI * 1.8);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(1092, 23, 9, Math.PI * 1.2, Math.PI * 1.8);
+  ctx.stroke();
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#1D1D1F';
+  ctx.font = '600 12.5px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+  ctx.fillText(`Bengaluru  ${timeStr || '1:20 am'}`, 1262, 23);
 
   // 3. Desktop Shortcut Icons on Right
   const rightIcons = [
-    { label: 'Work', icon: '📁', y: 70 },
-    { label: 'About', icon: '👤', y: 155 },
-    { label: 'Contact', icon: '✉️', y: 240 }
+    { label: 'Work', color: '#3B82F6', y: 70 },
+    { label: 'About', color: '#6366F1', y: 155 },
+    { label: 'Resume', color: '#10B981', y: 240 }
   ];
   rightIcons.forEach((item) => {
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.86)';
     round(1190, item.y, 56, 56, 14);
     ctx.fill();
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    ctx.font = '22px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(item.icon, 1218, item.y + 36);
+    ctx.fillStyle = item.color;
+    round(1203, item.y + 14, 30, 26, 6);
+    ctx.fill();
 
     ctx.fillStyle = '#1D1D1F';
     ctx.font = '600 11px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.textAlign = 'center';
     ctx.fillText(item.label, 1218, item.y + 72);
   });
 
   // 4. Main Floating Window (Work: Eight projects, all running)
   const wx = 50;
-  const wy = 52;
+  const wy = 54;
   const ww = 1100;
-  const wh = 650;
+  const wh = 648;
 
   // Window Shadow
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.14)';
   round(wx + 4, wy + 8, ww, wh, 16);
   ctx.fill();
 
@@ -298,7 +378,7 @@ function drawLiveLaptopDisplay(
   ctx.fillStyle = 'rgba(0, 0, 0, 0.06)';
   ctx.fillRect(wx, wy + 43, ww, 1);
 
-  // Traffic lights
+  // macOS Traffic lights
   ctx.fillStyle = '#FF5F57';
   ctx.beginPath(); ctx.arc(wx + 22, wy + 22, 6, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#FEBC2E';
@@ -320,18 +400,18 @@ function drawLiveLaptopDisplay(
 
   ctx.fillStyle = '#6B7280';
   ctx.font = '13px -apple-system, BlinkMacSystemFont, sans-serif';
-  ctx.fillText('Open one to use the real site. Everything here was built by me alone.', wx + 36, wy + 102);
+  ctx.fillText('Open one to use the real site. Everything here was built by me.', wx + 36, wy + 102);
 
   // Grid of 8 Project Tiles (2 rows x 4 cols)
   const tiles = [
-    { title: 'Z Card v0.1', sub: 'Smart Card System', tag: 'HARDWARE', tint: '#EBF1F7', icon: '💳' },
-    { title: 'S.M. School Web', sub: 'School Management', tag: 'LIVE SITE', tint: '#EBF5FB', icon: '🏫' },
-    { title: 'Arch Workstation', sub: 'Hyprland & Kernel', tag: 'SYSTEM', tint: '#F0F4F8', icon: '⚡' },
-    { title: 'Luxoft AAOS', sub: 'Automotive CAN Bus', tag: 'RESEARCH', tint: '#F2EEF9', icon: '🚗' },
-    { title: 'MediVend', sub: 'Verilog FSM Prototype', tag: 'EMBEDDED', tint: '#E7F6EF', icon: '💊' },
-    { title: '7YNX Sound Lab', sub: 'Electronic Soundscapes', tag: 'AUDIO', tint: '#FDF0F3', icon: '🎧' },
-    { title: 'Jesper Wave 3D', sub: 'Curved WebGL Wave', tag: 'CREATIVE', tint: '#E8F0FE', icon: '🌊' },
-    { title: '3D Bedroom', sub: 'Three.js Spatial Web', tag: 'SPATIAL', tint: '#FDF6E2', icon: '🛋️' }
+    { title: 'Z Card v0.1', sub: 'Smart Card System', tag: 'HARDWARE', tint: '#EBF1F7', accent: '#1E293B' },
+    { title: 'S.M. School Web', sub: 'School Management', tag: 'LIVE SITE', tint: '#EBF5FB', accent: '#2563EB' },
+    { title: 'Arch Workstation', sub: 'Hyprland & Kernel', tag: 'SYSTEM', tint: '#F0F4F8', accent: '#0F172A' },
+    { title: 'Luxoft AAOS', sub: 'Automotive CAN Bus', tag: 'RESEARCH', tint: '#F2EEF9', accent: '#7C3AED' },
+    { title: 'MediVend', sub: 'Verilog FSM Prototype', tag: 'EMBEDDED', tint: '#E7F6EF', accent: '#059669' },
+    { title: '7YNX Sound Lab', sub: 'Electronic Soundscapes', tag: 'AUDIO', tint: '#FDF0F3', accent: '#E11D48' },
+    { title: 'Jesper Wave 3D', sub: 'Curved WebGL Wave', tag: 'CREATIVE', tint: '#E8F0FE', accent: '#1D4ED8' },
+    { title: '3D Bedroom', sub: 'Three.js Spatial Web', tag: 'SPATIAL', tint: '#FDF6E2', accent: '#D97706' }
   ];
 
   const cols = 4;
@@ -348,7 +428,6 @@ function drawLiveLaptopDisplay(
     const tx = startX + col * (tileW + gapX);
     const ty = startY + row * (tileH + gapY);
 
-    // Card background
     ctx.fillStyle = t.tint;
     round(tx, ty, tileW, tileH, 10);
     ctx.fill();
@@ -356,20 +435,27 @@ function drawLiveLaptopDisplay(
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Top icon/preview box
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-    round(tx + 8, ty + 8, tileW - 16, 110, 8);
+    // Mini UI preview window inside card
+    ctx.fillStyle = '#FFFFFF';
+    round(tx + 10, ty + 10, tileW - 20, 108, 8);
+    ctx.fill();
+    ctx.fillStyle = t.accent;
+    round(tx + 10, ty + 10, tileW - 20, 20, [8, 8, 0, 0]);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    round(tx + 20, ty + 42, tileW - 40, 12, 4);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.05)';
+    round(tx + 20, ty + 62, tileW - 76, 10, 4);
+    ctx.fill();
+    round(tx + 20, ty + 80, tileW - 92, 10, 4);
     ctx.fill();
 
-    ctx.font = '36px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(t.icon, tx + tileW / 2, ty + 74);
-
     // Tag badge
-    ctx.fillStyle = '#2F5BEA';
+    ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 9px monospace';
     ctx.textAlign = 'left';
-    ctx.fillText(t.tag, tx + 14, ty + 26);
+    ctx.fillText(t.tag, tx + 18, ty + 23);
 
     // Title & Subtitle
     ctx.fillStyle = '#111827';
@@ -380,42 +466,57 @@ function drawLiveLaptopDisplay(
     ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
     ctx.fillText(t.sub, tx + 12, ty + 172);
 
-    // Live indicator
     ctx.fillStyle = '#10B981';
     ctx.beginPath();
     ctx.arc(tx + tileW - 18, ty + 150, 3.5, 0, Math.PI * 2);
     ctx.fill();
   });
 
-  // 5. Bottom MacOS Glass Dock
-  const dockW = 460;
+  // 5. Authentic macOS Glass Dock (Squircle App Icons)
+  const dockW = 472;
   const dockH = 54;
   const dockX = (w - dockW) / 2;
   const dockY = h - 68;
 
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
-  round(dockX, dockY, dockW, dockH, 20);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
+  round(dockX, dockY, dockW, dockH, 18);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.10)';
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  // Dock icons
-  const dockIcons = ['📁', '💳', '🏫', '⚡', '🚗', '💊', '🎧', '|', '👤', '✉️'];
-  ctx.textAlign = 'center';
-  dockIcons.forEach((dIcon, di) => {
-    const ix = dockX + 28 + di * 42;
-    if (dIcon === '|') {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-      ctx.fillRect(ix - 6, dockY + 12, 1, 30);
+  const dockApps = [
+    { bg: '#2563EB', fg: '#FFFFFF', text: 'F', active: true },
+    { bg: '#0EA5E9', fg: '#FFFFFF', text: 'S' },
+    { bg: '#18181B', fg: '#34D399', text: '>_' },
+    { bg: '#FFFFFF', fg: '#2563EB', text: 'W' },
+    { bg: '#F59E0B', fg: '#FFFFFF', text: 'N' },
+    { bg: '#E11D48', fg: '#FFFFFF', text: 'M' },
+    { bg: '#10B981', fg: '#FFFFFF', text: 'C' },
+    { bg: 'SEP', fg: '', text: '' },
+    { bg: '#3B82F6', fg: '#FFFFFF', text: 'P' },
+    { bg: '#E5E7EB', fg: '#4B5563', text: 'T' },
+  ];
+
+  dockApps.forEach((app, di) => {
+    const ix = dockX + 16 + di * 44;
+    if (app.bg === 'SEP') {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.16)';
+      ctx.fillRect(ix + 10, dockY + 12, 1.5, 30);
     } else {
-      ctx.font = '20px sans-serif';
-      ctx.fillText(dIcon, ix, dockY + 35);
-      if (di === 0) {
-        // Active dot under Work folder
+      ctx.fillStyle = app.bg;
+      round(ix, dockY + 9, 34, 34, 9);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+      ctx.stroke();
+      ctx.fillStyle = app.fg;
+      ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(app.text, ix + 17, dockY + 31);
+      if (app.active) {
         ctx.fillStyle = '#1D1D1F';
         ctx.beginPath();
-        ctx.arc(ix, dockY + 47, 2, 0, Math.PI * 2);
+        ctx.arc(ix + 17, dockY + 48, 2, 0, Math.PI * 2);
         ctx.fill();
       }
     }
@@ -489,20 +590,22 @@ function drawReceiptOnCanvas(ctx: CanvasRenderingContext2D, order?: DocketOrder 
   ctx.fillText('*** PRADIPLABS / ZYNX ***', 20, currentY + 20);
 }
 
-// 12 Target Coordinates for Isometric X-Ray Blueprint Badges (Matching v2_10.png)
+// Isometric X-Ray marker positions for the desk props.
 const XRAY_TARGETS: { id: number; key: string; pos: THREE.Vector3 }[] = [
   { id: 1, key: 'printer', pos: new THREE.Vector3(-0.52, 0.22, -0.06) },  // 1: Thermal POS Printer
-  { id: 2, key: 'watch', pos: new THREE.Vector3(-0.50, 0.20, 0.14) },    // 2: Precision Chronometer Watch
+  { id: 2, key: 'zoro', pos: new THREE.Vector3(-0.405, 0.29, -0.19) },   // 2: Zoro bobblehead
   { id: 3, key: 'tablet', pos: new THREE.Vector3(-0.32, 0.28, 0.04) },   // 3: Tablet (Docket system)
   { id: 4, key: 'laptop', pos: new THREE.Vector3(0.0, 0.35, -0.10) },    // 4: Laptop (MacBook)
   { id: 5, key: 'notes', pos: new THREE.Vector3(-0.16, 0.36, -0.09) },   // 5: Sticky Notes
-  { id: 6, key: 'card', pos: new THREE.Vector3(-0.04, 0.20, 0.22) },      // 6: Z Business Card
-  { id: 7, key: 'diary', pos: new THREE.Vector3(0.14, 0.18, 0.18) },     // 7: Opened Guestbook Diary
+  { id: 6, key: 'card', pos: new THREE.Vector3(0.24, 0.20, 0.285) },      // 6: Z Business Card
+  { id: 7, key: 'diary', pos: new THREE.Vector3(0.25, 0.195, 0.145) },    // 7: Closed Black Death Note Diary
   { id: 8, key: 'photo', pos: new THREE.Vector3(0.14, 0.23, -0.20) },    // 8: Picture Frame
-  { id: 9, key: 'mug', pos: new THREE.Vector3(0.32, 0.21, 0.18) },       // 9: Coffee Mug (Front)
-  { id: 10, key: 'lamp', pos: new THREE.Vector3(0.48, 0.28, -0.24) },    // 10: Mushroom Desk Lamp (Back)
-  { id: 11, key: 'phone', pos: new THREE.Vector3(0.40, 0.24, -0.05) },    // 11: Smartphone & Stand (Right)
-  { id: 12, key: 'plant', pos: new THREE.Vector3(0.48, 0.28, 0.18) },    // 12: Succulent Plant (Front)
+  { id: 9, key: 'mug', pos: new THREE.Vector3(0.39, 0.21, 0.045) },      // 9: Ceramic Coffee Mug
+  { id: 10, key: 'lamp', pos: new THREE.Vector3(0.58, 0.28, -0.24) },    // 10: Mushroom Desk Lamp (Back)
+  { id: 11, key: 'phone', pos: new THREE.Vector3(0.49, 0.24, -0.05) },   // 11: Smartphone & Stand (Right)
+  { id: 12, key: 'plant', pos: new THREE.Vector3(0.34, 0.32, -0.22) },   // 12: Tall desk plant
+  { id: 13, key: 'speaker', pos: new THREE.Vector3(-0.59, 0.25, 0.245) }, // 13: Blue desk speaker
+  { id: 14, key: 'turntable', pos: new THREE.Vector3(0.53, 0.205, 0.165) }, // 14: Miniature record player
 ];
 
 interface BedroomDesk3DProps {
@@ -513,8 +616,12 @@ interface BedroomDesk3DProps {
   onOpenMonitor?: () => void;
   onOpenPhone?: () => void;
   onToggleMusic?: () => void;
+  onToggleMusicPlayback?: () => void;
+  isMusicOpen?: boolean;
   isMusicPlaying?: boolean;
+  isDiaryOpen?: boolean;
   dayMode?: boolean;
+  openTabletAppSignal?: { seq: number; app: TabletAppId; addSong?: boolean } | null;
 }
 
 export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
@@ -523,9 +630,37 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   onOpenAnatomy,
   onOpenMonitor,
   onOpenPhone,
+  onToggleMusic,
+  onToggleMusicPlayback,
+  isMusicOpen = false,
+  isMusicPlaying = false,
+  isDiaryOpen = false,
   dayMode: controlledDayMode,
+  openTabletAppSignal,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
+  const actionsNavRef = useRef<HTMLElement | null>(null);
+  const onToggleMusicRef = useRef(onToggleMusic);
+  const onToggleMusicPlaybackRef = useRef(onToggleMusicPlayback);
+  useEffect(() => {
+    onToggleMusicRef.current = onToggleMusic;
+  }, [onToggleMusic]);
+  useEffect(() => {
+    onToggleMusicPlaybackRef.current = onToggleMusicPlayback;
+  }, [onToggleMusicPlayback]);
+  const musicPlayingRef = useRef(isMusicPlaying);
+  useEffect(() => {
+    musicPlayingRef.current = isMusicPlaying;
+  }, [isMusicPlaying]);
+
+  useEffect(() => {
+    if (isDiaryOpen) return;
+    const frame = requestAnimationFrame(() => {
+      if (actionsNavRef.current) actionsNavRef.current.scrollLeft = 0;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [isDiaryOpen]);
+
   const [hoveredObject, setHoveredObject] = useState<string | null>(null);
   const [lampOn, setLampOn] = useState(true);
   const [isXRayMode, setIsXRayMode] = useState(false); // X-Ray mode activated exclusively when wearing specs
@@ -535,11 +670,22 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   const [printedReceipt, setPrintedReceipt] = useState(false);
   const [isMonitorOpen, setIsMonitorOpen] = useState(false);
   const [isPhoneOpen, setIsPhoneOpen] = useState(false);
-  const [focusedTarget, setFocusedTarget] = useState<'laptop' | 'tablet' | 'phone' | 'diary' | 'zcard' | 'printer' | 'watch' | null>(null);
+  const [focusedTarget, setFocusedTarget] = useState<'laptop' | 'tablet' | 'phone' | 'diary' | 'zcard' | 'printer' | 'turntable' | null>(null);
   const [isCardHeld, setIsCardHeld] = useState(false);
   const [, setCardSide] = useState<0 | 1>(0);
 
   const [isDocketOpen, setIsDocketOpen] = useState(false);
+  const [tabletInitialApp, setTabletInitialApp] = useState<TabletAppId>('home');
+  const [tabletInitialAddSong, setTabletInitialAddSong] = useState(false);
+  const [docketsPrintedCount, setDocketsPrintedCount] = useState<number>(() => {
+    try {
+      const saved = Number(localStorage.getItem('zynx_dockets_printed_count'));
+      return Number.isFinite(saved) && saved > 0 ? saved : 136;
+    } catch {
+      return 136;
+    }
+  });
+  const [diaryPageCount, setDiaryPageCount] = useState<number>(42);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [isStickyNotesOpen, setIsStickyNotesOpen] = useState(false);
   const [activeStickyNoteId, setActiveStickyNoteId] = useState<number | undefined>(undefined);
@@ -548,9 +694,18 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   const [plantWaterCount, setPlantWaterCount] = useState<number>(() => {
     try {
       const saved = localStorage.getItem('zynx_plant_water_count');
-      return saved ? parseInt(saved, 10) : 87;
+      const parsed = saved ? parseInt(saved, 10) : 87;
+      return Number.isFinite(parsed) ? Math.max(0, parsed) : 87;
     } catch {
       return 87;
+    }
+  });
+  const [plantLastWateredAt, setPlantLastWateredAt] = useState<number | null>(() => {
+    try {
+      const saved = Number(localStorage.getItem('zynx_plant_last_watered_at'));
+      return Number.isFinite(saved) && saved > 0 ? saved : null;
+    } catch {
+      return null;
     }
   });
   const [waterDropAnim, setWaterDropAnim] = useState(false);
@@ -709,11 +864,6 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   const lampLightRef = useRef<THREE.PointLight | null>(null);
   const daySunLightRef = useRef<THREE.DirectionalLight | null>(null);
 
-  // Precision Chronometer Watch hands reference
-  const watchHourHandRef = useRef<THREE.Mesh | null>(null);
-  const watchMinuteHandRef = useRef<THREE.Mesh | null>(null);
-  const watchSecondHandRef = useRef<THREE.Mesh | null>(null);
-
   // Wearable Spectacles Animation References
   const specsWearProgressRef = useRef<number>(0.0);
   const isWireframeOnRef = useRef<boolean>(false);
@@ -725,6 +875,40 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
   // Succulent plant bounce & leaf sway references
   const plantBounceRef = useRef<number>(0);
   const succulentLeavesRef = useRef<THREE.Mesh[]>([]);
+  const plantWaterCountRef = useRef(plantWaterCount);
+  useEffect(() => {
+    plantWaterCountRef.current = plantWaterCount;
+  }, [plantWaterCount]);
+  const plantLastWateredRef = useRef(plantLastWateredAt);
+  useEffect(() => {
+    plantLastWateredRef.current = plantLastWateredAt;
+  }, [plantLastWateredAt]);
+  const zoroHeadRef = useRef<THREE.Group | null>(null);
+  const zoroWobbleRef = useRef({ angle: 0, speed: 0, tilt: 0, tiltSpeed: 0 });
+  const turntableRecordRef = useRef<THREE.Group | null>(null);
+  const turntableTonearmRef = useRef<THREE.Group | null>(null);
+  const turntableLedMatRef = useRef<THREE.MeshBasicMaterial | null>(null);
+  const turntableDrawLabelRef = useRef<((accentHex?: string, playing?: boolean) => void) | null>(null);
+
+  useEffect(() => {
+    fetchLiveDiaryEntries().then(({ entries }) => {
+      if (entries.length > 0) setDiaryPageCount(entries.length);
+    }).catch(() => {});
+  }, [isDiaryOpen]);
+
+  useEffect(() => {
+    turntableDrawLabelRef.current?.('#090a0d', isMusicPlaying);
+    if (turntableLedMatRef.current) {
+      turntableLedMatRef.current.color.setHex(isMusicPlaying ? 0x22c55e : 0x3b82f6);
+    }
+  }, [isMusicPlaying]);
+
+  useEffect(() => {
+    if (!openTabletAppSignal) return;
+    setTabletInitialApp(openTabletAppSignal.app);
+    setTabletInitialAddSong(Boolean(openTabletAppSignal.addSong));
+    setIsDocketOpen(true);
+  }, [openTabletAppSignal]);
 
   // Receipt paper mesh reference
   const receiptPaperMeshRef = useRef<THREE.Mesh | null>(null);
@@ -751,7 +935,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
     const initialFrame = getResponsiveCameraFrame(width, height);
     const initialAspect = width / Math.max(1, height);
-    const initialFov = initialAspect < 0.6 ? 48 : initialAspect < 0.8 ? 45 : 42;
+    const initialFov = getResponsiveCameraFov(initialAspect);
     const camera = new THREE.PerspectiveCamera(initialFov, initialAspect, 0.1, 100);
     camera.position.copy(initialFrame.pos);
     camera.lookAt(initialFrame.lookAt);
@@ -763,7 +947,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     renderer.setSize(width, height);
     renderer.setPixelRatio(renderQuality.pixelRatio);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
     container.appendChild(renderer.domElement);
@@ -810,29 +994,34 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
     // Warm Mushroom Desk Lamp Point Light (Back of table)
     const lampLight = new THREE.PointLight(0xffaa55, lampOn ? 3.6 : 0.0, 1.8, 1.8);
-    lampLight.position.set(0.48, 0.34, -0.24);
+    lampLight.position.set(0.58, 0.34, -0.24);
     lampLight.castShadow = true;
     lampLight.shadow.bias = -0.001;
     scene.add(lampLight);
     lampLightRef.current = lampLight;
 
     // 3. Materials
+    const woodTexture = createOakTexture();
+    woodTexture.wrapS = THREE.RepeatWrapping;
+    woodTexture.wrapT = THREE.RepeatWrapping;
+    woodTexture.repeat.set(1.6, 1.0);
     const woodMat = new THREE.MeshStandardMaterial({
-      color: 0x8b5a2b,
-      roughness: 0.45,
-      metalness: 0.05,
+      color: 0xffffff,
+      map: woodTexture,
+      roughness: 0.78,
+      metalness: 0.0,
     });
 
     const legMat = new THREE.MeshStandardMaterial({
-      color: 0x1a1a1e,
-      roughness: 0.6,
-      metalness: 0.4,
+      color: 0x77736d,
+      roughness: 0.48,
+      metalness: 0.56,
     });
 
     const laptopAlu = new THREE.MeshStandardMaterial({
-      color: 0xc8cdd5,
-      roughness: 0.22,
-      metalness: 0.85,
+      color: 0xd9dee4,
+      roughness: 0.27,
+      metalness: 0.56,
     });
 
     const blackPlastic = new THREE.MeshStandardMaterial({
@@ -847,12 +1036,6 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       metalness: 0.05,
     });
 
-    const plantGreen = new THREE.MeshStandardMaterial({
-      color: 0x2d6a4f,
-      roughness: 0.5,
-      metalness: 0.0,
-    });
-
     const terracottaMat = new THREE.MeshStandardMaterial({
       color: 0xd97757,
       roughness: 0.7,
@@ -860,9 +1043,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     });
 
     const diaryLeather = new THREE.MeshStandardMaterial({
-      color: 0x1e1e24,
-      roughness: 0.4,
-      metalness: 0.1,
+      color: 0x09090c,
+      roughness: 0.56,
+      metalness: 0.05,
     });
 
     const silverMetal = new THREE.MeshStandardMaterial({
@@ -880,7 +1063,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     });
 
     const wallMat = new THREE.MeshStandardMaterial({
-      color: dayMode ? 0xd6dae2 : 0x242220,
+      color: dayMode ? 0xf1e9dd : 0x242220,
       roughness: 0.88,
       metalness: 0.0,
     });
@@ -951,7 +1134,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
     // 5. Desk Top & Chamfers
     const deskTop = new THREE.Mesh(
-      new THREE.BoxGeometry(1.35, 0.038, 0.68),
+      new RoundedBoxGeometry(1.35, 0.038, 0.68, 3, 0.012),
       woodMat
     );
     deskTop.position.set(0.0, 0.15, 0.0);
@@ -999,53 +1182,137 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     laptopTexture.magFilter = THREE.LinearFilter;
     laptopTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-    // 6b. Tablet Screen Texture: "Docket Telemetry & Print Action"
+    // 6b. Tablet Screen Texture: Pradip-inspired illustrated hills wallpaper + iPadOS dock
     const tabletCanvas = document.createElement('canvas');
     tabletCanvas.width = 680;
     tabletCanvas.height = 480;
     const tCtx = tabletCanvas.getContext('2d');
     if (tCtx) {
-      tCtx.fillStyle = '#060a12';
+      const skyGrad = tCtx.createLinearGradient(0, 0, 0, 480);
+      skyGrad.addColorStop(0, '#60a5fa');
+      skyGrad.addColorStop(0.55, '#93c5fd');
+      skyGrad.addColorStop(1, '#dbeafe');
+      tCtx.fillStyle = skyGrad;
       tCtx.fillRect(0, 0, 680, 480);
-      
-      tCtx.fillStyle = '#00f0ff';
-      tCtx.font = 'bold 20px monospace';
-      tCtx.fillText('Z-DOCKET SYSTEM // ARCH TELEMETRY', 30, 45);
-      tCtx.fillStyle = '#64748b';
-      tCtx.font = '12px monospace';
-      tCtx.fillText('KERNEL: 6.12.1-ARCH · 6 ACTIVE NODES', 30, 70);
 
-      const stats = [
-        { label: 'CPU UTILIZATION', val: '18% @ 3.8GHz', color: '#10b981' },
-        { label: 'RAM WORKING SET', val: '8.4 / 32 GB', color: '#38bdf8' },
-        { label: 'BATTERY SOLAR', val: '3.78 V (CHARGING)', color: '#fbbf24' },
-        { label: 'ECE FIRMWARE', val: 'REV 0.81 STABLE', color: '#a855f7' }
-      ];
-
-      stats.forEach((st, i) => {
-        const sx = 30 + (i % 2) * 315;
-        const sy = 95 + Math.floor(i / 2) * 115;
-        tCtx.fillStyle = '#0f172a';
-        tCtx.roundRect(sx, sy, 295, 95, 8);
+      // Puffy illustrated clouds
+      tCtx.fillStyle = 'rgba(255, 255, 255, 0.94)';
+      [
+        [95, 76, 44], [140, 66, 56], [190, 80, 38],
+        [330, 82, 52], [385, 64, 64], [445, 78, 46],
+        [565, 90, 50], [625, 75, 58],
+      ].forEach(([cx, cy, r]) => {
+        tCtx.beginPath();
+        tCtx.arc(cx, cy, r, 0, Math.PI * 2);
         tCtx.fill();
-        tCtx.fillStyle = '#64748b';
-        tCtx.font = '11px monospace';
-        tCtx.fillText(st.label, sx + 15, sy + 30);
-        tCtx.fillStyle = st.color;
-        tCtx.font = 'bold 18px monospace';
-        tCtx.fillText(st.val, sx + 15, sy + 65);
       });
 
-      // Big "Print Docket Receipt" Banner Button on Tablet
-      tCtx.fillStyle = '#00f0ff';
-      tCtx.roundRect(30, 360, 620, 80, 14);
+      // Rolling layered green hills
+      tCtx.fillStyle = '#4ade80';
+      tCtx.beginPath();
+      tCtx.moveTo(0, 290);
+      tCtx.quadraticCurveTo(170, 220, 340, 275);
+      tCtx.quadraticCurveTo(510, 325, 680, 250);
+      tCtx.lineTo(680, 480);
+      tCtx.lineTo(0, 480);
+      tCtx.closePath();
       tCtx.fill();
-      tCtx.fillStyle = '#000000';
-      tCtx.font = 'bold 22px monospace';
-      tCtx.fillText('🖨️  PRINT DOCKET RECEIPT NOW', 160, 410);
+
+      tCtx.fillStyle = '#22c55e';
+      tCtx.beginPath();
+      tCtx.moveTo(0, 330);
+      tCtx.quadraticCurveTo(190, 285, 390, 335);
+      tCtx.quadraticCurveTo(540, 365, 680, 305);
+      tCtx.lineTo(680, 480);
+      tCtx.lineTo(0, 480);
+      tCtx.closePath();
+      tCtx.fill();
+
+      tCtx.fillStyle = '#16a34a';
+      tCtx.beginPath();
+      tCtx.moveTo(0, 385);
+      tCtx.quadraticCurveTo(260, 345, 680, 375);
+      tCtx.lineTo(680, 480);
+      tCtx.lineTo(0, 480);
+      tCtx.closePath();
+      tCtx.fill();
+
+      // Sun-kissed dirt footpath
+      tCtx.fillStyle = 'rgba(217, 119, 6, 0.72)';
+      tCtx.beginPath();
+      tCtx.moveTo(295, 480);
+      tCtx.quadraticCurveTo(325, 395, 322, 360);
+      tCtx.lineTo(356, 360);
+      tCtx.quadraticCurveTo(368, 410, 390, 480);
+      tCtx.closePath();
+      tCtx.fill();
+
+      // Top status bar text
+      tCtx.fillStyle = 'rgba(255,255,255,0.92)';
+      tCtx.font = 'bold 12px sans-serif';
+      tCtx.fillText('iPad OS · Desk Hub', 22, 28);
+      tCtx.fillText('100%', 622, 28);
+
+      // Right mini frosted "On my desk" card
+      tCtx.fillStyle = 'rgba(255,255,255,0.9)';
+      tCtx.beginPath();
+      tCtx.roundRect(458, 224, 198, 128, 16);
+      tCtx.fill();
+      tCtx.fillStyle = '#0f172a';
+      tCtx.font = 'bold 13px sans-serif';
+      tCtx.fillText('On my desk', 474, 248);
+      tCtx.fillStyle = '#475569';
+      tCtx.font = '11px sans-serif';
+      tCtx.fillText('Waterings · Docket · Music', 474, 272);
+      tCtx.fillStyle = '#2F5BEA';
+      tCtx.beginPath();
+      tCtx.roundRect(474, 294, 166, 36, 18);
+      tCtx.fill();
+      tCtx.fillStyle = '#ffffff';
+      tCtx.font = 'bold 12px sans-serif';
+      tCtx.fillText('Open my diary', 514, 316);
+
+      // Centered White Frosted App Dock (3 icons: Docket, Permanent QR, Player)
+      tCtx.fillStyle = 'rgba(255,255,255,0.88)';
+      tCtx.beginPath();
+      tCtx.roundRect(216, 386, 248, 70, 22);
+      tCtx.fill();
+
+      // 1. DM Docket Icon
+      tCtx.fillStyle = '#2563eb';
+      tCtx.beginPath();
+      tCtx.roundRect(238, 399, 44, 44, 12);
+      tCtx.fill();
+      tCtx.fillStyle = '#ffffff';
+      tCtx.font = 'bold 16px sans-serif';
+      tCtx.fillText('DM', 247, 427);
+
+      // 2. Permanent QR Icon
+      tCtx.fillStyle = '#111318';
+      tCtx.beginPath();
+      tCtx.roundRect(318, 399, 44, 44, 12);
+      tCtx.fill();
+      tCtx.fillStyle = '#ffffff';
+      tCtx.font = 'bold 16px monospace';
+      tCtx.fillText('QR', 329, 427);
+
+      // 3. Zynx Player Icon
+      tCtx.fillStyle = '#0f172a';
+      tCtx.beginPath();
+      tCtx.roundRect(398, 399, 44, 44, 12);
+      tCtx.fill();
+      tCtx.fillStyle = '#22c55e';
+      tCtx.beginPath();
+      tCtx.arc(420, 421, 12, 0, Math.PI * 2);
+      tCtx.fill();
+      tCtx.fillStyle = '#ffffff';
+      tCtx.beginPath();
+      tCtx.arc(420, 421, 4, 0, Math.PI * 2);
+      tCtx.fill();
     }
     const tabletTexture = new THREE.CanvasTexture(tabletCanvas);
     tabletTexture.colorSpace = THREE.SRGBColorSpace;
+    tabletTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
     // 6c. Receipt Paper Texture
     const receiptCanvas = document.createElement('canvas');
@@ -1058,62 +1325,143 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     }
     const receiptTexture = new THREE.CanvasTexture(receiptCanvas);
     receiptTexture.colorSpace = THREE.SRGBColorSpace;
+    receiptTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
     receiptTextureRef.current = receiptTexture;
 
-    // 6d. Phone Screen Texture: "AI Chat & 7YNX Audio"
+    // 6d. Phone Screen Texture: Crisp Live Website Mobile Portal (matching Pradip Labs video 00:48)
     const phoneCanvas = document.createElement('canvas');
     phoneCanvas.width = 400;
     phoneCanvas.height = 800;
     const pCtx = phoneCanvas.getContext('2d');
     if (pCtx) {
-      pCtx.fillStyle = '#0a0f1d';
+      // Clean Material light background
+      pCtx.fillStyle = '#f8fafc';
       pCtx.fillRect(0, 0, 400, 800);
+
+      // Status bar + Dynamic Island
       pCtx.fillStyle = '#ffffff';
-      pCtx.font = 'bold 16px sans-serif';
-      pCtx.fillText('9:41', 30, 40);
-      pCtx.fillText('5G 100%', 320, 40);
-
-      pCtx.fillStyle = '#1e293b';
-      pCtx.roundRect(20, 70, 360, 60, 14);
-      pCtx.fill();
-      pCtx.fillStyle = '#38bdf8';
-      pCtx.font = 'bold 18px sans-serif';
-      pCtx.fillText('7YNX Smart Chat & Player', 40, 107);
-
-      pCtx.fillStyle = '#1e293b';
-      pCtx.roundRect(25, 160, 280, 75, 12);
-      pCtx.fill();
-      pCtx.fillStyle = '#e2e8f0';
-      pCtx.font = '13px sans-serif';
-      pCtx.fillText('Hi! Looking for hardware prototype', 40, 190);
-      pCtx.fillText('or Linux automation consulting?', 40, 212);
-
-      pCtx.fillStyle = '#0284c7';
-      pCtx.roundRect(95, 260, 280, 75, 12);
-      pCtx.fill();
-      pCtx.fillStyle = '#ffffff';
-      pCtx.font = '13px sans-serif';
-      pCtx.fillText('Yes! Interested in the Z Card', 115, 290);
-      pCtx.fillText('and universal smart ID concept!', 115, 312);
-
+      pCtx.fillRect(0, 0, 400, 56);
       pCtx.fillStyle = '#0f172a';
-      pCtx.roundRect(25, 420, 350, 180, 16);
+      pCtx.font = 'bold 14px sans-serif';
+      pCtx.fillText('9:41', 26, 36);
+      pCtx.fillText('5G', 346, 36);
+      pCtx.fillStyle = '#000000';
+      pCtx.beginPath();
+      pCtx.roundRect(142, 14, 116, 26, 13);
       pCtx.fill();
-      pCtx.fillStyle = '#00f0ff';
-      pCtx.font = 'bold 15px monospace';
-      pCtx.fillText('LIVE RADIO: 7YNX STUDY BEATS', 45, 460);
-      pCtx.fillStyle = '#94a3b8';
-      pCtx.font = '12px sans-serif';
-      pCtx.fillText('Lo-fi Beats & Warm Ambient Waves', 45, 485);
 
-      for (let b = 0; b < 24; b++) {
-        const barH = 20 + Math.sin(b * 0.7) * 35;
-        pCtx.fillStyle = '#00f0ff';
-        pCtx.fillRect(45 + b * 13, 550 - barH, 8, barH);
-      }
+      // Browser URL + Green Live pill
+      pCtx.fillStyle = '#f1f5f9';
+      pCtx.beginPath();
+      pCtx.roundRect(18, 66, 250, 34, 10);
+      pCtx.fill();
+      pCtx.fillStyle = '#334155';
+      pCtx.font = '12px monospace';
+      pCtx.fillText('smenglishschool.vercel', 30, 88);
+
+      pCtx.fillStyle = '#16a34a';
+      pCtx.beginPath();
+      pCtx.roundRect(276, 66, 106, 34, 17);
+      pCtx.fill();
+      pCtx.fillStyle = '#ffffff';
+      pCtx.font = 'bold 12px sans-serif';
+      pCtx.fillText('AI / Chat', 302, 88);
+
+      // Dark Hero Site Banner
+      pCtx.fillStyle = '#11151d';
+      pCtx.beginPath();
+      pCtx.roundRect(18, 116, 364, 118, 16);
+      pCtx.fill();
+      pCtx.fillStyle = '#4ade80';
+      pCtx.font = 'bold 11px monospace';
+      pCtx.fillText('● LIVE WEBSITE ON PHONE', 34, 142);
+      pCtx.fillStyle = '#ffffff';
+      pCtx.font = 'bold 20px sans-serif';
+      pCtx.fillText('S.M. English School', 34, 172);
+      pCtx.fillStyle = '#94a3b8';
+      pCtx.font = '13px sans-serif';
+      pCtx.fillText('Admissions, Labs & Z Card Showcase', 34, 198);
+
+      // Search Input Box
+      pCtx.fillStyle = '#ffffff';
+      pCtx.beginPath();
+      pCtx.roundRect(18, 248, 364, 42, 12);
+      pCtx.fill();
+      pCtx.strokeStyle = '#cbd5e1';
+      pCtx.lineWidth = 1.5;
+      pCtx.stroke();
+      pCtx.fillStyle = '#64748b';
+      pCtx.font = '13px sans-serif';
+      pCtx.fillText('Search live projects & pages...', 36, 274);
+
+      // Featured Campus / Project Card
+      pCtx.fillStyle = '#ffffff';
+      pCtx.beginPath();
+      pCtx.roundRect(18, 306, 364, 244, 18);
+      pCtx.fill();
+      pCtx.strokeStyle = '#e2e8f0';
+      pCtx.stroke();
+
+      // Thumbnail area
+      const cardGrad = pCtx.createLinearGradient(30, 318, 370, 448);
+      cardGrad.addColorStop(0, '#0f172a');
+      cardGrad.addColorStop(1, '#1e3a8a');
+      pCtx.fillStyle = cardGrad;
+      pCtx.beginPath();
+      pCtx.roundRect(30, 318, 340, 126, 12);
+      pCtx.fill();
+      pCtx.fillStyle = '#ffffff';
+      pCtx.font = 'bold 17px sans-serif';
+      pCtx.fillText('Admissions 2026 & Campus Web', 48, 384);
+      pCtx.fillStyle = '#38bdf8';
+      pCtx.font = '12px monospace';
+      pCtx.fillText('Astro · Tailwind · Supabase', 48, 408);
+
+      // Card bottom title + Enquire/Details buttons
+      pCtx.fillStyle = '#0f172a';
+      pCtx.font = 'bold 16px sans-serif';
+      pCtx.fillText('Z Card v0.1 Smart Card', 32, 474);
+      pCtx.fillStyle = '#16a34a';
+      pCtx.beginPath();
+      pCtx.roundRect(32, 492, 164, 40, 10);
+      pCtx.fill();
+      pCtx.fillStyle = '#ffffff';
+      pCtx.font = 'bold 14px sans-serif';
+      pCtx.fillText('Open Live', 82, 517);
+
+      pCtx.fillStyle = '#f1f5f9';
+      pCtx.beginPath();
+      pCtx.roundRect(208, 492, 160, 40, 10);
+      pCtx.fill();
+      pCtx.fillStyle = '#0f172a';
+      pCtx.fillText('Details', 266, 517);
+
+      // Second preview card
+      pCtx.fillStyle = '#ffffff';
+      pCtx.beginPath();
+      pCtx.roundRect(18, 566, 364, 160, 18);
+      pCtx.fill();
+      pCtx.strokeStyle = '#e2e8f0';
+      pCtx.stroke();
+      pCtx.fillStyle = '#0f172a';
+      pCtx.font = 'bold 16px sans-serif';
+      pCtx.fillText('7YNX Sound Lab & AI Chat', 34, 602);
+      pCtx.fillStyle = '#64748b';
+      pCtx.font = '13px sans-serif';
+      pCtx.fillText('Tap phone to scroll live pages', 34, 630);
+
+      // Floating green circular chat icon
+      pCtx.fillStyle = '#16a34a';
+      pCtx.beginPath();
+      pCtx.arc(348, 684, 24, 0, Math.PI * 2);
+      pCtx.fill();
+      pCtx.fillStyle = '#ffffff';
+      pCtx.font = 'bold 14px sans-serif';
+      pCtx.fillText('AI', 340, 689);
     }
     const phoneTexture = new THREE.CanvasTexture(phoneCanvas);
     phoneTexture.colorSpace = THREE.SRGBColorSpace;
+    phoneTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
     // 6e. Business Card Canvas Textures (Brushed Titanium Front & Interactive Contact Back)
     const cardFrontCanvas = document.createElement('canvas');
@@ -1162,74 +1510,272 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       }).catch(() => {});
     }
 
-    // 7. Realistic Opened Laptop Model (Center of Desk)
+    // 7. Apple MacBook Pro 14" (Center of Desk)
     const laptopGroup = new THREE.Group();
-    laptopGroup.position.set(0.0, 0.17, -0.04);
+    laptopGroup.position.set(0.0, 0.169, -0.04);
 
-    const laptopBase = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.012, 0.22), laptopAlu);
+    // 4 low-profile black rubber feet lifting the aluminum unibody off the desk
+    const footMat = new THREE.MeshStandardMaterial({ color: 0x16181d, roughness: 0.75, metalness: 0.05 });
+    const footGeo = new THREE.CylinderGeometry(0.0065, 0.0065, 0.0014, 16);
+    [
+      [-0.132, 0.0007, -0.084],
+      [0.132, 0.0007, -0.084],
+      [-0.132, 0.0007, 0.084],
+      [0.132, 0.0007, 0.084],
+    ].forEach(([fx, fy, fz]) => {
+      const foot = new THREE.Mesh(footGeo, footMat);
+      foot.position.set(fx, fy, fz);
+      laptopGroup.add(foot);
+    });
+
+    // Precision CNC-milled flat unibody base (0.318 x 0.0082 x 0.218)
+    const laptopBase = new THREE.Mesh(
+      new RoundedBoxGeometry(0.318, 0.0082, 0.218, 3, 0.0032),
+      laptopAlu
+    );
+    laptopBase.position.y = 0.0052;
     laptopBase.castShadow = true;
     laptopBase.receiveShadow = true;
     laptopGroup.add(laptopBase);
 
-    // Front thumb groove
-    const frontGroove = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.003, 0.004), blackPlastic);
-    frontGroove.position.set(0.0, 0.005, 0.109);
+    // Signature curved anodized front thumb scoop
+    const wellDarkMat = new THREE.MeshStandardMaterial({ color: 0x0e1014, roughness: 0.54, metalness: 0.16 });
+    const frontGroove = new THREE.Mesh(
+      new RoundedBoxGeometry(0.056, 0.0022, 0.006, 2, 0.0011),
+      wellDarkMat
+    );
+    frontGroove.position.set(0.0, 0.0086, 0.1068);
     laptopGroup.add(frontGroove);
 
-    // Recessed keyboard well
-    const keyboard = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.002, 0.105), blackPlastic);
-    keyboard.position.set(0.0, 0.007, -0.035);
+    // Side edge ports: Left (MagSafe 3 + Dual Thunderbolt USB-C + Audio Jack), Right (HDMI + USB-C + SDXC)
+    const portMat = new THREE.MeshStandardMaterial({ color: 0x181a20, roughness: 0.4, metalness: 0.3 });
+    const portSizes: [number, number, number, number, number][] = [
+      [-0.1592, 0.0052, -0.068, 0.011, 0.0032], // MagSafe 3
+      [-0.1592, 0.0052, -0.044, 0.008, 0.0022], // USB-C 1
+      [-0.1592, 0.0052, -0.028, 0.008, 0.0022], // USB-C 2
+      [0.1592, 0.0052, -0.062, 0.012, 0.0028],  // HDMI
+      [0.1592, 0.0052, -0.040, 0.008, 0.0022],  // USB-C 3
+      [0.1592, 0.0052, -0.014, 0.020, 0.0020],  // SDXC slot
+    ];
+    portSizes.forEach(([px, py, pz, pLen, pH]) => {
+      const port = new THREE.Mesh(new THREE.BoxGeometry(0.001, pH, pLen), portMat);
+      port.position.set(px, py, pz);
+      laptopGroup.add(port);
+    });
+
+    // Blackout anodized Magic Keyboard recessed well
+    const keyboard = new THREE.Mesh(
+      new RoundedBoxGeometry(0.244, 0.0014, 0.105, 2, 0.004),
+      wellDarkMat
+    );
+    keyboard.position.set(0.0, 0.0090, -0.032);
     laptopGroup.add(keyboard);
 
-    // Speaker grilles flanking keyboard
-    const speakerL = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.001, 0.105), blackPlastic);
-    speakerL.position.set(-0.136, 0.0068, -0.035);
+    // Authentic 6-row MacBook Pro keyboard: Full Function row + QWERTY rows + Modifier bottom row + Touch ID
+    const keyMaterial = new THREE.MeshStandardMaterial({ color: 0x1c1e24, roughness: 0.48, metalness: 0.08 });
+    const keyGeometry = new RoundedBoxGeometry(0.0132, 0.0014, 0.0122, 1, 0.0012);
+    const alphaRows = [
+      { z: -0.056, count: 13, startX: -0.108, spacing: 0.0168 }, // Number row
+      { z: -0.041, count: 13, startX: -0.102, spacing: 0.0168 }, // QWERTY row
+      { z: -0.026, count: 12, startX: -0.097, spacing: 0.0168 }, // Home row
+      { z: -0.011, count: 11, startX: -0.088, spacing: 0.0168 }, // Z row
+    ];
+    const fnCount = 12;
+    const totalStandardKeys = fnCount + alphaRows.reduce((acc, r) => acc + r.count, 0);
+    const keyCaps = new THREE.InstancedMesh(keyGeometry, keyMaterial, totalStandardKeys);
+    const keyTransform = new THREE.Object3D();
+    let keyIndex = 0;
+
+    // Function row keys (F1..F12)
+    for (let col = 0; col < fnCount; col += 1) {
+      keyTransform.position.set(-0.088 + col * 0.0166, 0.0099, -0.072);
+      keyTransform.rotation.set(0, 0, 0);
+      keyTransform.scale.set(0.98, 0.85, 0.72);
+      keyTransform.updateMatrix();
+      keyCaps.setMatrixAt(keyIndex, keyTransform.matrix);
+      keyIndex += 1;
+    }
+
+    // Standard alphanumeric keys
+    alphaRows.forEach((row) => {
+      for (let col = 0; col < row.count; col += 1) {
+        keyTransform.position.set(row.startX + col * row.spacing, 0.0101, row.z);
+        keyTransform.rotation.set(0, 0, 0);
+        keyTransform.scale.set(1, 1, 1);
+        keyTransform.updateMatrix();
+        keyCaps.setMatrixAt(keyIndex, keyTransform.matrix);
+        keyIndex += 1;
+      }
+    });
+    keyCaps.instanceMatrix.needsUpdate = true;
+    keyCaps.castShadow = false;
+    keyCaps.receiveShadow = false;
+    laptopGroup.add(keyCaps);
+
+    // Wide MacBook special keys (Esc, Touch ID ring, Spacebar, Modifiers & Inverted-T Arrow cluster)
+    const wideKeys: [number, number, number, number, number][] = [
+      [-0.107, 0.0099, -0.072, 0.020, 0.0088], // Esc
+      [0.111, 0.0099, -0.072, 0.011, 0.0088],  // Touch ID power button
+      [0.111, 0.0101, -0.056, 0.018, 0.0122],  // Delete
+      [-0.111, 0.0101, -0.041, 0.018, 0.0122], // Tab
+      [-0.109, 0.0101, -0.026, 0.021, 0.0122], // Caps Lock
+      [0.107, 0.0101, -0.026, 0.022, 0.0122],  // Return
+      [-0.105, 0.0101, -0.011, 0.029, 0.0122], // Left Shift
+      [0.103, 0.0101, -0.011, 0.030, 0.0122],  // Right Shift
+      [-0.088, 0.0101, 0.004, 0.056, 0.0122],  // Fn/Ctrl/Opt cluster
+      [-0.047, 0.0101, 0.004, 0.019, 0.0122],  // Left Command
+      [0.0, 0.0101, 0.004, 0.072, 0.0122],     // Spacebar
+      [0.048, 0.0101, 0.004, 0.019, 0.0122],   // Right Command
+      [0.068, 0.0101, 0.004, 0.014, 0.0122],   // Right Option
+      [0.098, 0.0099, 0.001, 0.012, 0.0056],   // Up arrow
+      [0.098, 0.0099, 0.0072, 0.012, 0.0056],  // Down arrow
+      [0.084, 0.0099, 0.0072, 0.012, 0.0056],  // Left arrow
+      [0.112, 0.0099, 0.0072, 0.012, 0.0056],  // Right arrow
+    ];
+    wideKeys.forEach(([kx, ky, kz, kw, kd]) => {
+      const cap = new THREE.Mesh(new RoundedBoxGeometry(kw, 0.0014, kd, 1, 0.0011), keyMaterial);
+      cap.position.set(kx, ky, kz);
+      laptopGroup.add(cap);
+    });
+
+    // Touch ID subtle recessed ring inside top-right key
+    const touchIdRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.0024, 0.0033, 20),
+      new THREE.MeshBasicMaterial({ color: 0x3b404c })
+    );
+    touchIdRing.rotation.x = -Math.PI / 2;
+    touchIdRing.position.set(0.111, 0.0107, -0.072);
+    laptopGroup.add(touchIdRing);
+
+    // Flush Micro-Perforated Speaker Grilles flanking keyboard well
+    const grilleCanvas = document.createElement('canvas');
+    grilleCanvas.width = 64;
+    grilleCanvas.height = 256;
+    const gCtx = grilleCanvas.getContext('2d');
+    if (gCtx) {
+      gCtx.fillStyle = '#c8ced6';
+      gCtx.fillRect(0, 0, 64, 256);
+      gCtx.fillStyle = '#31353e';
+      for (let gy = 8; gy < 248; gy += 6) {
+        for (let gx = 8; gx < 56; gx += 6) {
+          gCtx.fillRect(gx, gy, 2.2, 2.2);
+        }
+      }
+    }
+    const grilleTex = new THREE.CanvasTexture(grilleCanvas);
+    const grilleMat = new THREE.MeshStandardMaterial({ map: grilleTex, roughness: 0.45, metalness: 0.35 });
+    const speakerL = new THREE.Mesh(new THREE.PlaneGeometry(0.022, 0.104), grilleMat);
+    speakerL.rotation.x = -Math.PI / 2;
+    speakerL.position.set(-0.138, 0.0094, -0.032);
     laptopGroup.add(speakerL);
-    const speakerR = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.001, 0.105), blackPlastic);
-    speakerR.position.set(0.136, 0.0068, -0.035);
+    const speakerR = new THREE.Mesh(new THREE.PlaneGeometry(0.022, 0.104), grilleMat);
+    speakerR.rotation.x = -Math.PI / 2;
+    speakerR.position.set(0.138, 0.0094, -0.032);
     laptopGroup.add(speakerR);
 
-    // Trackpad
-    const trackpad = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.001, 0.065), laptopAlu);
-    trackpad.position.set(0.0, 0.007, 0.065);
+    // Oversized Apple Force Touch Trackpad (wide recessed glass pad + hairline moat)
+    const trackpadSeam = new THREE.Mesh(
+      new RoundedBoxGeometry(0.124, 0.0005, 0.080, 2, 0.004),
+      new THREE.MeshStandardMaterial({ color: 0x8f96a0, roughness: 0.4, metalness: 0.4 })
+    );
+    trackpadSeam.position.set(0.0, 0.0092, 0.064);
+    laptopGroup.add(trackpadSeam);
+
+    const trackpad = new THREE.Mesh(
+      new RoundedBoxGeometry(0.121, 0.0007, 0.077, 2, 0.0038),
+      new THREE.MeshStandardMaterial({ color: 0xcfd5dd, roughness: 0.24, metalness: 0.45 })
+    );
+    trackpad.position.set(0.0, 0.0093, 0.064);
     laptopGroup.add(trackpad);
 
-    // Black hinge cylinder
-    const hingeCylinder = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0045, 0.26, 16), blackPlastic);
+    // Recessed continuous black clutch hinge barrel
+    const hingeCylinder = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.0044, 0.0044, 0.232, 18),
+      wellDarkMat
+    );
     hingeCylinder.rotation.z = Math.PI / 2;
-    hingeCylinder.position.set(0.0, 0.006, -0.11);
+    hingeCylinder.position.set(0.0, 0.0085, -0.104);
     laptopGroup.add(hingeCylinder);
 
-    // Screen Hinge (OPENED: tilted backwards slightly, facing the desk observer directly)
+    // Screen Assembly (Ultra-slim MacBook Pro Display Lid)
     const screenHinge = new THREE.Group();
-    screenHinge.position.set(0.0, 0.006, -0.11);
+    screenHinge.position.set(0.0, 0.0086, -0.104);
     screenHinge.rotation.x = -0.21;
 
-    const screenLid = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.22, 0.008), laptopAlu);
-    screenLid.position.set(0.0, 0.11, 0.0);
+    const screenLid = new THREE.Mesh(
+      new RoundedBoxGeometry(0.318, 0.212, 0.0042, 2, 0.002),
+      laptopAlu
+    );
+    screenLid.position.set(0.0, 0.107, 0.0);
     screenLid.castShadow = true;
     screenHinge.add(screenLid);
 
-    // Black screen bezel border
-    const bezel = new THREE.Mesh(new THREE.PlaneGeometry(0.316, 0.216), blackPlastic);
-    bezel.position.set(0.0, 0.11, 0.0042);
+    // Glossy polished dark Apple silhouette on back of lid
+    const backLogoCanvas = document.createElement('canvas');
+    backLogoCanvas.width = 128;
+    backLogoCanvas.height = 128;
+    const blCtx = backLogoCanvas.getContext('2d');
+    if (blCtx) {
+      blCtx.clearRect(0, 0, 128, 128);
+      blCtx.fillStyle = '#24272f';
+      blCtx.beginPath();
+      blCtx.arc(54, 68, 22, Math.PI * 0.38, Math.PI * 1.65);
+      blCtx.arc(74, 68, 22, Math.PI * 1.35, Math.PI * 0.62);
+      blCtx.fill();
+      blCtx.globalCompositeOperation = 'destination-out';
+      blCtx.beginPath();
+      blCtx.arc(92, 62, 12, 0, Math.PI * 2);
+      blCtx.fill();
+      blCtx.globalCompositeOperation = 'source-over';
+      blCtx.fillStyle = '#24272f';
+      blCtx.beginPath();
+      blCtx.ellipse(68, 34, 11, 6, -0.68, 0, Math.PI * 2);
+      blCtx.fill();
+    }
+    const backLogoTex = new THREE.CanvasTexture(backLogoCanvas);
+    const backLogo = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.036, 0.036),
+      new THREE.MeshStandardMaterial({ map: backLogoTex, transparent: true, roughness: 0.14, metalness: 0.85 })
+    );
+    backLogo.rotation.y = Math.PI;
+    backLogo.position.set(0, 0.110, -0.0023);
+    screenHinge.add(backLogo);
+
+    // Edge-to-Edge Obsidian Display Bezel Glass
+    const bezelGlassMat = new THREE.MeshStandardMaterial({ color: 0x050608, roughness: 0.12, metalness: 0.16 });
+    const bezel = new THREE.Mesh(
+      new RoundedBoxGeometry(0.314, 0.208, 0.0008, 2, 0.004),
+      bezelGlassMat
+    );
+    bezel.position.set(0.0, 0.107, 0.0020);
     screenHinge.add(bezel);
 
-    // FaceTime / WebCam lens dot at top of bezel
-    const camDot = new THREE.Mesh(new THREE.CircleGeometry(0.0015, 12), blackPlastic);
-    camDot.position.set(0.0, 0.212, 0.0045);
-    screenHinge.add(camDot);
-
-    // Active Display Plane (16:10 aspect ratio matching 1280x800 Z OS display, toneMapped: false for luminous LCD glow)
+    // Luminous Liquid Retina Display Panel (thin top & side borders + clean lower chin)
     const screenDisplay = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.295, 0.184),
+      new THREE.PlaneGeometry(0.302, 0.189),
       new THREE.MeshBasicMaterial({
         map: laptopTexture,
         toneMapped: false
       })
     );
-    screenDisplay.position.set(0.0, 0.110, 0.0048);
+    screenDisplay.position.set(0.0, 0.1115, 0.0026);
     screenHinge.add(screenDisplay);
+
+    // Authentic MacBook Pro Center Notch integrated at top center of the display
+    const cameraNotch = new THREE.Mesh(
+      new RoundedBoxGeometry(0.036, 0.0074, 0.0006, 2, 0.0022),
+      bezelGlassMat
+    );
+    cameraNotch.position.set(0.0, 0.2024, 0.0030);
+    screenHinge.add(cameraNotch);
+
+    // Coated sapphire FaceTime HD camera lens inside the notch
+    const camLens = new THREE.Mesh(
+      new THREE.CircleGeometry(0.0014, 14),
+      new THREE.MeshBasicMaterial({ color: 0x162b4d })
+    );
+    camLens.position.set(0.0, 0.2024, 0.0034);
+    screenHinge.add(camLens);
 
     // Subtle soft ambient screen glow casting onto the keyboard & trackpad
     const screenGlowLight = new THREE.PointLight(0xb2d2ff, 0.45, 0.5);
@@ -1242,36 +1788,83 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     registerClickable(laptopBase, 'laptop');
     registerClickable(keyboard, 'laptop');
     registerClickable(trackpad, 'laptop');
+    registerClickable(speakerL, 'laptop');
+    registerClickable(speakerR, 'laptop');
     registerClickable(screenLid, 'laptop');
+    registerClickable(bezel, 'laptop');
     registerClickable(screenDisplay, 'laptop');
 
-    // 8. Tablet on Stand (Left of Laptop)
+    // 8. Tablet on a broad aluminium kickstand (Left of Laptop)
     const tabletGroup = new THREE.Group();
     tabletGroup.position.set(-0.32, 0.17, 0.04);
     tabletGroup.rotation.y = Math.PI / 11;
 
-    const tabletStand = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 0.01, 24), silverMetal);
-    tabletStand.position.set(0.0, 0.005, 0.0);
+    const tabletStand = new THREE.Mesh(
+      new RoundedBoxGeometry(0.225, 0.012, 0.135, 3, 0.008),
+      silverMetal
+    );
+    tabletStand.position.set(0.0, 0.008, 0.012);
+    tabletStand.castShadow = true;
     tabletGroup.add(tabletStand);
 
-    const tabletArm = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.12, 0.02), silverMetal);
-    tabletArm.position.set(0.0, 0.06, -0.01);
-    tabletArm.rotation.x = 0.2;
-    tabletGroup.add(tabletArm);
+    const standHinge = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.006, 0.006, 0.19, 16),
+      silverMetal
+    );
+    standHinge.rotation.z = Math.PI / 2;
+    standHinge.position.set(0.0, 0.10, -0.045);
+    tabletGroup.add(standHinge);
 
-    const tabletBody = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.16, 0.01), blackPlastic);
+    const tabletKickstand = new THREE.Mesh(
+      new RoundedBoxGeometry(0.185, 0.012, 0.095, 2, 0.007),
+      silverMetal
+    );
+    tabletKickstand.position.set(0.0, 0.062, -0.033);
+    tabletKickstand.rotation.x = 0.48;
+    tabletKickstand.castShadow = true;
+    tabletGroup.add(tabletKickstand);
+
+    const tabletBody = new THREE.Mesh(
+      new RoundedBoxGeometry(0.24, 0.16, 0.012, 4, 0.012),
+      blackPlastic
+    );
     tabletBody.position.set(0.0, 0.13, 0.01);
     tabletBody.rotation.x = -0.22;
     tabletBody.castShadow = true;
+    tabletBody.receiveShadow = true;
     tabletGroup.add(tabletBody);
 
+    const tabletBezel = new THREE.Mesh(
+      new RoundedBoxGeometry(0.229, 0.149, 0.002, 4, 0.009),
+      new THREE.MeshStandardMaterial({ color: 0x080a0e, roughness: 0.22, metalness: 0.18 })
+    );
+    tabletBezel.position.set(0.0, 0.13, 0.017);
+    tabletBezel.rotation.x = -0.22;
+    tabletGroup.add(tabletBezel);
+
     const tabletScreen = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.22, 0.14),
+      new THREE.PlaneGeometry(0.216, 0.136),
       new THREE.MeshBasicMaterial({ map: tabletTexture })
     );
-    tabletScreen.position.set(0.0, 0.13, 0.016);
+    tabletScreen.position.set(0.0, 0.13, 0.0185);
     tabletScreen.rotation.x = -0.22;
     tabletGroup.add(tabletScreen);
+
+    const tabletCamera = new THREE.Mesh(
+      new THREE.CircleGeometry(0.002, 12),
+      new THREE.MeshBasicMaterial({ color: 0x1f2937 })
+    );
+    tabletCamera.position.set(0.0, 0.205, 0.018);
+    tabletCamera.rotation.x = -0.22;
+    tabletGroup.add(tabletCamera);
+
+    const tabletVolumeKeys = new THREE.Mesh(
+      new RoundedBoxGeometry(0.004, 0.026, 0.008, 1, 0.002),
+      silverMetal
+    );
+    tabletVolumeKeys.position.set(0.122, 0.14, 0.008);
+    tabletVolumeKeys.rotation.x = -0.22;
+    tabletGroup.add(tabletVolumeKeys);
 
     scene.add(tabletGroup);
     registerClickable(tabletBody, 'tablet');
@@ -1306,7 +1899,15 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     printerGroup.add(printerLed);
 
     // Printable Receipt Paper (Animated unroll when triggered)
-    const paperGeo = new THREE.PlaneGeometry(0.08, 0.18, 12, 12);
+    const paperGeo = new THREE.PlaneGeometry(0.08, 0.18, 12, 36);
+    const paperPositions = paperGeo.attributes.position;
+    for (let vertex = 0; vertex < paperPositions.count; vertex += 1) {
+      const t = (paperPositions.getY(vertex) + 0.09) / 0.18;
+      // A shallow curl catches the lamp highlight as the paper feeds out.
+      paperPositions.setZ(vertex, Math.sin(t * Math.PI) * 0.018);
+    }
+    paperPositions.needsUpdate = true;
+    paperGeo.computeVertexNormals();
     const paperMat = new THREE.MeshBasicMaterial({ map: receiptTexture, side: THREE.DoubleSide });
     const receiptPaper = new THREE.Mesh(paperGeo, paperMat);
     receiptPaper.position.set(0.0, 0.105, 0.035);
@@ -1319,171 +1920,126 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     registerClickable(printerBody, 'printer');
     registerClickable(receiptPaper, 'printer');
 
-    // 10. Precision Chronometer Watch on Display Stand (Left desk edge, live time)
-    const watchGroup = new THREE.Group();
-    watchGroup.position.set(-0.50, 0.17, 0.14);
-    watchGroup.rotation.y = 0.28;
-    watchGroup.rotation.x = -0.05;
-
-    // Angled ergonomic display stand
-    const standMat = new THREE.MeshStandardMaterial({ color: 0x111317, roughness: 0.85 });
-    const standBase = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.012, 0.075), standMat);
-    standBase.position.y = 0.006;
-    watchGroup.add(standBase);
-
-    const standPillar = new THREE.Mesh(
-      new THREE.BoxGeometry(0.038, 0.040, 0.040),
-      new THREE.MeshStandardMaterial({ color: 0x181a20, roughness: 0.6 })
-    );
-    standPillar.position.set(0, 0.026, -0.008);
-    standPillar.rotation.x = Math.PI / 6;
-    watchGroup.add(standPillar);
-
-    // Watch Case (Titanium / Stealth Black Chrono)
-    const caseMat = new THREE.MeshStandardMaterial({ color: 0x22242b, metalness: 0.88, roughness: 0.22 });
-    const caseMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.030, 0.030, 0.009, 32), caseMat);
-    caseMesh.position.set(0, 0.042, 0.005);
-    caseMesh.rotation.x = Math.PI / 6;
-    caseMesh.castShadow = true;
-    watchGroup.add(caseMesh);
-
-    // Bezel with ceramic tachymeter styling
-    const bezelMat = new THREE.MeshStandardMaterial({ color: 0x090a0d, roughness: 0.12, metalness: 0.9 });
-    const bezelMesh = new THREE.Mesh(new THREE.TorusGeometry(0.0285, 0.0022, 10, 36), bezelMat);
-    bezelMesh.position.set(0, 0.0048, 0);
-    bezelMesh.rotation.x = Math.PI / 2;
-    caseMesh.add(bezelMesh);
-
-    // Knurled Titanium Crown (3 o'clock)
-    const crownMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.0032, 0.0032, 0.006, 12), silverMetal);
-    crownMesh.position.set(0.033, 0.0, 0.0);
-    crownMesh.rotation.z = Math.PI / 2;
-    caseMesh.add(crownMesh);
-
-    // Chrono Pushers (2 o'clock and 4 o'clock)
-    const pusher1 = new THREE.Mesh(new THREE.CylinderGeometry(0.0022, 0.0022, 0.004, 8), silverMetal);
-    pusher1.position.set(0.028, 0.0, -0.016);
-    pusher1.rotation.set(0, 0.5, Math.PI / 2);
-    caseMesh.add(pusher1);
-    const pusher2 = pusher1.clone();
-    pusher2.position.set(0.028, 0.0, 0.016);
-    pusher2.rotation.set(0, -0.5, Math.PI / 2);
-    caseMesh.add(pusher2);
-
-    // Dial Face
-    const dialMat = new THREE.MeshStandardMaterial({ color: 0x06080d, roughness: 0.35, metalness: 0.4 });
-    const dialMesh = new THREE.Mesh(new THREE.CircleGeometry(0.026, 36), dialMat);
-    dialMesh.position.set(0, 0.0045, 0);
-    dialMesh.rotation.x = -Math.PI / 2;
-    caseMesh.add(dialMesh);
-
-    // 12 Glowing Hour Markers around Dial
-    const markerMat = new THREE.MeshStandardMaterial({ color: 0x22d3ee, emissive: 0x22d3ee, emissiveIntensity: 0.6 });
-    const markerWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
-    for (let i = 0; i < 12; i++) {
-      const angle = (i / 12) * Math.PI * 2;
-      const isCardinal = (i % 3 === 0);
-      const mGeom = new THREE.BoxGeometry(isCardinal ? 0.0025 : 0.0014, isCardinal ? 0.005 : 0.0032, 0.0006);
-      const mMesh = new THREE.Mesh(mGeom, isCardinal ? markerMat : markerWhiteMat);
-      mMesh.position.set(Math.sin(angle) * 0.022, Math.cos(angle) * 0.022, 0.0006);
-      mMesh.rotation.z = -angle;
-      dialMesh.add(mMesh);
+    // Printed bills stay beside the printer so the desk reads as a working
+    // studio even before the receipt-feed interaction is triggered.
+    const billCanvas = document.createElement('canvas');
+    billCanvas.width = 320;
+    billCanvas.height = 420;
+    const billContext = billCanvas.getContext('2d');
+    if (billContext) {
+      billContext.fillStyle = '#fbf8ef';
+      billContext.fillRect(0, 0, billCanvas.width, billCanvas.height);
+      billContext.fillStyle = '#262b32';
+      billContext.font = 'bold 21px sans-serif';
+      billContext.fillText('ZYNX DESK', 22, 42);
+      billContext.font = '12px monospace';
+      billContext.fillStyle = '#68717c';
+      billContext.fillText('SAMPLE DOCKET · 001', 22, 66);
+      billContext.strokeStyle = '#c9c4b8';
+      billContext.beginPath();
+      billContext.moveTo(22, 82);
+      billContext.lineTo(298, 82);
+      billContext.stroke();
+      for (let row = 0; row < 7; row += 1) {
+        const y = 112 + row * 28;
+        billContext.fillStyle = '#8b9299';
+        billContext.fillRect(22, y, 148 + (row % 3) * 24, 4);
+        billContext.fillStyle = '#c1c7cd';
+        billContext.fillRect(220, y, 76, 4);
+      }
+      billContext.strokeStyle = '#c9c4b8';
+      billContext.beginPath();
+      billContext.moveTo(22, 324);
+      billContext.lineTo(298, 324);
+      billContext.stroke();
+      billContext.fillStyle = '#262b32';
+      billContext.font = 'bold 15px monospace';
+      billContext.fillText('TOTAL  ₹ 0.00', 22, 355);
+      billContext.font = '11px sans-serif';
+      billContext.fillStyle = '#8b9299';
+      billContext.fillText('Interactive sample prop', 22, 385);
     }
-
-    // Subdials
-    const subdialMat = new THREE.MeshBasicMaterial({ color: 0x141822 });
-    const sub1 = new THREE.Mesh(new THREE.CircleGeometry(0.007, 16), subdialMat);
-    sub1.position.set(-0.011, 0, 0.0005);
-    dialMesh.add(sub1);
-    const sub2 = new THREE.Mesh(new THREE.CircleGeometry(0.007, 16), subdialMat);
-    sub2.position.set(0, -0.010, 0.0005);
-    dialMesh.add(sub2);
-
-    // Clock Hands Group
-    const handsGroup = new THREE.Group();
-    handsGroup.position.set(0, 0, 0.0012);
-    dialMesh.add(handsGroup);
-
-    // Hour Hand
-    const hourHandMesh = new THREE.Mesh(new THREE.BoxGeometry(0.0022, 0.013, 0.0008), silverMetal);
-    hourHandMesh.geometry.translate(0, 0.0065, 0);
-    handsGroup.add(hourHandMesh);
-    watchHourHandRef.current = hourHandMesh;
-
-    // Minute Hand
-    const minuteHandMesh = new THREE.Mesh(new THREE.BoxGeometry(0.0016, 0.020, 0.0008), silverMetal);
-    minuteHandMesh.geometry.translate(0, 0.010, 0);
-    handsGroup.add(minuteHandMesh);
-    watchMinuteHandRef.current = minuteHandMesh;
-
-    // Second Hand (Neon Sweeping Red)
-    const secondHandMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(0.0008, 0.024, 0.0008),
-      new THREE.MeshBasicMaterial({ color: 0xef4444 })
+    const billTexture = new THREE.CanvasTexture(billCanvas);
+    billTexture.colorSpace = THREE.SRGBColorSpace;
+    const billStack = new THREE.Group();
+    billStack.position.set(-0.37, 0.17, -0.20);
+    billStack.rotation.y = -0.18;
+    const billPaperMat = new THREE.MeshStandardMaterial({ color: 0xf7f3e9, roughness: 0.9 });
+    for (let sheet = 0; sheet < 3; sheet += 1) {
+      const page = new THREE.Mesh(new RoundedBoxGeometry(0.105, 0.0015, 0.138, 1, 0.001), billPaperMat);
+      page.position.set(sheet * 0.002, 0.002 + sheet * 0.002, sheet * -0.002);
+      page.castShadow = sheet === 2;
+      billStack.add(page);
+    }
+    const billFace = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.098, 0.128),
+      new THREE.MeshBasicMaterial({ map: billTexture, toneMapped: false })
     );
-    secondHandMesh.geometry.translate(0, 0.009, 0.0006);
-    handsGroup.add(secondHandMesh);
-    watchSecondHandRef.current = secondHandMesh;
+    billFace.position.set(0, 0.009, 0);
+    billFace.rotation.x = -Math.PI / 2;
+    billStack.add(billFace);
+    scene.add(billStack);
+    registerClickable(billFace, 'printer');
 
-    // Center Cap
-    const pinMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.0018, 0.0018, 0.002, 12), silverMetal);
-    pinMesh.rotation.x = Math.PI / 2;
-    handsGroup.add(pinMesh);
+    // The rounded blue speaker from the reference layout opens the radio player.
+    // Rounded blue desk speaker from the reference layout.
+    const blueSpeaker = createBlueSpeaker();
+    scene.add(blueSpeaker.group);
+    registerClickable(blueSpeaker.clickable, 'speaker');
 
-    // Sapphire Crystal Glass
-    const glassMat = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
-      transmission: 0.94,
-      opacity: 0.22,
-      transparent: true,
-      roughness: 0.04,
-      ior: 1.5,
-      depthWrite: false
-    });
-    const glassMesh = new THREE.Mesh(new THREE.CircleGeometry(0.0275, 36), glassMat);
-    glassMesh.position.set(0, 0.0055, 0);
-    glassMesh.rotation.x = -Math.PI / 2;
-    caseMesh.add(glassMesh);
+    // Roronoa Zoro bobblehead: a small spring-mounted figure that settles after a tap.
+    const bobblehead = createBobblehead();
+    scene.add(bobblehead.group);
+    zoroHeadRef.current = bobblehead.head;
+    registerClickable(bobblehead.clickable, 'zoro');
 
-    // Watch Silicone Strap
-    const strapMat = new THREE.MeshStandardMaterial({ color: 0x15171c, roughness: 0.8 });
-    const topStrap = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.0035, 0.042), strapMat);
-    topStrap.position.set(0, 0.028, -0.016);
-    topStrap.rotation.x = Math.PI / 6;
-    watchGroup.add(topStrap);
+    // The record spins while the desk player is playing.
+    const turntable = createTurntable();
+    scene.add(turntable.group);
+    turntableRecordRef.current = turntable.record;
+    turntableTonearmRef.current = turntable.tonearmGroup;
+    turntableLedMatRef.current = turntable.ledMaterial;
+    turntableDrawLabelRef.current = turntable.drawLabel;
+    turntable.drawLabel('#090a0d', musicPlayingRef.current);
+    registerClickable(turntable.clickable, 'turntable');
 
-    const botStrap = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.0035, 0.046), strapMat);
-    botStrap.position.set(0, 0.024, 0.024);
-    botStrap.rotation.x = Math.PI / 6;
-    watchGroup.add(botStrap);
-
-    scene.add(watchGroup);
-    registerClickable(caseMesh, 'watch');
-    registerClickable(glassMesh, 'watch');
-    registerClickable(dialMesh, 'watch');
-    registerClickable(standBase, 'watch');
-
-    // 11. Smartphone & Stand (Moved to the Right of the Desk)
+    // 11. Smartphone & Rounded Aluminum Stand (Right of Desk)
     const phoneGroup = new THREE.Group();
-    phoneGroup.position.set(0.40, 0.17, -0.05);
+    phoneGroup.position.set(0.49, 0.17, -0.05);
     phoneGroup.rotation.y = -Math.PI / 10;
 
-    const phoneStand = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.01), silverMetal);
-    phoneStand.position.set(0.0, 0.035, -0.02);
-    phoneStand.rotation.x = -0.4;
+    const standBase = new THREE.Mesh(
+      new RoundedBoxGeometry(0.086, 0.006, 0.072, 3, 0.003),
+      silverMetal
+    );
+    standBase.position.set(0.0, 0.003, 0.0);
+    standBase.castShadow = true;
+    standBase.receiveShadow = true;
+    phoneGroup.add(standBase);
+
+    const phoneStand = new THREE.Mesh(
+      new RoundedBoxGeometry(0.068, 0.095, 0.008, 3, 0.004),
+      silverMetal
+    );
+    phoneStand.position.set(0.0, 0.044, -0.018);
+    phoneStand.rotation.x = -0.35;
+    phoneStand.castShadow = true;
     phoneGroup.add(phoneStand);
 
-    const phoneBody = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.15, 0.008), blackPlastic);
-    phoneBody.position.set(0.0, 0.075, 0.005);
+    const phoneBody = new THREE.Mesh(
+      new RoundedBoxGeometry(0.078, 0.156, 0.009, 4, 0.012),
+      blackPlastic
+    );
+    phoneBody.position.set(0.0, 0.078, 0.006);
     phoneBody.rotation.x = -0.35;
     phoneBody.castShadow = true;
     phoneGroup.add(phoneBody);
 
     const phoneScreen = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.068, 0.135),
+      new THREE.PlaneGeometry(0.069, 0.142),
       new THREE.MeshBasicMaterial({ map: phoneTexture })
     );
-    phoneScreen.position.set(0.0, 0.075, 0.01);
+    phoneScreen.position.set(0.0, 0.078, 0.0112);
     phoneScreen.rotation.x = -0.35;
     phoneGroup.add(phoneScreen);
 
@@ -1491,151 +2047,138 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     registerClickable(phoneBody, 'phone');
     registerClickable(phoneScreen, 'phone');
     registerClickable(phoneStand, 'phone');
+    registerClickable(standBase, 'phone');
 
-    // 12. Personal Guestbook Diary (Front Row - Realistic Opened Leather Journal)
+    // 12. Closed Black Hardcover Notebook ("DEATH NOTE")
     const diaryGroup = new THREE.Group();
-    diaryGroup.position.set(0.14, 0.17, 0.18);
-    diaryGroup.rotation.y = -0.08;
+    diaryGroup.position.set(0.25, 0.169, 0.145);
+    diaryGroup.rotation.y = -0.22;
 
-    const coverW = 0.105;
-    const coverH = 0.003;
-    const coverD = 0.165;
-    const bookOpenAngle = 0.035;
+    const noteW = 0.136;
+    const noteD = 0.184;
+    const boardH = 0.0028;
 
-    // Leather open cover backing: left and right boards angled gently in open V-shape
-    const leftCover = new THREE.Mesh(new THREE.BoxGeometry(coverW, coverH, coverD), diaryLeather);
-    leftCover.position.set(-coverW / 2 - 0.002, 0.002, 0);
-    leftCover.rotation.z = bookOpenAngle;
-    leftCover.castShadow = true;
-    leftCover.receiveShadow = true;
-    diaryGroup.add(leftCover);
-
-    const rightCover = new THREE.Mesh(new THREE.BoxGeometry(coverW, coverH, coverD), diaryLeather);
-    rightCover.position.set(coverW / 2 + 0.002, 0.002, 0);
-    rightCover.rotation.z = -bookOpenAngle;
-    rightCover.castShadow = true;
-    rightCover.receiveShadow = true;
-    diaryGroup.add(rightCover);
-
-    // Rounded central spine ridge
-    const spineMesh = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.005, 0.005, coverD, 16, 1, false, 0, Math.PI),
+    // Bottom matte-black hardcover board
+    const bottomCover = new THREE.Mesh(
+      new RoundedBoxGeometry(noteW, boardH, noteD, 2, 0.0014),
       diaryLeather
     );
-    spineMesh.position.set(0, 0.003, 0);
+    bottomCover.position.set(0, boardH / 2, 0);
+    bottomCover.castShadow = true;
+    bottomCover.receiveShadow = true;
+    diaryGroup.add(bottomCover);
+
+    // Cream bound page block inside closed covers
+    const pageBlockMat = new THREE.MeshStandardMaterial({
+      color: 0xf1ebd9,
+      roughness: 0.92,
+      metalness: 0.0,
+    });
+    const pageBlock = new THREE.Mesh(
+      new THREE.BoxGeometry(noteW - 0.007, 0.013, noteD - 0.008),
+      pageBlockMat
+    );
+    pageBlock.position.set(0.002, 0.0092, 0);
+    pageBlock.castShadow = true;
+    pageBlock.receiveShadow = true;
+    diaryGroup.add(pageBlock);
+
+    // Rounded black spine along the left edge of the closed book
+    const spineMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.0092, 0.0092, noteD, 18),
+      diaryLeather
+    );
+    spineMesh.position.set(-noteW / 2 + 0.001, 0.0092, 0);
     spineMesh.rotation.x = Math.PI / 2;
+    spineMesh.castShadow = true;
     diaryGroup.add(spineMesh);
 
-    // Thick creamy multi-page leaf stacks (Left and Right page blocks)
-    const pageStackW = 0.098;
-    const pageStackH = 0.007;
-    const pageStackD = 0.155;
-    const pageStackMat = new THREE.MeshStandardMaterial({
-      color: 0xf5eedb,
-      roughness: 0.9,
-      metalness: 0.0
-    });
-
-    const leftPageStack = new THREE.Mesh(
-      new THREE.BoxGeometry(pageStackW, pageStackH, pageStackD),
-      pageStackMat
+    // Top matte-black hardcover board
+    const topCover = new THREE.Mesh(
+      new RoundedBoxGeometry(noteW, boardH, noteD, 2, 0.0014),
+      diaryLeather
     );
-    leftPageStack.position.set(-pageStackW / 2 - 0.003, 0.006, 0);
-    leftPageStack.rotation.z = bookOpenAngle;
-    leftPageStack.castShadow = true;
-    diaryGroup.add(leftPageStack);
+    topCover.position.set(0, 0.0168, 0);
+    topCover.castShadow = true;
+    topCover.receiveShadow = true;
+    diaryGroup.add(topCover);
 
-    const rightPageStack = new THREE.Mesh(
-      new THREE.BoxGeometry(pageStackW, pageStackH, pageStackD),
-      pageStackMat
-    );
-    rightPageStack.position.set(pageStackW / 2 + 0.003, 0.006, 0);
-    rightPageStack.rotation.z = -bookOpenAngle;
-    rightPageStack.castShadow = true;
-    diaryGroup.add(rightPageStack);
+    // Crisp "DEATH NOTE" front cover CanvasTexture
+    const deathNoteCanvas = document.createElement('canvas');
+    deathNoteCanvas.width = 512;
+    deathNoteCanvas.height = 700;
+    const dnCtx = deathNoteCanvas.getContext('2d');
+    if (dnCtx) {
+      dnCtx.fillStyle = '#09090c';
+      dnCtx.fillRect(0, 0, 512, 700);
 
-    // Exposed top pages with faint ruled lines, red margin, and simulated script
-    const pageCanvas = document.createElement('canvas');
-    pageCanvas.width = 256;
-    pageCanvas.height = 256;
-    const diaryCtx = pageCanvas.getContext('2d');
-    if (diaryCtx) {
-      diaryCtx.fillStyle = '#fbf7ee';
-      diaryCtx.fillRect(0, 0, 256, 256);
-      diaryCtx.strokeStyle = 'rgba(214, 96, 86, 0.35)';
-      diaryCtx.lineWidth = 2;
-      diaryCtx.beginPath();
-      diaryCtx.moveTo(34, 0);
-      diaryCtx.lineTo(34, 256);
-      diaryCtx.stroke();
-      diaryCtx.strokeStyle = 'rgba(86, 120, 170, 0.22)';
-      diaryCtx.lineWidth = 1;
-      for (let y = 30; y < 240; y += 18) {
-        diaryCtx.beginPath();
-        diaryCtx.moveTo(10, y);
-        diaryCtx.lineTo(246, y);
-        diaryCtx.stroke();
-        if (y > 40 && y < 190 && Math.sin(y) > -0.2) {
-          diaryCtx.strokeStyle = 'rgba(36, 48, 74, 0.32)';
-          diaryCtx.beginPath();
-          diaryCtx.moveTo(42, y - 4);
-          diaryCtx.bezierCurveTo(70, y - 8, 110, y - 1, 140, y - 5);
-          diaryCtx.bezierCurveTo(170, y - 8, 200, y - 2, 230, y - 5);
-          diaryCtx.stroke();
-          diaryCtx.strokeStyle = 'rgba(86, 120, 170, 0.22)';
-        }
+      // Subtle leather grain speckles & spine crease line
+      dnCtx.fillStyle = 'rgba(255, 255, 255, 0.018)';
+      for (let i = 0; i < 650; i += 1) {
+        const gx = ((i * 97) % 508) + 2;
+        const gy = ((i * 151) % 696) + 2;
+        dnCtx.fillRect(gx, gy, 2, 2);
       }
+
+      dnCtx.fillStyle = 'rgba(255, 255, 255, 0.045)';
+      dnCtx.fillRect(26, 0, 2, 700);
+
+      // Faint inner cover deboss frame
+      dnCtx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      dnCtx.lineWidth = 2;
+      dnCtx.strokeRect(36, 26, 452, 648);
+
+      // Bold iconic white serif cover lettering
+      dnCtx.textAlign = 'center';
+      dnCtx.fillStyle = '#f8fafc';
+      dnCtx.font = 'bold 78px Georgia, "Times New Roman", serif';
+      dnCtx.fillText('DEATH', 262, 228);
+      dnCtx.fillText('NOTE', 262, 314);
+
+      dnCtx.strokeStyle = 'rgba(248, 250, 252, 0.28)';
+      dnCtx.lineWidth = 2;
+      dnCtx.beginPath();
+      dnCtx.moveTo(158, 344);
+      dnCtx.lineTo(366, 344);
+      dnCtx.stroke();
     }
-    const openPageTexture = new THREE.CanvasTexture(pageCanvas);
-    const openPageMat = new THREE.MeshBasicMaterial({ map: openPageTexture });
+    const deathNoteTexture = new THREE.CanvasTexture(deathNoteCanvas);
+    deathNoteTexture.colorSpace = THREE.SRGBColorSpace;
+    deathNoteTexture.anisotropy = 4;
 
-    const leftTopPage = new THREE.Mesh(new THREE.PlaneGeometry(pageStackW, pageStackD), openPageMat);
-    leftTopPage.position.set(-pageStackW / 2 - 0.003, 0.010, 0);
-    leftTopPage.rotation.x = -Math.PI / 2;
-    leftTopPage.rotation.y = bookOpenAngle;
-    diaryGroup.add(leftTopPage);
-
-    const rightTopPage = new THREE.Mesh(new THREE.PlaneGeometry(pageStackW, pageStackD), openPageMat);
-    rightTopPage.position.set(pageStackW / 2 + 0.003, 0.010, 0);
-    rightTopPage.rotation.x = -Math.PI / 2;
-    rightTopPage.rotation.y = -bookOpenAngle;
-    diaryGroup.add(rightTopPage);
-
-    // Silk Crimson Ribbon Bookmark trailing across the right page & hanging off front edge
-    const ribbonMat = new THREE.MeshStandardMaterial({
-      color: 0xaa1c1c,
-      roughness: 0.35,
-      metalness: 0.1
+    const coverArtMat = new THREE.MeshStandardMaterial({
+      map: deathNoteTexture,
+      roughness: 0.62,
+      metalness: 0.04,
     });
-    const ribbonBody = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.001, 0.16), ribbonMat);
-    ribbonBody.position.set(0.025, 0.011, 0.0);
-    ribbonBody.rotation.y = -0.06;
-    diaryGroup.add(ribbonBody);
+    const coverArtPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(noteW - 0.004, noteD - 0.004),
+      coverArtMat
+    );
+    coverArtPlane.position.set(0, 0.0184, 0);
+    coverArtPlane.rotation.x = -Math.PI / 2;
+    coverArtPlane.receiveShadow = true;
+    diaryGroup.add(coverArtPlane);
 
-    const ribbonDrape = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.014, 0.001), ribbonMat);
-    ribbonDrape.position.set(0.030, 0.004, 0.081);
-    diaryGroup.add(ribbonDrape);
-
-    // Fine Executive Pen resting inside the book gutter
-    const pen = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.14, 16), silverMetal);
-    pen.position.set(0.0, 0.009, 0.0);
+    // Sleek metallic pen resting diagonally across the closed black cover
+    const pen = new THREE.Mesh(new THREE.CylinderGeometry(0.0028, 0.0028, 0.135, 16), silverMetal);
+    pen.position.set(0.014, 0.0212, 0.018);
     pen.rotation.x = Math.PI / 2;
+    pen.rotation.z = -0.22;
     pen.castShadow = true;
     diaryGroup.add(pen);
 
     scene.add(diaryGroup);
-    registerClickable(leftCover, 'diary');
-    registerClickable(rightCover, 'diary');
-    registerClickable(leftPageStack, 'diary');
-    registerClickable(rightPageStack, 'diary');
-    registerClickable(leftTopPage, 'diary');
-    registerClickable(rightTopPage, 'diary');
+    registerClickable(bottomCover, 'diary');
+    registerClickable(topCover, 'diary');
+    registerClickable(spineMesh, 'diary');
+    registerClickable(pageBlock, 'diary');
+    registerClickable(coverArtPlane, 'diary');
     registerClickable(pen, 'diary');
-    registerClickable(ribbonBody, 'diary');
 
     // 13. Interactive Walnut Business Card Holder & Brushed Titanium Card
     const cardHolderGroup = new THREE.Group();
-    cardHolderGroup.position.set(-0.04, 0.169, 0.22);
+    cardHolderGroup.position.set(0.24, 0.169, 0.285);
     cardHolderGroup.rotation.y = 0.12;
     cardGroupRef.current = cardHolderGroup;
 
@@ -1736,7 +2279,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
     // 14. Mushroom Desk Lamp (Moved to the back of the table)
     const lampGroup = new THREE.Group();
-    lampGroup.position.set(0.48, 0.17, -0.24);
+    lampGroup.position.set(0.58, 0.17, -0.24);
 
     const lampBase = new THREE.Mesh(
       new THREE.CylinderGeometry(0.05, 0.055, 0.012, 24),
@@ -1761,55 +2304,126 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     registerClickable(lampBase, 'lamp');
 
     // 15. Ceramic Coffee Mug with Rising Steam (Brought to the Front of the Desk)
-    const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.035, 0.085, 20), ceramicMat);
-    mug.position.set(0.32, 0.21, 0.18);
+    const mugGroup = new THREE.Group();
+    mugGroup.position.set(0.39, 0.169, 0.045);
+    const mugProfile = [
+      new THREE.Vector2(0.0001, 0),
+      new THREE.Vector2(0.030, 0),
+      new THREE.Vector2(0.036, 0.006),
+      new THREE.Vector2(0.040, 0.073),
+      new THREE.Vector2(0.037, 0.080),
+      new THREE.Vector2(0.033, 0.078),
+      new THREE.Vector2(0.032, 0.016),
+      new THREE.Vector2(0.027, 0.010),
+      new THREE.Vector2(0.0001, 0.010),
+    ];
+    const mug = new THREE.Mesh(new THREE.LatheGeometry(mugProfile, 32), ceramicMat);
     mug.castShadow = true;
-    scene.add(mug);
-    registerClickable(mug, 'mug');
-
+    mug.receiveShadow = true;
+    mugGroup.add(mug);
+    const mugHandle = new THREE.Mesh(new THREE.TorusGeometry(0.026, 0.0045, 10, 28, Math.PI), ceramicMat);
+    mugHandle.position.set(0.039, 0.041, 0);
+    mugHandle.rotation.z = Math.PI / 2;
+    mugGroup.add(mugHandle);
+    const mugRim = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.0022, 8, 32), ceramicMat);
+    mugRim.rotation.x = Math.PI / 2;
+    mugRim.position.y = 0.078;
+    mugGroup.add(mugRim);
     const coffeeSurface = new THREE.Mesh(
-      new THREE.CircleGeometry(0.034, 16),
-      new THREE.MeshBasicMaterial({ color: 0x3d2314 })
+      new THREE.CircleGeometry(0.030, 24),
+      new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 0.24, metalness: 0.04 })
     );
-    coffeeSurface.position.set(0.32, 0.25, 0.18);
+    coffeeSurface.position.y = 0.068;
     coffeeSurface.rotation.x = -Math.PI / 2;
-    scene.add(coffeeSurface);
+    mugGroup.add(coffeeSurface);
+    scene.add(mugGroup);
+    registerClickable(mug, 'mug');
+    registerClickable(mugHandle, 'mug');
+    registerClickable(coffeeSurface, 'mug');
 
     // Subtle Steam Particles
     const steamCount = 18;
     const steamGeo = new THREE.BufferGeometry();
     const steamPositions = new Float32Array(steamCount * 3);
     for (let s = 0; s < steamCount; s++) {
-      steamPositions[s * 3] = 0.32 + (Math.random() - 0.5) * 0.03;
-      steamPositions[s * 3 + 1] = 0.26 + Math.random() * 0.08;
-      steamPositions[s * 3 + 2] = 0.18 + (Math.random() - 0.5) * 0.03;
+      steamPositions[s * 3] = 0.39 + (Math.random() - 0.5) * 0.03;
+      steamPositions[s * 3 + 1] = 0.25 + Math.random() * 0.08;
+      steamPositions[s * 3 + 2] = 0.045 + (Math.random() - 0.5) * 0.03;
     }
     steamGeo.setAttribute('position', new THREE.BufferAttribute(steamPositions, 3));
     const steamMat = new THREE.PointsMaterial({
       color: 0xffffff,
-      size: 0.015,
+      map: createSteamPuffTexture(),
+      size: 0.036,
       transparent: true,
-      opacity: 0.3,
-      blending: THREE.AdditiveBlending
+      opacity: 0.34,
+      depthWrite: false,
+      blending: THREE.NormalBlending
     });
     const steamParticles = new THREE.Points(steamGeo, steamMat);
     scene.add(steamParticles);
     steamParticlesRef.current = steamParticles;
 
-    // 16. Succulent Plant in Terracotta Pot (Brought to the Front Right of the Desk)
+    // 16. Tall leafy desk plant, positioned behind the phone like the reference.
     const plantGroup = new THREE.Group();
-    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.032, 0.07, 16), terracottaMat);
-    pot.position.set(0.48, 0.20, 0.18);
+    plantGroup.position.set(0.34, 0.169, -0.22);
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.043, 0.034, 0.078, 24), terracottaMat);
+    pot.position.set(0, 0.039, 0);
     pot.castShadow = true;
     plantGroup.add(pot);
 
+    const potRim = new THREE.Mesh(
+      new THREE.TorusGeometry(0.042, 0.003, 8, 24),
+      new THREE.MeshStandardMaterial({ color: 0xa95840, roughness: 0.62 })
+    );
+    potRim.rotation.x = Math.PI / 2;
+    potRim.position.y = 0.075;
+    plantGroup.add(potRim);
+    const potSoil = new THREE.Mesh(
+      new THREE.CircleGeometry(0.037, 20),
+      new THREE.MeshStandardMaterial({ color: 0x30251d, roughness: 0.95 })
+    );
+    potSoil.rotation.x = -Math.PI / 2;
+    potSoil.position.y = 0.078;
+    plantGroup.add(potSoil);
+
     succulentLeavesRef.current = [];
-    for (let i = 0; i < 8; i++) {
-      const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.09, 8), plantGreen);
-      leaf.position.set(0.48 + (Math.cos(i * 0.785) * 0.018), 0.265, 0.18 + (Math.sin(i * 0.785) * 0.018));
-      leaf.rotation.set((Math.sin(i) * 0.28), i * 0.785, (Math.cos(i) * 0.28));
+    const leafShape = new THREE.Shape();
+    leafShape.moveTo(0, 0);
+    leafShape.bezierCurveTo(-0.014, 0.05, -0.034, 0.105, 0, 0.17);
+    leafShape.bezierCurveTo(0.034, 0.105, 0.014, 0.05, 0, 0);
+    const leafGeometry = new THREE.ExtrudeGeometry(leafShape, {
+      depth: 0.002,
+      bevelEnabled: true,
+      bevelSegments: 1,
+      steps: 1,
+      bevelSize: 0.001,
+      bevelThickness: 0.001,
+      curveSegments: 5,
+    });
+    leafGeometry.translate(0, 0, -0.001);
+    const leafColors = [0x285f45, 0x347653, 0x4a8b5f, 0x246147];
+    const dryLeafColor = new THREE.Color(0x897f5c);
+    for (let i = 0; i < BASE_PLANT_LEAVES + NEW_PLANT_LEAVES; i += 1) {
+      const healthyLeafColor = new THREE.Color(leafColors[i % leafColors.length]);
+      const leafMat = new THREE.MeshStandardMaterial({
+        color: healthyLeafColor,
+        roughness: 0.42,
+        metalness: 0.01,
+        side: THREE.DoubleSide,
+      });
+      const leaf = new THREE.Mesh(leafGeometry, leafMat);
+      const fan = (i / (BASE_PLANT_LEAVES + NEW_PLANT_LEAVES - 1) - 0.5) * 1.38;
+      leaf.position.set(Math.sin(fan) * 0.014, 0.076 + (i % 3) * 0.003, Math.cos(fan) * 0.012 - 0.006);
+      leaf.rotation.set((i % 2 ? 0.16 : -0.12), (i / 10) * Math.PI, fan);
       leaf.castShadow = true;
-      leaf.userData = { initialRot: leaf.rotation.clone(), leafIndex: i };
+      leaf.userData = {
+        initialRot: leaf.rotation.clone(),
+        leafIndex: i,
+        healthyColor: healthyLeafColor,
+        dryColor: dryLeafColor,
+      };
+      leaf.visible = i < plantLeafCount(plantWaterCountRef.current);
       plantGroup.add(leaf);
       succulentLeavesRef.current.push(leaf);
     }
@@ -1818,12 +2432,29 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     registerClickable(plantGroup, 'plant');
 
     // 17. Framed Photo & Spectacles
-    const photoFrame = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.095, 0.008), blackPlastic);
+    const photoFrame = new THREE.Mesh(new RoundedBoxGeometry(0.08, 0.095, 0.008, 2, 0.003), blackPlastic);
     photoFrame.position.set(0.14, 0.215, -0.20);
-    photoFrame.rotation.y = -0.18;
+    photoFrame.rotation.set(-0.18, -0.18, 0);
     photoFrame.castShadow = true;
     scene.add(photoFrame);
+
+    const photoTexture = new THREE.TextureLoader().load('/images/profile_avatar.webp');
+    photoTexture.colorSpace = THREE.SRGBColorSpace;
+    const framedPhoto = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.064, 0.078),
+      new THREE.MeshBasicMaterial({ map: photoTexture, toneMapped: false }),
+    );
+    framedPhoto.position.set(0.14, 0.215, -0.195);
+    framedPhoto.rotation.copy(photoFrame.rotation);
+    scene.add(framedPhoto);
+
+    const photoStand = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.04, 0.008), blackPlastic);
+    photoStand.position.set(0.14, 0.189, -0.218);
+    photoStand.rotation.x = -0.18;
+    photoStand.castShadow = true;
+    scene.add(photoStand);
     registerClickable(photoFrame, 'photo');
+    registerClickable(framedPhoto, 'photo');
 
     // 17. Realistic Acetate Designer Spectacles (X-Ray Glasses from pradiplabs.dev)
     const glassesGroup = new THREE.Group();
@@ -2016,9 +2647,17 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         } else if (name === 'printer') {
           soundFX.playClick();
           setIsReceiptModalOpen(true);
-        } else if (name === 'watch') {
+        } else if (name === 'speaker') {
           soundFX.playClick();
-          focusObject('watch');
+          onToggleMusicRef.current?.();
+        } else if (name === 'turntable') {
+          soundFX.playClick();
+          onToggleMusicPlaybackRef.current?.();
+          focusObject('turntable');
+        } else if (name === 'zoro') {
+          soundFX.playClick();
+          zoroWobbleRef.current.speed += 2.4;
+          zoroWobbleRef.current.tiltSpeed += 1.1;
         } else if (name === 'lamp') {
           soundFX.playClick();
           setLampOn(prev => {
@@ -2049,14 +2688,23 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
             return next;
           });
         } else if (name === 'tablet') {
-          soundFX.playClick();
-          setIsDocketOpen(true);
+          if (focusedTargetRef.current === 'tablet') {
+            soundFX.playClick();
+            setTabletInitialApp('home');
+            setTabletInitialAddSong(false);
+            setIsDocketOpen(true);
+          } else {
+            focusObject('tablet');
+          }
         } else if (name === 'phone') {
           soundFX.playClick();
           handleOpenPhone();
         } else if (name === 'plant') {
           soundFX.playWaterDrop();
           plantBounceRef.current = 1.0;
+          const wateredAt = Date.now();
+          setPlantLastWateredAt(wateredAt);
+          try { localStorage.setItem('zynx_plant_last_watered_at', wateredAt.toString()); } catch {}
           setPlantWaterCount(prev => {
             const next = prev + 1;
             try { localStorage.setItem('zynx_plant_water_count', next.toString()); } catch {}
@@ -2205,9 +2853,9 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     let animationFrameId = 0;
     let lastFrameTime = 0;
     let lastBadgeUpdate = 0;
+    let lastPlantMoodUpdate = 0;
     let isInViewport = true;
     const startTime = performance.now();
-    const liveDate = new Date();
     const projectedBadgePosition = new THREE.Vector3();
     const deskGlassesPos = new THREE.Vector3(-0.20, 0.171, 0.17);
     const deskGlassesQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.04, 0.22, 0));
@@ -2222,6 +2870,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       }
       animationFrameId = requestAnimationFrame(animate);
       if (renderQuality.frameInterval && time - lastFrameTime < renderQuality.frameInterval) return;
+      const step = Math.min(lastFrameTime ? (time - lastFrameTime) / 1000 : 1 / 60, 0.05);
       lastFrameTime = time;
       const elapsedTime = (time - startTime) / 1000;
 
@@ -2240,7 +2889,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       }
       controls.update();
 
-      // Dynamic 3D Object Projection for X-Ray Numbered Badges (1 to 12)
+      // Dynamic 3D Object Projection for every X-Ray numbered badge.
       if (isXRayModeRef.current && container && time - lastBadgeUpdate >= 40) {
         lastBadgeUpdate = time;
         const rect = container.getBoundingClientRect();
@@ -2258,20 +2907,27 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         setBadgePositions(newCoords);
       }
 
-      // Precision Chronometer Watch Live Movement (Smooth sweeping mechanical seconds)
-      const now = liveDate;
-      now.setTime(Date.now());
-      const s = now.getSeconds() + now.getMilliseconds() / 1000;
-      const m = now.getMinutes() + s / 60;
-      const h = (now.getHours() % 12) + m / 60;
-      if (watchSecondHandRef.current) {
-        watchSecondHandRef.current.rotation.z = -s * (Math.PI / 30);
+      // Spring motion makes the tiny Zoro figure wobble and settle after a tap.
+      const wobble = zoroWobbleRef.current;
+      wobble.speed += (-90 * wobble.angle - 4.5 * wobble.speed) * step;
+      wobble.angle += wobble.speed * step;
+      wobble.tiltSpeed += (-72 * wobble.tilt - 4.2 * wobble.tiltSpeed) * step;
+      wobble.tilt += wobble.tiltSpeed * step;
+      if (zoroHeadRef.current) {
+        zoroHeadRef.current.rotation.z = wobble.angle;
+        zoroHeadRef.current.rotation.x = wobble.tilt;
       }
-      if (watchMinuteHandRef.current) {
-        watchMinuteHandRef.current.rotation.z = -m * (Math.PI / 30);
+
+      if (turntableRecordRef.current && musicPlayingRef.current) {
+        turntableRecordRef.current.rotation.y += step * 1.8;
       }
-      if (watchHourHandRef.current) {
-        watchHourHandRef.current.rotation.z = -h * (Math.PI / 6);
+      if (turntableTonearmRef.current) {
+        const armTargetY = musicPlayingRef.current ? -0.52 : 0.14;
+        turntableTonearmRef.current.rotation.y = THREE.MathUtils.lerp(
+          turntableTonearmRef.current.rotation.y,
+          armTargetY,
+          Math.min(1, step * 6),
+        );
       }
 
       // Wearable Spectacles Cinematic Animation (Desk -> Eyes & Temples Unfold)
@@ -2322,12 +2978,24 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
       // Succulent Plant Organic Leaf Sway & Water Drop Bounce
       if (succulentLeavesRef.current.length > 0) {
+        if (time - lastPlantMoodUpdate >= 1000) {
+          lastPlantMoodUpdate = time;
+          const thirst = plantThirst(plantLastWateredRef.current);
+          succulentLeavesRef.current.forEach((leaf) => {
+            const healthy = leaf.userData.healthyColor as THREE.Color;
+            const dry = leaf.userData.dryColor as THREE.Color;
+            const material = leaf.material as THREE.MeshStandardMaterial;
+            material.color.lerpColors(dry, healthy, 1 - thirst);
+          });
+        }
         if (plantBounceRef.current > 0.005) {
           plantBounceRef.current *= 0.94; // Spring recovery
         }
         const bounce = plantBounceRef.current;
         const swayBase = Math.sin(elapsedTime * 1.8) * 0.03;
         succulentLeavesRef.current.forEach((leaf, idx) => {
+          leaf.visible = idx < plantLeafCount(plantWaterCountRef.current);
+          if (!leaf.visible) return;
           const initRot = leaf.userData.initialRot as THREE.Euler;
           if (initRot) {
             const phase = idx * 0.785;
@@ -2354,8 +3022,8 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           arr[s * 3 + 2] += Math.cos(elapsedTime * 2.1 + s) * 0.00025;
           if (arr[s * 3 + 1] > 0.35) {
             arr[s * 3 + 1] = 0.255;
-            arr[s * 3] = 0.32 + (Math.random() - 0.5) * 0.025;
-            arr[s * 3 + 2] = 0.18 + (Math.random() - 0.5) * 0.025;
+            arr[s * 3] = 0.39 + (Math.random() - 0.5) * 0.025;
+            arr[s * 3 + 2] = 0.045 + (Math.random() - 0.5) * 0.025;
           }
         }
         posAttr.needsUpdate = true;
@@ -2465,7 +3133,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       const h = container.clientHeight || window.innerHeight;
       const aspect = w / Math.max(1, h);
       camera.aspect = aspect;
-      camera.fov = aspect < 0.6 ? 48 : aspect < 0.8 ? 45 : 42;
+      camera.fov = getResponsiveCameraFov(aspect);
 
       // Adapt camera FOV / distance based on viewport aspect ratio (Mobile & ultrawide compatibility)
       const frame = getResponsiveCameraFrame(w, h);
@@ -2501,11 +3169,16 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       cardGroupRef.current = null;
       cardMaterialsRef.current = null;
       succulentLeavesRef.current = [];
+      zoroHeadRef.current = null;
+      turntableRecordRef.current = null;
+      turntableTonearmRef.current = null;
+      turntableLedMatRef.current = null;
+      turntableDrawLabelRef.current = null;
       sceneRef.current = null;
     };
   }, [dayMode, takeCard, putDownCard, triggerFlip]);
 
-  const focusObject = (target: 'laptop' | 'tablet' | 'phone' | 'diary' | 'zcard' | 'printer' | 'watch' | 'reset') => {
+  const focusObject = (target: 'laptop' | 'tablet' | 'phone' | 'diary' | 'zcard' | 'printer' | 'turntable' | 'reset') => {
     soundFX.playClick();
     isCameraTransitioningRef.current = true;
     if (target === 'reset') {
@@ -2528,14 +3201,14 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       setFocusedTarget('printer');
       targetCamPos.current.set(-0.52, 0.38, 0.28);
       targetLookAt.current.set(-0.52, 0.22, -0.06);
-    } else if (target === 'watch') {
-      setFocusedTarget('watch');
-      targetCamPos.current.set(-0.50, 0.32, 0.28);
-      targetLookAt.current.set(-0.50, 0.19, 0.14);
+    } else if (target === 'turntable') {
+      setFocusedTarget('turntable');
+      targetCamPos.current.set(0.53, 0.34, 0.36);
+      targetLookAt.current.set(0.53, 0.19, 0.165);
     } else if (target === 'phone') {
       setFocusedTarget('phone');
-      targetCamPos.current.set(0.40, 0.36, 0.22);
-      targetLookAt.current.set(0.40, 0.24, -0.05);
+      targetCamPos.current.set(0.49, 0.36, 0.22);
+      targetLookAt.current.set(0.49, 0.24, -0.05);
       if (onOpenPhone) onOpenPhone();
       else setIsPhoneOpen(true);
     } else if (target === 'zcard') {
@@ -2549,20 +3222,20 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     <div className={`relative w-full h-screen overflow-hidden select-none transition-colors duration-500 ${
       dayMode 
         ? 'bg-[radial-gradient(120%_90%_at_50%_45%,#FFFFFF_0%,#F4F4F6_55%,#E8E8EC_100%)] text-slate-900' 
-        : 'bg-[#090b10] text-white'
+        : 'bg-transparent text-white'
     }`}>
       {/* Top Banner Headline (Clean & minimal on mobile, expanded on desktop) */}
       {!isXRayMode && !isCardHeld && !isWearingSpecs && (
-        <div className="absolute top-10 sm:top-12 inset-x-0 z-20 pointer-events-none text-center px-4 max-w-xl mx-auto transition-opacity duration-300">
-          <h1 className={`text-base sm:text-3xl md:text-4xl font-extrabold tracking-tight drop-shadow-md font-display ${
+        <div className="absolute top-10 sm:top-12 inset-x-0 z-20 pointer-events-none text-center px-4 max-w-2xl mx-auto transition-opacity duration-300">
+          <h1 className={`text-[clamp(2rem,4.8vw,3.2rem)] font-medium tracking-[-0.045em] drop-shadow-md font-sans ${
             dayMode ? 'text-slate-900' : 'text-white'
           }`}>
-            Hi, I'm Joshua (ZYNX).
+            Hi, I’m Joshua.
           </h1>
-          <p className={`hidden sm:block mt-1 text-xs md:text-sm max-w-lg mx-auto drop-shadow-sm font-sans ${
+          <p className={`mt-1 text-xs sm:text-sm max-w-xl mx-auto drop-shadow-sm font-sans ${
             dayMode ? 'text-slate-600' : 'text-slate-300'
           }`}>
-            I build embedded systems, Arch Linux environments, and modern web applications.
+            I build electronics, Linux systems and web experiences. Everything on this desk is interactive.
           </p>
         </div>
       )}
@@ -2588,17 +3261,80 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
           )}
 
           {focusedTarget === 'tablet' && (
-            <button
-              onClick={() => {
-                soundFX.playClick();
-                setIsDocketOpen(true);
-              }}
-              className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-cyan-400 hover:bg-cyan-300 text-black text-xs font-mono font-bold flex items-center gap-2 shadow-xl shadow-cyan-400/25 active:scale-95 transition-all"
-              title="Open Demo Metals Docket System"
-            >
-              <ExternalLink size={14} />
-              <span>Open Docket System</span>
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  setTabletInitialApp('home');
+                  setIsDocketOpen(true);
+                }}
+                className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-white hover:bg-zinc-100 text-zinc-900 text-xs font-semibold flex items-center gap-2 shadow-xl active:scale-95 transition-all"
+                title="Open iPad Home Dashboard"
+              >
+                <Tablet size={14} className="text-[#2F5BEA]" />
+                <span>Open iPad Home</span>
+              </button>
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  setTabletInitialApp('player');
+                  setIsDocketOpen(true);
+                }}
+                className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-[#2F5BEA] hover:bg-[#2449c7] text-white text-xs font-semibold flex items-center gap-2 shadow-xl active:scale-95 transition-all"
+                title="Open Zynx Player on iPad"
+              >
+                <Disc3 size={14} />
+                <span>Zynx Player</span>
+              </button>
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  setTabletInitialApp('docket');
+                  setIsDocketOpen(true);
+                }}
+                className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-cyan-400 hover:bg-cyan-300 text-black text-xs font-mono font-bold flex items-center gap-2 shadow-xl active:scale-95 transition-all"
+                title="Open Demo Metals Docket System"
+              >
+                <ExternalLink size={14} />
+                <span>Docket</span>
+              </button>
+            </div>
+          )}
+
+          {focusedTarget === 'turntable' && (
+            <div className="flex flex-wrap items-center justify-center gap-2 rounded-full bg-white/95 text-zinc-900 px-3 py-1.5 shadow-2xl border border-black/10 backdrop-blur-xl">
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  onToggleMusicPlaybackRef.current?.();
+                }}
+                className="w-8 h-8 rounded-full bg-[#2F5BEA] hover:bg-[#2449c7] text-white flex items-center justify-center shadow transition active:scale-95"
+                title={isMusicPlaying ? 'Pause record' : 'Spin record'}
+              >
+                {isMusicPlaying ? <Pause size={14} /> : <Play size={14} className="ml-0.5" />}
+              </button>
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  musicPlayerEngine.nextTrack();
+                }}
+                className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-800 flex items-center justify-center transition active:scale-95"
+                title="Next track"
+              >
+                <SkipForward size={14} />
+              </button>
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  setTabletInitialApp('player');
+                  setIsDocketOpen(true);
+                }}
+                className="px-3.5 py-1.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold flex items-center gap-1.5 transition active:scale-95"
+              >
+                <Disc3 size={13} className="text-emerald-400" />
+                <span>Back to Zynx Player</span>
+              </button>
+            </div>
           )}
 
           {focusedTarget === 'printer' && printedReceipt && (
@@ -2613,13 +3349,6 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
               <Printer size={14} />
               <span>View Receipt</span>
             </button>
-          )}
-
-          {focusedTarget === 'watch' && (
-            <div className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-cyan-500/25 border border-cyan-400/50 text-cyan-200 text-xs font-mono font-semibold flex items-center gap-2 shadow-xl backdrop-blur-xl">
-              <Clock size={14} className="text-cyan-400 animate-spin" style={{ animationDuration: '60s' }} />
-              <span>Titanium Chronometer</span>
-            </div>
           )}
 
           {/* Dedicated prominent Close / Back to Desk button */}
@@ -2638,17 +3367,57 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       {/* 3D WebGL Canvas */}
       <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
 
+      {!focusedTarget && !isMusicOpen && !isXRayMode && !isCardHeld && !isWearingSpecs && (
+        <nav
+          ref={actionsNavRef}
+          className="absolute bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))] sm:bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] left-1/2 z-30 flex max-w-[calc(100vw-1.5rem)] -translate-x-1/2 items-center gap-1.5 overflow-x-auto rounded-full border border-white/15 bg-[#171411]/75 px-2 py-1.5 text-white shadow-xl shadow-black/20 backdrop-blur-xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          aria-label="Explore items on the work desk"
+        >
+          <button onClick={() => focusObject('laptop')} className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-medium text-white/90 transition hover:bg-white/10 hover:text-white">
+            Laptop <span className="ml-1 text-white/50">Projects</span>
+          </button>
+          <button onClick={() => focusObject('tablet')} className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-medium text-white/90 transition hover:bg-white/10 hover:text-white">
+            Tablet <span className="ml-1 text-white/50">Dockets, QR, music</span>
+          </button>
+          <button onClick={() => focusObject('phone')} className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-medium text-white/90 transition hover:bg-white/10 hover:text-white">
+            Phone <span className="ml-1 text-white/50">Live site &amp; AI</span>
+          </button>
+          <button onClick={() => focusObject('diary')} className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-medium text-white/90 transition hover:bg-white/10 hover:text-white">
+            Death Note
+          </button>
+          <button
+            onClick={() => {
+              soundFX.playClick();
+              onToggleMusicRef.current?.();
+            }}
+            className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-medium text-white/90 transition hover:bg-white/10 hover:text-white"
+          >
+            Talk to the speaker
+          </button>
+          <button
+            onClick={() => {
+              soundFX.playClick();
+              soundFX.playZoom();
+              setIsWearingSpecs(true);
+            }}
+            className="shrink-0 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold text-zinc-900 transition hover:bg-zinc-100"
+          >
+            See how it’s made
+          </button>
+        </nav>
+      )}
+
       {/* Floating Hover Tooltips (Matching pradiplabs.dev) */}
       {hoveredObject === 'diary' && (
-        <div className="absolute top-[60%] left-[57%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
-          <div className="px-3.5 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/40 text-amber-100 text-xs font-sans shadow-xl flex items-center gap-2">
-            <span>📖 Open guestbook diary · anyone can write in it</span>
+        <div className="absolute top-[58%] left-[65%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+          <div className="px-3.5 py-1.5 rounded-full bg-black/90 backdrop-blur-md border border-white/20 text-zinc-100 text-xs font-sans shadow-xl flex items-center gap-2">
+            <span>Open Death Note · anyone can write in it</span>
           </div>
         </div>
       )}
 
       {(hoveredObject === 'card' || hoveredObject === 'zcard') && !isCardHeld && (
-        <div className="absolute top-[55%] left-[48%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+        <div className="absolute top-[62%] left-[58%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
           <div className="px-3.5 py-1.5 rounded-full bg-black/90 backdrop-blur-md border border-white/20 text-white text-xs font-sans shadow-xl flex items-center gap-2">
             <span>Take my card</span>
           </div>
@@ -2664,17 +3433,41 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         </div>
       )}
 
-      {hoveredObject === 'watch' && !isCardHeld && (
-        <div className="absolute top-[58%] left-[23%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
-          <div className="px-3.5 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-cyan-400/50 text-cyan-200 text-xs font-mono shadow-xl flex items-center gap-2">
-            <Clock size={13} className="text-cyan-400" />
-            <span>Chrono Watch · Click to inspect</span>
+      {hoveredObject === 'speaker' && (
+        <div className="absolute top-[66%] left-[17%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+          <div className="px-3 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-cyan-400/40 text-cyan-200 text-xs font-mono shadow-xl flex items-center gap-2">
+            <span aria-hidden="true">♫</span>
+            <span>{isMusicOpen ? 'Desk speaker · Radio is open' : 'Talk to the desk speaker'}</span>
+          </div>
+        </div>
+      )}
+
+      {hoveredObject === 'turntable' && (
+        <div className="absolute top-[70%] left-[79%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+          <div className="px-3 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/40 text-amber-100 text-xs font-sans shadow-xl">
+            {isMusicPlaying ? 'Record player · spinning now' : 'Play a record'}
+          </div>
+        </div>
+      )}
+
+      {hoveredObject === 'zoro' && (
+        <div className="absolute top-[43%] left-[34%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+          <div className="px-3 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-emerald-400/40 text-emerald-100 text-xs font-sans shadow-xl">
+            Roronoa Zoro · give him a tap
+          </div>
+        </div>
+      )}
+
+      {hoveredObject === 'tablet' && !isCardHeld && !isDocketOpen && (
+        <div className="absolute top-[52%] left-[33%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+          <div className="px-3.5 py-1.5 rounded-full bg-black/90 backdrop-blur-md border border-white/20 text-white text-xs font-sans shadow-xl flex items-center gap-2">
+            <span>iPad OS · Dockets, QR codes &amp; Zynx Player</span>
           </div>
         </div>
       )}
 
       {hoveredObject === 'mug' && (
-        <div className="absolute top-[62%] left-[65%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+        <div className="absolute top-[59%] left-[71%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
           <div className="px-3.5 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-amber-500/40 text-amber-200 text-xs font-sans shadow-xl flex items-center gap-2">
             <span>☕ Hot Brew Coffee · Fresh & Steaming</span>
           </div>
@@ -2709,16 +3502,16 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
       {hoveredObject === 'phone' && !isCardHeld && !isPhoneOpen && (
         <div className="absolute top-[44%] left-[70%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
-          <div className="px-3.5 py-1.5 rounded-full bg-black/90 backdrop-blur-md border border-cyan-400/50 text-cyan-300 text-xs font-mono shadow-xl flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span>7YNX Smartphone · Live Audio & AI Chat</span>
+          <div className="px-3.5 py-1.5 rounded-full bg-black/90 backdrop-blur-md border border-emerald-400/50 text-emerald-200 text-xs font-sans shadow-xl flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Phone · Live Website &amp; AI Chat</span>
           </div>
         </div>
       )}
 
       {/* Plant Hover Tooltip (Matching v2_03.png) */}
       {hoveredObject === 'plant' && (
-        <div className="absolute top-[60%] left-[76%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
+        <div className="absolute top-[43%] left-[70%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
           <div className="px-3.5 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-emerald-400/50 text-emerald-300 text-xs font-sans shadow-xl flex items-center gap-2">
             <Droplets className="w-3.5 h-3.5 text-emerald-400" />
             <span>Water the plant · watered {plantWaterCount} times</span>
@@ -2728,7 +3521,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
 
       {/* Plant Watering Floating Drop Animation */}
       {waterDropAnim && (
-        <div className="absolute top-[56%] left-[76%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-bounce">
+        <div className="absolute top-[39%] left-[70%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-bounce">
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500 text-white font-mono font-bold text-xs shadow-xl shadow-emerald-500/40">
             <Droplets className="w-3.5 h-3.5" />
             <span>+1 Hydrated! ({plantWaterCount})</span>
@@ -2785,7 +3578,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         </div>
       )}
 
-      {/* 12 Interactive Numbered Badges pinned to 3D Coordinates (Matching v2_10.png) */}
+      {/* 15 Interactive Numbered Badges pinned to 3D Coordinates (Matching v2_10.png) */}
       {isXRayMode && Object.entries(badgePositions).map(([idStr, pos]) => {
         if (!pos.visible) return null;
         const idNum = parseInt(idStr, 10);
@@ -2826,12 +3619,29 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         />
       )}
 
-      {/* Interactive Tablet Docket Weighbridge Modal (Matching v2_02.png) */}
+      {/* Interactive iPad OS (Home Dashboard, Demo Metals Docket, QR Pass & Zynx Player) */}
       <TabletDocketModal
         isOpen={isDocketOpen}
-        onClose={() => setIsDocketOpen(false)}
+        onClose={() => {
+          setIsDocketOpen(false);
+          setTabletInitialAddSong(false);
+        }}
+        initialApp={tabletInitialApp}
+        initialAddSong={tabletInitialAddSong}
+        onOpenDiary={onOpenDiary}
+        onFocusTurntable={() => focusObject('turntable')}
+        plantWaterCount={plantWaterCount}
+        diaryPageCount={diaryPageCount}
+        docketsPrintedCount={docketsPrintedCount}
         onPrintDocket={(order) => {
           setCurrentDocketOrder(order);
+          setDocketsPrintedCount((prev) => {
+            const next = prev + 1;
+            try {
+              localStorage.setItem('zynx_dockets_printed_count', next.toString());
+            } catch {}
+            return next;
+          });
           setPrintedReceipt(true);
           receiptAnimRef.current = 1.0;
           if (rCtxRef.current && receiptTextureRef.current) {
@@ -2971,9 +3781,10 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         onOpenProject={onOpenProject}
       />
 
-      {/* 7YNX Smartphone Experience Modal (Matching pradiplabs.dev phone experience) */}
+      {/* 7YNX Smartphone Experience Modal */}
       {isPhoneOpen && (
         <PhoneExperience
+          onOpenProject={onOpenProject}
           onClose={() => {
             soundFX.playClick();
             setIsPhoneOpen(false);

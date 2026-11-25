@@ -201,18 +201,6 @@ export const INITIAL_DIARY_ENTRIES: DiaryEntry[] = [
     id: "entry-1",
     date: "29 Oct 2026",
     author: "Joshua D (ZYNX)",
-    message: "Welcome to my desk. Everything you see here is interactive—the laptop runs my live systems, the tablet shows workstation telemetry, and this diary is open for anyone visiting to leave a signature or a sketch. Let's build something great together."
-  },
-  {
-    id: "entry-2",
-    date: "28 Oct 2026",
-    author: "Elena (UI/UX Architect)",
-    message: "Loved the 3D tactile feel of the desk! The warm lamp glow and the seamless transition to the curved showcase carousel is stunning."
-  },
-  {
-    id: "entry-3",
-    date: "27 Oct 2026",
-    author: "Jeevan (ECE Colleague)",
-    message: "The Z Card hardware breakdown blew me away. 1.4mm prototype with e-paper and biometric sensor is serious engineering discipline."
+    message: "Welcome to my desk. Everything here is interactive. Leave a note or sketch in the diary before you head out."
   }
 ];

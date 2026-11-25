@@ -10,6 +10,7 @@ import {
   type ZoneId,
 } from "../data/roomData";
 import { SoundLab } from "../components/SoundLab";
+import { type TabletAppId } from "../components/TabletDocketModal";
 import { BedroomAudioPlayer } from "../components/BedroomAudioPlayer";
 import PhoneExperience from "../components/PhoneExperience";
 import { BedroomDesk3D } from "../components/BedroomDesk3D";
@@ -19,12 +20,14 @@ import { DiaryModal } from "../components/DiaryModal";
 import { AnatomyDissectionModal } from "../components/AnatomyDissectionModal";
 import { type Project, PROJECTS } from "../data/portfolioData";
 import { soundFX } from "../utils/audioFX";
+import { musicPlayerEngine } from "../utils/musicPlayerEngine";
 import {
   X, ArrowLeft, Award, GraduationCap,
   Terminal, Cpu, Music, Layers, Shield, ChevronRight,
   Monitor, Zap, BookOpen, Headphones, Save,
   Grid, Eye, BedDouble, Sparkles, Move, RotateCcw, Check, Laptop,
   Sun, Moon, Clock,
+  Share2, Volume2, VolumeX,
 } from "lucide-react";
 
 interface BedroomSpacePageProps {
@@ -493,22 +496,22 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
     </div>
   ),
 
-  // 9. Personal Guestbook Diary
+  // 9. Death Note Desk Diary
   diary: (
     <div className="space-y-8 animate-fadeIn">
-      <div className="relative p-7 rounded-3xl bg-gradient-to-br from-amber-950/60 via-black/80 to-yellow-950/40 border border-amber-500/30 overflow-hidden shadow-2xl">
+      <div className="relative p-7 rounded-3xl bg-gradient-to-br from-zinc-900/90 via-black/90 to-zinc-950/90 border border-white/15 overflow-hidden shadow-2xl">
         <div className="relative z-10 space-y-3">
           <div className="flex items-center gap-2">
-            <BookOpen size={15} className="text-amber-400" />
-            <span className="text-[11px] font-mono text-amber-400 uppercase tracking-widest">
+            <BookOpen size={15} className="text-zinc-300" />
+            <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-widest">
               [ 09 // VISITOR GUESTBOOK ]
             </span>
           </div>
           <h2 className="text-3xl sm:text-2xl font-display font-extrabold text-white">
-            Personal Guestbook Diary
+            Death Note
           </h2>
           <p className="text-xs sm:text-[11px] text-zinc-300 font-sans leading-relaxed">
-            A digital canvas journal resting on the bedroom desk. Visitors from around the world can leave handwritten notes, sketches, and signatures.
+            A closed matte-black Death Note notebook resting on the desk. Visitors can open it, turn pages by lifting a corner, and leave handwritten notes or sketches.
           </p>
         </div>
       </div>
@@ -722,7 +725,10 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
   const [activePoster, setActivePoster] = useState<RoomPosterId | null>(null);
   const [targetZone, setTargetZone] = useState<ZoneId | "overview">("overview");
   const [viewMode, setViewMode] = useState<"desk" | "3d" | "catalog">("desk");
-  const [deskDayMode, setDeskDayMode] = useState(false);
+  // Match the reference desk's natural daylight on first visit; visitors can still switch to night mode.
+  const [deskDayMode, setDeskDayMode] = useState(true);
+  const [deskSoundOn, setDeskSoundOn] = useState(() => soundFX.enabled);
+  const [shareCopied, setShareCopied] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isDiaryOpen, setIsDiaryOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -752,7 +758,22 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [furnitureEditRequest, setFurnitureEditRequest] = useState<FurnitureEditRequest>({ sequence: 0, action: "rotate", degrees: 0 });
   const [musicOpen, setMusicOpen] = useState(false);
+  const [musicIsActuallyPlaying, setMusicIsActuallyPlaying] = useState(() => {
+    const state = musicPlayerEngine.getState();
+    return state.isPlaying && !state.isBuffering;
+  });
   const [phoneOpen, setPhoneOpen] = useState(false);
+  const [openTabletAppSignal, setOpenTabletAppSignal] = useState<{
+    seq: number;
+    app: TabletAppId;
+    addSong?: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    return musicPlayerEngine.subscribe(state => {
+      setMusicIsActuallyPlaying(state.isPlaying && !state.isBuffering);
+    });
+  }, []);
 
   const toggleRoomLighting = useCallback(() => {
     soundFX.playClick();
@@ -851,8 +872,34 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
     }
   };
 
+  const handleShareDesk = async () => {
+    const shareData = {
+      title: "Joshua D · Work Desk",
+      text: "Explore my interactive work desk and projects.",
+      url: window.location.href,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        setShareCopied(true);
+        window.setTimeout(() => setShareCopied(false), 1800);
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
+      try {
+        await navigator.clipboard.writeText(shareData.url);
+        setShareCopied(true);
+        window.setTimeout(() => setShareCopied(false), 1800);
+      } catch {
+        // Clipboard and native share can be unavailable on insecure origins.
+      }
+    }
+  };
+
   return (
-    <div className="fixed inset-0 top-[57px] bg-[#030306] overflow-hidden select-none">
+    <div className="fixed inset-0 overflow-hidden select-none bg-[linear-gradient(135deg,#342923_0%,#54443a_52%,#302722_100%)]">
       {/* CSS Animations */}
       <style>{`
         @keyframes slideInRight {
@@ -876,7 +923,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
             title="Portfolio"
           >
             <ArrowLeft size={12} />
-            <span className="hidden xs:inline sm:inline">Portfolio</span>
+            <span className="hidden sm:inline">Portfolio</span>
           </button>
           
           {/* View Mode Switcher */}
@@ -913,6 +960,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
                 setSelectedFurniture(null);
               }}
               className={`flex h-6 sm:h-7 items-center gap-1 rounded-full px-2 sm:px-2.5 text-[10px] font-mono transition ${viewMode === "catalog" ? "bg-cyan-300 text-black font-bold shadow" : "text-zinc-300 hover:text-white"}`}
+              aria-label="Open room catalog"
             >
               <Grid size={11} />
               <span className="hidden sm:inline">Catalog</span>
@@ -931,6 +979,34 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
             >
               {deskDayMode ? <Moon size={13} /> : <Sun size={13} />}
             </button>
+          )}
+
+          {viewMode === "desk" && (
+            <>
+              <button
+                onClick={handleShareDesk}
+                className="flex h-7 sm:h-8 w-7 sm:w-8 items-center justify-center rounded-full border border-white/10 bg-black/35 text-zinc-200 shadow-md backdrop-blur-xl transition hover:border-white/30 hover:text-white"
+                aria-label={shareCopied ? "Desk link copied" : "Share this work desk"}
+                title={shareCopied ? "Link copied" : "Share this work desk"}
+              >
+                {shareCopied ? <Check size={13} /> : <Share2 size={13} />}
+              </button>
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  setDeskSoundOn((enabled) => {
+                    const next = !enabled;
+                    soundFX.enabled = next;
+                    return next;
+                  });
+                }}
+                className="flex h-7 sm:h-8 w-7 sm:w-8 items-center justify-center rounded-full border border-white/10 bg-black/35 text-zinc-200 shadow-md backdrop-blur-xl transition hover:border-white/30 hover:text-white"
+                aria-label={deskSoundOn ? "Turn desk sounds off" : "Turn desk sounds on"}
+                title={deskSoundOn ? "Turn desk sounds off" : "Turn desk sounds on"}
+              >
+                {deskSoundOn ? <Volume2 size={13} /> : <VolumeX size={13} />}
+              </button>
+            </>
           )}
 
           {/* Room 3D Mode specific controls: Theme Switcher */}
@@ -971,7 +1047,7 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
       </header>
 
       {/* Mobile Gesture Helper Badge (Bottom-left, non-overlapping) */}
-      {!editMode && viewMode === "desk" && (
+      {!editMode && viewMode === "desk" && !musicOpen && (
         <div className="pointer-events-none absolute left-3 bottom-3 z-20 sm:hidden pb-[env(safe-area-inset-bottom,0px)]">
           <div className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-black/75 px-2.5 py-1 text-[9px] font-mono tracking-wider text-zinc-300 shadow-lg backdrop-blur-md">
             <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
@@ -994,7 +1070,14 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
             onOpenAnatomy={() => setIsAnatomyOpen(true)}
             onOpenPhone={() => setPhoneOpen(true)}
             onToggleMusic={() => setMusicOpen((prev) => !prev)}
-            isMusicPlaying={musicOpen}
+            onToggleMusicPlayback={() => {
+              musicPlayerEngine.togglePlay();
+              setMusicOpen(true);
+            }}
+            isMusicOpen={musicOpen}
+            isMusicPlaying={musicIsActuallyPlaying}
+            isDiaryOpen={isDiaryOpen}
+            openTabletAppSignal={openTabletAppSignal}
           />
         </div>
       )}
@@ -1419,13 +1502,50 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
         <ZoneModal zoneId={activeZone} onClose={() => setActiveZone(null)} onPosterClick={handlePosterClick} />
       )}
       {activePoster && <PosterView posterId={activePoster} onClose={closePoster} />}
-      {phoneOpen && <PhoneExperience onClose={() => setPhoneOpen(false)} />}
+      {phoneOpen && (
+        <PhoneExperience
+          onClose={() => setPhoneOpen(false)}
+          onOpenProject={(projectId) => {
+            const proj = PROJECTS.find((p) => p.id === projectId) || PROJECTS[0];
+            setSelectedProject(proj);
+          }}
+        />
+      )}
 
       {/* ── LIVE LO-FI RADIO STATION / SOUND LAB DOCK (Available across all views) ── */}
-      <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 z-40 flex items-end gap-2 pointer-events-auto pb-[env(safe-area-inset-bottom,0px)]">
+      <div
+        className={`absolute bottom-3 sm:bottom-4 right-3 sm:right-4 z-40 flex ${
+          viewMode === "desk" ? "flex-col items-end" : "items-end"
+        } gap-2 pointer-events-auto pb-[env(safe-area-inset-bottom,0px)]`}
+      >
         {musicOpen && (
-          <div className="max-w-[min(94vw,28rem)] max-h-[85dvh] overflow-y-auto animate-fadeIn">
-            <BedroomAudioPlayer onClose={() => setMusicOpen(false)} />
+          <div className="max-w-[min(94vw,28rem)] max-h-[85dvh] overflow-visible animate-fadeIn">
+            <BedroomAudioPlayer
+              variant={viewMode === "desk" ? "minimal" : "full"}
+              onClose={() => setMusicOpen(false)}
+              onOpenTabletPlayer={
+                viewMode === "desk"
+                  ? () => {
+                      setOpenTabletAppSignal((prev) => ({
+                        seq: (prev?.seq ?? 0) + 1,
+                        app: "player",
+                        addSong: false,
+                      }));
+                    }
+                  : undefined
+              }
+              onOpenAddSong={
+                viewMode === "desk"
+                  ? () => {
+                      setOpenTabletAppSignal((prev) => ({
+                        seq: (prev?.seq ?? 0) + 1,
+                        app: "player",
+                        addSong: true,
+                      }));
+                    }
+                  : undefined
+              }
+            />
           </div>
         )}
         <button

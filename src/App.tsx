@@ -59,7 +59,7 @@ export default function App() {
       {currentView !== "space" && currentView !== "showcase" && <CustomAuraCursor />}
 
       {/* Top Universal Navbar & Ecosystem Switcher */}
-      {currentView !== "showcase" && (
+      {currentView !== "showcase" && currentView !== "space" && (
         <Navbar
           currentView={currentView}
           setCurrentView={handleNavigate}

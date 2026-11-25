@@ -318,7 +318,7 @@ export const ImmersiveRoom: React.FC<ImmersiveRoomProps> = ({
     const renderQuality = getRenderQuality(W);
     renderer.setPixelRatio(renderQuality.pixelRatio);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
     container.appendChild(renderer.domElement);

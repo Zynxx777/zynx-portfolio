@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   Play,
   Pause,
+  Plus,
   SkipBack,
   SkipForward,
   Volume1,
@@ -22,9 +23,36 @@ import {
 
 interface BedroomAudioPlayerProps {
   onClose?: () => void;
+  onOpenTabletPlayer?: () => void;
+  onOpenAddSong?: () => void;
+  variant?: "minimal" | "full";
 }
 
-export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose }) => {
+function resolveMinimalPickerLabel(trackIndex: number, fallbackArtist: string, type: string): string {
+  try {
+    const saved = localStorage.getItem("zynx_player_custom_picks_v1");
+    if (saved) {
+      const picks = JSON.parse(saved);
+      if (Array.isArray(picks)) {
+        const match = picks.find((p) => p && p.playlistIndex === trackIndex && typeof p.pickedBy === "string");
+        if (match?.pickedBy) {
+          return match.pickedBy.toLowerCase().includes("favourite")
+            ? match.pickedBy
+            : `${match.pickedBy}'s favourite`;
+        }
+      }
+    }
+  } catch {}
+  if (type === "track") return "Joshua's favourite";
+  return `${fallbackArtist} mix`;
+}
+
+export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({
+  onClose,
+  onOpenTabletPlayer,
+  onOpenAddSong,
+  variant = "full",
+}) => {
   const [playerState, setPlayerState] = useState<PlayerState>(() => musicPlayerEngine.getState());
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -215,6 +243,117 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
     };
   }, []);
 
+  if (variant === "minimal") {
+    const pickedTitle = resolveMinimalPickerLabel(
+      trackIndex,
+      currentTrack.artist,
+      currentTrack.type
+    );
+    const trackSubtitle = isBuffering
+      ? "Tuning frequency..."
+      : nowPlaying || currentTrack.title;
+
+    return (
+      <div
+        className="w-[214px] sm:w-[228px] pointer-events-auto select-none flex flex-col items-center gap-1.5"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
+        <div
+          role={onOpenTabletPlayer ? "button" : undefined}
+          tabIndex={onOpenTabletPlayer ? 0 : undefined}
+          onClick={() => {
+            if (!onOpenTabletPlayer) return;
+            soundFX.playClick();
+            onOpenTabletPlayer();
+          }}
+          onKeyDown={(e) => {
+            if (!onOpenTabletPlayer) return;
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              soundFX.playClick();
+              onOpenTabletPlayer();
+            }
+          }}
+          title={onOpenTabletPlayer ? "Open Zynx Player on iPad" : undefined}
+          className={`w-full rounded-xl bg-[#18191e]/82 hover:bg-[#1f2128]/90 backdrop-blur-2xl border border-white/15 px-2 py-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.45)] flex items-center gap-2 transition ${
+            onOpenTabletPlayer ? "cursor-pointer" : ""
+          }`}
+        >
+          {/* Compact vinyl / album art tile */}
+          <div className="w-8 h-8 rounded-md bg-zinc-950 border border-white/15 flex items-center justify-center shrink-0 relative overflow-hidden shadow-inner">
+            <div
+              className="absolute inset-0 opacity-35"
+              style={{
+                background: `radial-gradient(circle at center, ${currentPalette.glow} 0%, transparent 72%)`,
+              }}
+            />
+            <div
+              className={`w-6 h-6 rounded-full border border-white/15 bg-black flex items-center justify-center ${
+                isActive ? "animate-spin [animation-duration:4s]" : ""
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-zinc-800 ring-1 ring-white/30" />
+            </div>
+          </div>
+
+          {/* 2-line minimal title & track */}
+          <div className="min-w-0 flex-1 text-left">
+            <p className="text-[11px] font-semibold text-white truncate leading-tight">
+              {pickedTitle}
+            </p>
+            <p className="text-[10px] text-white/60 truncate leading-tight mt-0.5">
+              {trackSubtitle}
+            </p>
+          </div>
+
+          {/* Compact Play/Pause & Next controls */}
+          <div className="flex items-center gap-0.5 shrink-0">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleTogglePlay();
+              }}
+              aria-label={isPlaying ? "Pause music" : "Play music"}
+              className="w-6 h-6 rounded-full bg-white/12 hover:bg-white/25 text-white flex items-center justify-center transition active:scale-95"
+            >
+              {isBuffering ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : isPlaying ? (
+                <Pause className="w-3 h-3" />
+              ) : (
+                <Play className="w-3 h-3 ml-0.5" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleNextTrack}
+              aria-label="Next song"
+              className="w-6 h-6 rounded-full hover:bg-white/15 text-white/75 hover:text-white flex items-center justify-center transition active:scale-95"
+            >
+              <SkipForward className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+
+        {(onOpenAddSong || onOpenTabletPlayer) && (
+          <button
+            type="button"
+            onClick={() => {
+              soundFX.playClick();
+              (onOpenAddSong ?? onOpenTabletPlayer)?.();
+            }}
+            className="w-full py-1 px-2.5 rounded-full bg-white hover:bg-zinc-100 text-zinc-900 text-[10.5px] font-medium shadow-[0_6px_18px_rgba(0,0,0,0.32)] ring-1 ring-black/10 flex items-center justify-center gap-1 transition active:scale-95"
+          >
+            <Plus className="w-3 h-3" />
+            <span>Add your favourite song</span>
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       className="w-[min(92vw,22rem)] sm:w-[26rem] pointer-events-auto select-none transition-all duration-300"
@@ -263,8 +402,21 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({ onClose 
             </span>
           </div>
 
-          {/* Right: Color Cycle Pill & Optional Close Button */}
+          {/* Right: Open Full Player, Color Cycle Pill & Optional Close Button */}
           <div className="flex items-center gap-1.5">
+            {onOpenTabletPlayer && (
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  onOpenTabletPlayer();
+                }}
+                className="px-2.5 py-1 rounded-full bg-white/95 hover:bg-white text-zinc-900 text-[10px] font-semibold shadow-sm flex items-center gap-1 transition active:scale-95"
+                title="Open Zynx Player on iPad"
+              >
+                <Disc3 size={11} className="text-[#2F5BEA]" />
+                <span>Mixtape</span>
+              </button>
+            )}
             <button
               onClick={handleColorCycle}
               className="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/15 transition-transform active:scale-90"
