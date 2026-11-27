@@ -274,7 +274,7 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({
               onOpenTabletPlayer();
             }
           }}
-          title={onOpenTabletPlayer ? "Open Zynx Player on iPad" : undefined}
+          title={onOpenTabletPlayer ? "Open ZPlayer on iPad" : undefined}
           className={`w-full rounded-xl bg-[#18191e]/82 hover:bg-[#1f2128]/90 backdrop-blur-2xl border border-white/15 px-2 py-1.5 shadow-[0_12px_28px_rgba(0,0,0,0.45)] flex items-center gap-2 transition ${
             onOpenTabletPlayer ? "cursor-pointer" : ""
           }`}
@@ -411,7 +411,7 @@ export const BedroomAudioPlayer: React.FC<BedroomAudioPlayerProps> = ({
                   onOpenTabletPlayer();
                 }}
                 className="px-2.5 py-1 rounded-full bg-white/95 hover:bg-white text-zinc-900 text-[10px] font-semibold shadow-sm flex items-center gap-1 transition active:scale-95"
-                title="Open Zynx Player on iPad"
+                title="Open ZPlayer on iPad"
               >
                 <Disc3 size={11} className="text-[#2F5BEA]" />
                 <span>Mixtape</span>

@@ -483,7 +483,7 @@ export const PhoneExperience: React.FC<PhoneExperienceProps> = ({
       return "Joshua earned his B.E. in Electronics & Communication Engineering (DBIT, 2021–2025). His hardware work includes MediVend (Verilog FSM & stepper actuators), Luxoft AAOS CAN bus studies, and Z Card v0.1.";
     }
     if (q.includes("music") || q.includes("7ynx") || q.includes("audio") || q.includes("producer") || q.includes("track")) {
-      return "7YNX is Joshua's electronic music & DSP alias. Tap the Music tab right below to play his originals like Afrotonic 4 and Analog, or open Zynx Player on the desk iPad.";
+      return "7YNX is Joshua's electronic music & DSP alias. Tap the Music tab right below to play his originals like Afrotonic 4 and Analog, or open ZPlayer on the desk iPad.";
     }
     if (q.includes("hire") || q.includes("job") || q.includes("work") || q.includes("collaborat") || q.includes("contact") || q.includes("reach")) {
       return "Joshua is actively open for IT Support, Junior Linux Admin, Embedded, and Web roles! Email joshuadecedbit@gmail.com, call +91 72599 87691, or tap WhatsApp below.";

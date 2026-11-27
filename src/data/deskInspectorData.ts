@@ -33,9 +33,9 @@ export const XRAY_DESK_ITEMS: XRayDeskItem[] = [
     id: 3,
     key: 'tablet',
     name: 'iPad OS & Desk Hub',
-    description: 'An illustrated landscape iPad featuring On My Desk stats, Demo Metals Docket workflow, Z Card QR & Zynx Player.',
+    description: 'An illustrated landscape iPad featuring On My Desk stats, Demo Metals Docket workflow, Z Card QR & ZPlayer.',
     construction: 'Machined bezel, landscape canvas texture, translucent dock and angled stand.',
-    interaction: 'Open the iPad to check live desk telemetry, print dockets, inspect Z Card QR, or spin tracks in Zynx Player.',
+    interaction: 'Open the iPad to check live desk telemetry, print dockets, inspect Z Card QR, or spin tracks in ZPlayer.',
     source: 'src/components/BedroomDesk3D.tsx · src/components/TabletDocketModal.tsx',
   },
   {
@@ -134,7 +134,7 @@ export const XRAY_DESK_ITEMS: XRayDeskItem[] = [
     name: 'Record Player',
     description: 'A walnut and matte-aluminum turntable with spinning vinyl, articulated tonearm, and live desk track widget.',
     construction: 'Rounded walnut plinth, grooved vinyl disc, center album label, articulated tonearm and cue LED.',
-    interaction: 'Tap to spin a record or cue the Zynx Player mixtape; the tonearm moves onto the disc during playback.',
+    interaction: 'Tap to spin a record or cue the ZPlayer mixtape; the tonearm moves onto the disc during playback.',
     source: 'src/components/desk/ReferenceDeskProps.ts',
   },
 ];

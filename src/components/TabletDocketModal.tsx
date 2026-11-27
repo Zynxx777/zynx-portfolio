@@ -244,7 +244,7 @@ export const TabletDocketModal: React.FC<TabletDocketModalProps> = ({
     return () => clearInterval(timer);
   }, [isOpen]);
 
-  // ── Music Player state (Zynx Player inside iPad) ──
+  // ── Music Player state (ZPlayer inside iPad) ──
   const [playerState, setPlayerState] = useState<PlayerState>(() => musicPlayerEngine.getState());
   useEffect(() => musicPlayerEngine.subscribe(setPlayerState), []);
 
@@ -672,7 +672,7 @@ export const TabletDocketModal: React.FC<TabletDocketModalProps> = ({
                   <div className="rounded-3xl bg-white/90 backdrop-blur-xl p-4 sm:p-5 shadow-xl border border-white/60 text-zinc-900">
                     <p className="text-xs font-semibold text-zinc-800">Desk OS · iPad hub</p>
                     <p className="text-[11px] text-zinc-500 mt-1 leading-relaxed">
-                      Switch apps from the dock below — weighbridge dockets, QR pass, or Joshua’s Zynx Player mixtape.
+                      Switch apps from the dock below — weighbridge dockets, QR pass, or Joshua’s ZPlayer mixtape.
                     </p>
                     {onOpenDiary && (
                       <button
@@ -721,7 +721,7 @@ export const TabletDocketModal: React.FC<TabletDocketModalProps> = ({
                     <span className="text-[10px] font-medium text-zinc-800">Permanent QR</span>
                   </button>
 
-                  {/* 3. Zynx Player */}
+                  {/* 3. ZPlayer */}
                   <button
                     onClick={() => {
                       soundFX.playClick();
@@ -732,14 +732,14 @@ export const TabletDocketModal: React.FC<TabletDocketModalProps> = ({
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0f172a] to-[#1e3a8a] text-white flex items-center justify-center shadow-md group-hover:-translate-y-1 transition-transform relative">
                       <Disc3 className={`w-6 h-6 text-emerald-400 ${isPlaying ? 'animate-spin' : ''}`} />
                     </div>
-                    <span className="text-[10px] font-medium text-zinc-800">Zynx Player</span>
+                    <span className="text-[10px] font-medium text-zinc-800">ZPlayer</span>
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* ── APP 2: ZYNX PLAYER (Matching Pradip Player video 00:20) ── */}
+          {/* ── APP 2: ZPLAYER (Matching Pradip Player video 00:20) ── */}
           {activeApp === 'player' && (
             <div className="flex-1 bg-[#f8fafc] overflow-hidden flex flex-col md:flex-row pb-7">
               {/* Left Column: Featured Active Disc & Transport Controls */}
@@ -861,7 +861,7 @@ export const TabletDocketModal: React.FC<TabletDocketModalProps> = ({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 tracking-tight">
-                      Zynx Player
+                      ZPlayer
                     </h2>
                     <p className="text-xs text-zinc-500 mt-0.5">
                       Mixtape of 7YNX studio tracks, live radio streams & desk picks. Pick one to play on the turntable.

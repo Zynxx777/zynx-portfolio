@@ -1356,7 +1356,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       tCtx.font = 'bold 16px monospace';
       tCtx.fillText('QR', 329, 427);
 
-      // 3. Zynx Player Icon
+      // 3. ZPlayer Icon
       tCtx.fillStyle = '#0f172a';
       tCtx.beginPath();
       tCtx.roundRect(398, 399, 44, 44, 12);
@@ -3430,10 +3430,10 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
                   setIsDocketOpen(true);
                 }}
                 className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-[#2F5BEA] hover:bg-[#2449c7] text-white text-xs font-semibold flex items-center gap-2 shadow-xl active:scale-95 transition-all"
-                title="Open Zynx Player on iPad"
+                title="Open ZPlayer on iPad"
               >
                 <Disc3 size={14} />
-                <span>Zynx Player</span>
+                <span>ZPlayer</span>
               </button>
               <button
                 onClick={() => {
@@ -3481,7 +3481,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
                 className="px-3.5 py-1.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold flex items-center gap-1.5 transition active:scale-95"
               >
                 <Disc3 size={13} className="text-emerald-400" />
-                <span>Back to Zynx Player</span>
+                <span>Back to ZPlayer</span>
               </button>
             </div>
           )}
@@ -3610,7 +3610,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       {hoveredObject === 'tablet' && !isCardHeld && !isDocketOpen && (
         <div className="absolute top-[52%] left-[33%] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-30 animate-fade-in">
           <div className="px-3.5 py-1.5 rounded-full bg-black/90 backdrop-blur-md border border-white/20 text-white text-xs font-sans shadow-xl flex items-center gap-2">
-            <span>iPad OS · Dockets, QR codes &amp; Zynx Player</span>
+            <span>iPad OS · Dockets, QR codes &amp; ZPlayer</span>
           </div>
         </div>
       )}
@@ -3768,7 +3768,7 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
         />
       )}
 
-      {/* Interactive iPad OS (Home Dashboard, Demo Metals Docket, QR Pass & Zynx Player) */}
+      {/* Interactive iPad OS (Home Dashboard, Demo Metals Docket, QR Pass & ZPlayer) */}
       <TabletDocketModal
         isOpen={isDocketOpen}
         onClose={() => {
