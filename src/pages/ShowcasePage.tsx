@@ -1,10 +1,13 @@
-import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
-import { ArrowUpRight, X } from "lucide-react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
+import { ArrowUpRight } from "lucide-react";
 import profileData from "../data/profile.json";
-import { AnatomyDissectionModal } from "../components/AnatomyDissectionModal";
+import { NewsletterModal } from "../components/NewsletterModal";
 
 const ImmersiveProjects = lazy(() =>
-  import("../components/Projects3D").then((module) => ({ default: module.Projects3D }))
+  import("../components/Projects3D").then((module) => ({ default: module.Projects3D })),
+);
+const AnatomyDissectionModal = lazy(() =>
+  import("../components/AnatomyDissectionModal").then((module) => ({ default: module.AnatomyDissectionModal })),
 );
 
 interface ShowcasePageProps {
@@ -15,6 +18,119 @@ interface ShowcasePageProps {
   onNavigateCommunity: () => void;
 }
 
+const ShowcaseCursor: React.FC<{ hoveredCard: string | null; isDragging: boolean }> = ({
+  hoveredCard,
+  isDragging,
+}) => {
+  const glowRef = useRef<HTMLDivElement | null>(null);
+  const ringRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const glow = glowRef.current;
+    const ring = ringRef.current;
+    if (!glow || !ring) return;
+
+    let mx = -200;
+    let my = -200;
+    let rx = -200;
+    let ry = -200;
+    let visible = false;
+    let animId = 0;
+
+    const render = () => {
+      animId = 0;
+      rx += (mx - rx) * 0.16;
+      ry += (my - ry) * 0.16;
+      ring.style.transform = `translate3d(${rx}px, ${ry}px, 0)`;
+      glow.style.transform = `translate3d(${mx}px, ${my}px, 0)`;
+
+      if (Math.abs(mx - rx) > 0.4 || Math.abs(my - ry) > 0.4) {
+        animId = requestAnimationFrame(render);
+      }
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (e.pointerType === "touch") {
+        visible = false;
+        ring.style.opacity = "0";
+        glow.style.opacity = "0";
+        return;
+      }
+      mx = e.clientX;
+      my = e.clientY;
+      if (!visible) {
+        visible = true;
+        ring.style.opacity = "1";
+        glow.style.opacity = "1";
+      }
+      const target = e.target as HTMLElement | null;
+      const onLightModal = Boolean(target?.closest(".showcase-project-dialog"));
+      ring.style.mixBlendMode = onLightModal ? "normal" : "difference";
+      glow.style.display = onLightModal ? "none" : "block";
+
+      if (!animId) animId = requestAnimationFrame(render);
+    };
+
+    const onLeave = () => {
+      visible = false;
+      ring.style.opacity = "0";
+      glow.style.opacity = "0";
+      cancelAnimationFrame(animId);
+      animId = 0;
+    };
+
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    document.addEventListener("mouseleave", onLeave);
+    document.addEventListener("visibilitychange", onLeave);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("mouseleave", onLeave);
+      document.removeEventListener("visibilitychange", onLeave);
+    };
+  }, []);
+
+  const badgeLabel = isDragging ? "DRAG" : hoveredCard ? "OPEN" : "";
+
+  return (
+    <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[120] overflow-hidden">
+      {/* Atmospheric subtle cursor gradient illumination */}
+      <div
+        ref={glowRef}
+        className="fixed left-0 top-0 rounded-full opacity-0 transition-opacity duration-300 will-change-transform"
+        style={{
+          width: 340,
+          height: 340,
+          marginLeft: -170,
+          marginTop: -170,
+          background:
+            "radial-gradient(circle, rgba(255,255,255,0.068) 0%, rgba(220,210,215,0.028) 36%, rgba(0,0,0,0) 70%)",
+        }}
+      />
+      {/* Trailing hairline lens ring */}
+      <div
+        ref={ringRef}
+        className={`fixed left-0 top-0 flex items-center justify-center rounded-full border transition-[width,height,margin,border-color,background-color,opacity] duration-200 will-change-transform ${
+          badgeLabel
+            ? "-ml-6 -mt-6 h-12 w-12 border-white/60 bg-white/10 backdrop-blur-[2px]"
+            : "-ml-3.5 -mt-3.5 h-7 w-7 border-white/30 bg-transparent"
+        }`}
+        style={{ opacity: 0 }}
+      >
+        {badgeLabel && (
+          <span className="font-mono text-[7px] font-medium uppercase tracking-[0.18em] text-white">
+            {badgeLabel}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const ShowcasePage: React.FC<ShowcasePageProps> = ({
   openResume,
   onNavigatePortfolio,
@@ -23,7 +139,11 @@ export const ShowcasePage: React.FC<ShowcasePageProps> = ({
   onNavigateCommunity,
 }) => {
   const [profileOpen, setProfileOpen] = useState(false);
-  const [isAnatomyOpen, setIsAnatomyOpen] = useState(false);
+  const [newsletterOpen, setNewsletterOpen] = useState(false);
+  const [anatomyOpen, setAnatomyOpen] = useState(false);
+  const [worldMenuOpen, setWorldMenuOpen] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -36,8 +156,10 @@ export const ShowcasePage: React.FC<ShowcasePageProps> = ({
       if (event.key === "Tab") {
         const dialog = document.querySelector<HTMLElement>("[data-profile-dialog]");
         if (!dialog) return;
-        const focusable = [closeButtonRef.current, ...dialog.querySelectorAll<HTMLElement>("a[href], button:not([disabled])")]
-          .filter((element): element is HTMLElement => element instanceof HTMLElement);
+        const focusable = [
+          closeButtonRef.current,
+          ...dialog.querySelectorAll<HTMLElement>("a[href], button:not([disabled])"),
+        ].filter((element): element is HTMLElement => element instanceof HTMLElement);
         if (!focusable.length) return;
         if (event.shiftKey && document.activeElement === focusable[0]) {
           event.preventDefault();
@@ -58,153 +180,189 @@ export const ShowcasePage: React.FC<ShowcasePageProps> = ({
   }, [profileOpen]);
 
   return (
-    <div className="showcase-replica-page bg-[#020305] text-white selection:bg-cyan-400 selection:text-black">
-      {/* ── 1. MAIN HERO: JESPER LANDBERG WEBLG S-CURVE RIBBON WAVE ── */}
-      <section className="showcase-replica-home relative h-[100svh] min-h-[480px] overflow-hidden" aria-label="Featured projects">
-        {/* Top Minimalist Header */}
-        <header className="pointer-events-none absolute inset-x-0 top-0 z-40 flex h-[62px] items-center justify-between px-5 sm:px-8 lg:px-[5vw]">
-          <button
-            type="button"
-            onClick={onNavigatePortfolio}
-            className="pointer-events-auto inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-white/90 transition hover:text-white"
-            aria-label="Return to ZYNX portfolio"
+    <div className="showcase-replica-page relative h-[100svh] w-full overflow-hidden bg-black text-white select-none">
+      <ShowcaseCursor
+        hoveredCard={profileOpen ? null : hoveredCard}
+        isDragging={!profileOpen && isDragging}
+      />
+
+      <section className="showcase-replica-home relative h-full w-full overflow-hidden" aria-label="Featured projects">
+        {/* Top Bar matching Jesper Landberg: JOSHUA D top-left, PROFILE / CLOSE top-right */}
+        <header className="pointer-events-none absolute inset-x-0 top-0 z-40 flex h-[58px] items-center justify-between px-5 sm:px-8 lg:px-[5vw]">
+          <div
+            className="pointer-events-auto relative"
+            onMouseLeave={() => setWorldMenuOpen(false)}
           >
-            <span className="font-bold tracking-[0.14em]">JOSHUA D (ZYNX)</span>
-            <span className="rounded bg-white/10 px-2 py-0.5 text-[9px] text-zinc-300 font-normal">
-              SHOWCASE
-            </span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setWorldMenuOpen((v) => !v)}
+              onMouseEnter={() => setWorldMenuOpen(true)}
+              className="inline-flex items-center gap-2 py-2 font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/90 transition hover:text-white sm:text-[10px]"
+              aria-expanded={worldMenuOpen}
+              aria-label="Joshua D portfolio navigation"
+            >
+              <span className="font-medium">Joshua D</span>
+              <span className="text-white/35">/ ZYNX</span>
+            </button>
+
+            {worldMenuOpen && (
+              <nav
+                aria-label="Portfolio worlds"
+                className="absolute left-0 top-full mt-1 w-48 rounded-xl border border-white/15 bg-black/90 p-1.5 backdrop-blur-xl shadow-2xl"
+              >
+                <button
+                  type="button"
+                  onClick={onNavigateSpace}
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left font-mono text-[9px] uppercase tracking-[0.14em] text-white/80 transition hover:bg-white/10 hover:text-white"
+                >
+                  <span>Work Desk 3D</span>
+                  <ArrowUpRight size={11} />
+                </button>
+                <button
+                  type="button"
+                  onClick={onNavigatePortfolio}
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left font-mono text-[9px] uppercase tracking-[0.14em] text-white/80 transition hover:bg-white/10 hover:text-white"
+                >
+                  <span>Selected Works</span>
+                  <ArrowUpRight size={11} />
+                </button>
+                <button
+                  type="button"
+                  onClick={onNavigateSkills}
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left font-mono text-[9px] uppercase tracking-[0.14em] text-white/80 transition hover:bg-white/10 hover:text-white"
+                >
+                  <span>Skills Universe</span>
+                  <ArrowUpRight size={11} />
+                </button>
+                <button
+                  type="button"
+                  onClick={onNavigateCommunity}
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left font-mono text-[9px] uppercase tracking-[0.14em] text-white/80 transition hover:bg-white/10 hover:text-white"
+                >
+                  <span>7YNX Music</span>
+                  <ArrowUpRight size={11} />
+                </button>
+              </nav>
+            )}
+          </div>
+
           {!profileOpen && (
             <button
               type="button"
               onClick={() => setProfileOpen(true)}
-              className="pointer-events-auto inline-flex min-h-9 items-center font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-300 transition hover:text-cyan-300"
+              className="pointer-events-auto inline-flex min-h-9 items-center font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/85 transition hover:text-white sm:text-[10px]"
             >
               Profile
             </button>
           )}
         </header>
 
-        {/* Real GLSL WebGL Ribbon Wave Engine */}
         <Suspense
           fallback={
-            <div className="absolute inset-0 grid place-items-center font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-              Initializing WebGL wave…
+            <div className="absolute inset-0 grid place-items-center bg-black font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+              Loading project wave…
             </div>
           }
         >
           <ImmersiveProjects
             immersive
             profileOpen={profileOpen}
-            onOpenAnatomy={() => setIsAnatomyOpen(true)}
+            onOpenNewsletter={() => setNewsletterOpen(true)}
+            onOpenAnatomy={() => setAnatomyOpen(true)}
+            onHoverCardChange={(name, dragging) => {
+              setHoveredCard(name);
+              setIsDragging(dragging);
+            }}
           />
         </Suspense>
       </section>
 
-      {/* ── 2. MORE OF THE ZYNX WORLD FOOTER ── */}
-      <section className="showcase-replica-next flex min-h-[50svh] items-center border-t border-white/10 bg-[#06080e] px-5 py-16 sm:px-10 lg:px-14" aria-labelledby="showcase-next-heading">
-        <div className="mx-auto grid w-full max-w-[1440px] gap-8 md:grid-cols-[0.8fr_1.2fr] md:items-end">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-cyan-400">Keep exploring</p>
-            <h2 id="showcase-next-heading" className="mt-3 max-w-lg text-3xl font-medium tracking-tight sm:text-5xl">
-              More of the ZYNX world.
-            </h2>
-          </div>
-          <nav className="grid gap-2.5 sm:grid-cols-2" aria-label="Explore other portfolio pages">
-            <button type="button" onClick={onNavigatePortfolio} className="showcase-next-link flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-4 text-left transition hover:border-cyan-400/50 hover:bg-white/10">
-              <span className="font-mono text-sm text-zinc-200">Portfolio &amp; Work</span>
-              <ArrowUpRight size={16} className="text-cyan-400" />
-            </button>
-            <button type="button" onClick={onNavigateSkills} className="showcase-next-link flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-4 text-left transition hover:border-cyan-400/50 hover:bg-white/10">
-              <span className="font-mono text-sm text-zinc-200">Skills Arsenal</span>
-              <ArrowUpRight size={16} className="text-cyan-400" />
-            </button>
-            <button type="button" onClick={onNavigateSpace} className="showcase-next-link flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-4 text-left transition hover:border-cyan-400/50 hover:bg-white/10">
-              <span className="font-mono text-sm text-zinc-200">3D Bedroom Space</span>
-              <ArrowUpRight size={16} className="text-cyan-400" />
-            </button>
-            <button type="button" onClick={onNavigateCommunity} className="showcase-next-link flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-4 text-left transition hover:border-cyan-400/50 hover:bg-white/10">
-              <span className="font-mono text-sm text-zinc-200">7YNX Music &amp; Audio Lab</span>
-              <ArrowUpRight size={16} className="text-cyan-400" />
-            </button>
-          </nav>
-        </div>
-      </section>
-
-      {/* ── 3. REFRACTIVE LIQUID GLASS PROFILE BUBBLE MODAL ── */}
+      {/* Profile Overlay floating centered inside the 3D WebGL refractive glass torus + obsidian droplets */}
       {profileOpen && (
         <div
-          className="showcase-profile-overlay fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-xl p-4"
+          className="showcase-profile-overlay pointer-events-none fixed inset-0 z-[80] overflow-hidden"
           role="presentation"
-          onMouseDown={(event) => event.target === event.currentTarget && setProfileOpen(false)}
         >
+          {/* Backdrop click area */}
           <div
-            className="relative z-10 w-full max-w-lg rounded-3xl border border-white/20 bg-gradient-to-b from-white/15 to-white/5 p-7 text-center shadow-2xl backdrop-blur-2xl"
+            className="pointer-events-auto absolute inset-0"
+            onMouseDown={() => setProfileOpen(false)}
+          />
+
+          <button
+            ref={closeButtonRef}
+            type="button"
+            onClick={() => setProfileOpen(false)}
+            aria-label="Close profile"
+            className="showcase-profile-close pointer-events-auto absolute right-5 top-4 z-20 inline-flex min-h-9 items-center font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/85 transition hover:text-white sm:right-8 sm:top-[11px] lg:right-[5vw]"
+          >
+            Close
+          </button>
+
+          <section
+            className="showcase-profile-content pointer-events-none z-10 flex w-full max-w-[390px] flex-col items-center px-6"
             role="dialog"
             aria-modal="true"
             aria-label={`Profile for ${profileData.basics.name}`}
             data-profile-dialog
           >
-            <button
-              ref={closeButtonRef}
-              type="button"
-              onClick={() => setProfileOpen(false)}
-              aria-label="Close profile"
-              className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 transition hover:bg-white/20 hover:text-white"
+            <p className="w-full text-left text-[12px] font-light leading-[1.6] text-white/95 sm:text-[13px]">
+              {profileData.basics.name}, ECE graduate &amp; systems craftsman focused on Arch Linux
+              administration, embedded hardware prototyping, and tactile 3D WebGL interfaces — building
+              visually expressive systems alongside independent engineering practice.
+            </p>
+            <p className="mt-4 text-center font-mono text-[8px] uppercase tracking-[0.12em] text-white/65 sm:text-[9px]">
+              B.E. ECE · DBIT — ARCH LINUX, THREE.JS WEBGL, EMBEDDED C, 7CHATS BUG BOUNTY
+            </p>
+            <nav
+              className="pointer-events-auto mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 font-mono text-[9px] uppercase tracking-[0.14em] text-white/90"
+              aria-label="Profile links"
             >
-              <X size={16} />
-            </button>
-
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-cyan-400/40 bg-cyan-400/10 text-cyan-300 font-bold font-mono text-lg shadow-lg shadow-cyan-500/20">
-              Z7X
-            </div>
-
-            <h3 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
-              {profileData.basics.name}
-            </h3>
-            <p className="mt-1 font-mono text-xs text-cyan-300 uppercase tracking-widest">
-              {profileData.basics.label}
-            </p>
-
-            <p className="mt-4 text-xs leading-relaxed text-zinc-300 sm:text-sm">
-              {profileData.basics.summary}
-            </p>
-
-            <div className="mt-4 rounded-xl border border-white/10 bg-black/40 p-3 text-left">
-              <span className="block font-mono text-[10px] text-zinc-400 uppercase tracking-wider">
-                Education &amp; Institution
-              </span>
-              <span className="block text-xs font-semibold text-white mt-0.5">
-                Don Bosco Institute of Technology (DBIT) · 2021–2025
-              </span>
-              <span className="block text-[11px] text-zinc-400">
-                B.E. in Electronics &amp; Communication Engineering · CGPA 7.16
-              </span>
-            </div>
-
-            <nav className="mt-6 flex flex-wrap items-center justify-center gap-3 font-mono text-xs uppercase tracking-wider" aria-label="Profile links">
-              <a className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-white transition hover:bg-white hover:text-black" href={profileData.basics.profiles.github} target="_blank" rel="noreferrer">
+              <a
+                className="transition hover:text-white/60"
+                href={profileData.basics.profiles.instagram}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Instagram
+              </a>
+              <a
+                className="transition hover:text-white/60"
+                href={profileData.basics.profiles.github}
+                target="_blank"
+                rel="noreferrer"
+              >
                 GitHub
               </a>
-              <a className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-white transition hover:bg-white hover:text-black" href={profileData.basics.profiles.linkedin} target="_blank" rel="noreferrer">
+              <a
+                className="transition hover:text-white/60"
+                href={profileData.basics.profiles.linkedin}
+                target="_blank"
+                rel="noreferrer"
+              >
                 LinkedIn
               </a>
-              <button type="button" onClick={openResume} className="rounded-full border border-cyan-400/40 bg-cyan-400/20 px-4 py-2 text-cyan-300 font-bold transition hover:bg-cyan-300 hover:text-black">
-                Download Résumé
+              <button type="button" onClick={openResume} className="uppercase transition hover:text-white/60">
+                Résumé
               </button>
-              <a className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-white transition hover:bg-white hover:text-black" href={`mailto:${profileData.basics.email}`}>
+              <a
+                className="transition hover:text-white/60"
+                href={`mailto:${profileData.basics.email}`}
+              >
                 Email
               </a>
             </nav>
-          </div>
+          </section>
         </div>
       )}
 
-      {/* ── 4. ANATOMY REVEAL MODAL ── */}
-      <AnatomyDissectionModal
-        isOpen={isAnatomyOpen}
-        onClose={() => setIsAnatomyOpen(false)}
-      />
+      <NewsletterModal isOpen={newsletterOpen} onClose={() => setNewsletterOpen(false)} />
+
+      {anatomyOpen && (
+        <Suspense fallback={null}>
+          <AnatomyDissectionModal isOpen={anatomyOpen} onClose={() => setAnatomyOpen(false)} />
+        </Suspense>
+      )}
     </div>
   );
 };
