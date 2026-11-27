@@ -42,7 +42,7 @@ export const ZYNX_PROFILE = {
   socials: {
     github: "https://github.com/Zynxx777",
     linkedin: "https://linkedin.com/in/Zynx",
-    instagram: "https://instagram.com/zynxx777",
+    instagram: "https://instagram.com/7osh___",
     musicInstagram: "https://instagram.com/7ynx777",
     whatsapp: "https://wa.me/917259987691"
   },

@@ -18,7 +18,7 @@ import { ProjectDetailModal } from "../components/ProjectDetailModal";
 import { ProfileSphereModal } from "../components/ProfileSphereModal";
 import { DiaryModal } from "../components/DiaryModal";
 import { AnatomyDissectionModal } from "../components/AnatomyDissectionModal";
-import { type Project, PROJECTS } from "../data/portfolioData";
+import { type Project, PROJECTS, ZYNX_PROFILE } from "../data/portfolioData";
 import { soundFX } from "../utils/audioFX";
 import { musicPlayerEngine } from "../utils/musicPlayerEngine";
 import {
@@ -329,6 +329,15 @@ const ZONE_CONTENT: Record<ZoneId, React.ReactNode> = {
           <p className="text-xs text-zinc-300 font-sans leading-relaxed">
             Personal electronic music practice under the artist alias <span className="text-pink-400 font-bold">7YNX</span>, alongside current part-time music teaching.
           </p>
+          <a
+            href={ZYNX_PROFILE.socials.musicInstagram}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-full border border-pink-400/35 bg-pink-500/10 hover:bg-pink-500/20 px-3 py-1 text-[11px] font-mono text-pink-200 transition"
+          >
+            <span>Producer &amp; Creator IG</span>
+            <span className="font-bold text-white">@7ynx777</span>
+          </a>
         </div>
       </div>
 
@@ -966,6 +975,23 @@ export const BedroomSpacePage: React.FC<BedroomSpacePageProps> = ({
               <span className="hidden sm:inline">Catalog</span>
             </button>
           </div>
+
+          {/* Portfolio & Producer/Creator Instagram quick handle across Work Desk & Bedroom */}
+          <a
+            href={ZYNX_PROFILE.socials.instagram}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex h-7 sm:h-8 items-center gap-1.5 rounded-full border border-white/10 bg-black/50 px-2 sm:px-2.5 text-[10px] sm:text-[11px] font-mono text-zinc-200 hover:border-pink-400/50 hover:text-pink-200 shadow-md backdrop-blur-xl transition-all"
+            aria-label="Instagram @7osh___"
+            title="Instagram · @7osh___"
+          >
+            <svg className="w-3.5 h-3.5 text-pink-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="5" />
+              <circle cx="12" cy="12" r="4" />
+              <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+            </svg>
+            <span className="hidden md:inline">@7osh___</span>
+          </a>
 
           {/* Desk Mode specific controls: Day/Night */}
           {viewMode === "desk" && (

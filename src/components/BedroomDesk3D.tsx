@@ -61,6 +61,14 @@ const LinkedinIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' 
   </svg>
 );
 
+const InstagramIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="3" width="18" height="18" rx="5" />
+    <circle cx="12" cy="12" r="4" />
+    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+  </svg>
+);
+
 export const SpectaclesIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <circle cx="6" cy="14" r="4" />
@@ -651,7 +659,7 @@ const XRAY_TARGETS: { id: number; key: string; pos: THREE.Vector3 }[] = [
   { id: 5, key: 'notes', pos: new THREE.Vector3(-0.16, 0.36, -0.09) },   // 5: Sticky Notes
   { id: 6, key: 'card', pos: new THREE.Vector3(0.24, 0.20, 0.285) },      // 6: Z Business Card
   { id: 7, key: 'diary', pos: new THREE.Vector3(0.25, 0.195, 0.145) },    // 7: Closed Black Death Note Diary
-  { id: 8, key: 'photo', pos: new THREE.Vector3(0.14, 0.23, -0.20) },    // 8: Picture Frame
+  { id: 8, key: 'photo', pos: new THREE.Vector3(0.225, 0.22, -0.185) },   // 8: Picture Frame (right of MacBook)
   { id: 9, key: 'mug', pos: new THREE.Vector3(0.39, 0.21, 0.045) },      // 9: Ceramic Coffee Mug
   { id: 10, key: 'lamp', pos: new THREE.Vector3(0.58, 0.28, -0.24) },    // 10: Mushroom Desk Lamp (Back)
   { id: 11, key: 'phone', pos: new THREE.Vector3(0.49, 0.24, -0.05) },   // 11: Smartphone & Stand (Right)
@@ -1854,81 +1862,151 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     registerClickable(bezel, 'laptop');
     registerClickable(screenDisplay, 'laptop');
 
-    // 8. Tablet on a broad aluminium kickstand (Left of Laptop)
+    // 8. Curved Apple iPad Pro on Sculpted Brushed-Aluminum Studio Stand (Left of Laptop)
     const tabletGroup = new THREE.Group();
-    tabletGroup.position.set(-0.32, 0.17, 0.04);
+    tabletGroup.position.set(-0.32, 0.169, 0.04);
     tabletGroup.rotation.y = Math.PI / 11;
 
-    const tabletStand = new THREE.Mesh(
-      new RoundedBoxGeometry(0.225, 0.012, 0.135, 3, 0.008),
-      silverMetal
-    );
-    tabletStand.position.set(0.0, 0.008, 0.012);
+    const standAluMat = new THREE.MeshStandardMaterial({
+      color: 0xd5dade,
+      roughness: 0.25,
+      metalness: 0.62,
+    });
+    const standSiliconeMat = new THREE.MeshStandardMaterial({
+      color: 0x1b1e24,
+      roughness: 0.72,
+      metalness: 0.05,
+    });
+
+    // Subtle non-slip silicone ring pad under base foot
+    const standPadGeo = createRoundedSlabGeometry(0.114, 0.104, 0.012, 0.0005, 0.0002, 0.0002);
+    standPadGeo.rotateX(-Math.PI / 2);
+    const standPad = new THREE.Mesh(standPadGeo, standSiliconeMat);
+    standPad.position.set(0.0, 0.0005, 0.002);
+    tabletGroup.add(standPad);
+
+    // Contoured brushed-aluminum curved stand base plate
+    const standBaseGeo = createRoundedSlabGeometry(0.118, 0.108, 0.013, 0.0022, 0.0009, 0.0011);
+    standBaseGeo.rotateX(-Math.PI / 2);
+    const tabletStand = new THREE.Mesh(standBaseGeo, standAluMat);
+    tabletStand.position.set(0.0, 0.0024, 0.002);
     tabletStand.castShadow = true;
+    tabletStand.receiveShadow = true;
     tabletGroup.add(tabletStand);
 
-    const standHinge = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.006, 0.006, 0.19, 16),
-      silverMetal
-    );
-    standHinge.rotation.z = Math.PI / 2;
-    standHinge.position.set(0.0, 0.10, -0.045);
-    tabletGroup.add(standHinge);
+    // Sweeping curved brushed-aluminum stand neck rising smoothly to the swivel hinge
+    const neckShape = new THREE.Shape();
+    neckShape.moveTo(0.036, 0.003);
+    neckShape.quadraticCurveTo(0.033, 0.028, 0.022, 0.056);
+    neckShape.quadraticCurveTo(0.010, 0.088, 0.000, 0.106);
+    neckShape.lineTo(-0.006, 0.104);
+    neckShape.quadraticCurveTo(0.004, 0.085, 0.015, 0.054);
+    neckShape.quadraticCurveTo(0.025, 0.026, 0.026, 0.003);
+    neckShape.closePath();
 
-    const tabletKickstand = new THREE.Mesh(
-      new RoundedBoxGeometry(0.185, 0.012, 0.095, 2, 0.007),
-      silverMetal
-    );
-    tabletKickstand.position.set(0.0, 0.062, -0.033);
-    tabletKickstand.rotation.x = 0.48;
+    const standNeckGeo = new THREE.ExtrudeGeometry(neckShape, {
+      depth: 0.054,
+      curveSegments: 16,
+      bevelEnabled: true,
+      bevelThickness: 0.0012,
+      bevelSize: 0.0012,
+      bevelSegments: 4,
+    });
+    standNeckGeo.translate(0, 0, -0.027);
+    standNeckGeo.rotateY(Math.PI / 2);
+    const tabletKickstand = new THREE.Mesh(standNeckGeo, standAluMat);
     tabletKickstand.castShadow = true;
+    tabletKickstand.receiveShadow = true;
     tabletGroup.add(tabletKickstand);
 
-    const tabletBody = new THREE.Mesh(
-      new RoundedBoxGeometry(0.24, 0.16, 0.012, 4, 0.012),
-      blackPlastic
+    // Precision aluminum swivel hinge barrel connecting stand neck to iPad carrier
+    const standHinge = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.0052, 0.0052, 0.064, 18),
+      standAluMat
     );
-    tabletBody.position.set(0.0, 0.13, 0.01);
-    tabletBody.rotation.x = -0.22;
+    standHinge.rotation.z = Math.PI / 2;
+    standHinge.position.set(0.0, 0.105, 0.004);
+    tabletGroup.add(standHinge);
+
+    // Tilted iPad + Contoured Cradle Assembly (pivots around stand hinge cleanly)
+    const tabletAssembly = new THREE.Group();
+    tabletAssembly.position.set(0.0, 0.108, 0.014);
+    tabletAssembly.rotation.x = -0.24;
+
+    // Brushed aluminum back spine & cradle shelf holding bottom of curved iPad
+    const cradleSpineGeo = createRoundedSlabGeometry(0.054, 0.114, 0.008, 0.0018, 0.0006, 0.0006);
+    const cradleSpine = new THREE.Mesh(cradleSpineGeo, standAluMat);
+    cradleSpine.position.set(0.0, -0.025, -0.0044);
+    cradleSpine.castShadow = true;
+    tabletAssembly.add(cradleSpine);
+
+    // Lower horizontal aluminum support tray with dark silicone cushion lip
+    const cradleShelfGeo = createRoundedSlabGeometry(0.088, 0.014, 0.0045, 0.0020, 0.0006, 0.0006);
+    cradleShelfGeo.rotateX(-Math.PI / 2);
+    const cradleShelf = new THREE.Mesh(cradleShelfGeo, standAluMat);
+    cradleShelf.position.set(0.0, -0.0815, 0.0015);
+    tabletAssembly.add(cradleShelf);
+
+    const cradleCushionGeo = createRoundedSlabGeometry(0.082, 0.010, 0.003, 0.0008, 0.0002, 0.0002);
+    cradleCushionGeo.rotateX(-Math.PI / 2);
+    const cradleCushion = new THREE.Mesh(cradleCushionGeo, standSiliconeMat);
+    cradleCushion.position.set(0.0, -0.0796, 0.0015);
+    tabletAssembly.add(cradleCushion);
+
+    const cradleLipGeo = createRoundedSlabGeometry(0.076, 0.0042, 0.002, 0.0016, 0.0005, 0.0005);
+    const cradleLip = new THREE.Mesh(cradleLipGeo, standAluMat);
+    cradleLip.position.set(0.0, -0.0794, 0.0074);
+    tabletAssembly.add(cradleLip);
+
+    // Ultra-slim curved Apple iPad Pro aluminum unibody shell (~5.2mm with 13mm rounded corners)
+    const iPadShellMat = new THREE.MeshStandardMaterial({ color: 0x262930, roughness: 0.34, metalness: 0.45 });
+    const tabletBodyGeo = createRoundedSlabGeometry(0.236, 0.156, 0.013, 0.0026, 0.0012, 0.0012);
+    const tabletBody = new THREE.Mesh(tabletBodyGeo, iPadShellMat);
     tabletBody.castShadow = true;
     tabletBody.receiveShadow = true;
-    tabletGroup.add(tabletBody);
+    tabletAssembly.add(tabletBody);
 
+    // Glossy edge-to-edge obsidian glass display frame (11.5mm curved corners)
+    const tabletBezelGeo = createRoundedSlabGeometry(0.232, 0.152, 0.0115, 0.0005, 0.0002, 0.0003);
     const tabletBezel = new THREE.Mesh(
-      new RoundedBoxGeometry(0.229, 0.149, 0.002, 4, 0.009),
-      new THREE.MeshStandardMaterial({ color: 0x080a0e, roughness: 0.22, metalness: 0.18 })
+      tabletBezelGeo,
+      new THREE.MeshStandardMaterial({ color: 0x06070a, roughness: 0.14, metalness: 0.18 })
     );
-    tabletBezel.position.set(0.0, 0.13, 0.017);
-    tabletBezel.rotation.x = -0.22;
-    tabletGroup.add(tabletBezel);
+    tabletBezel.position.set(0.0, 0.0, 0.0025);
+    tabletAssembly.add(tabletBezel);
 
+    // Curved Liquid Retina Display Panel (0.220 x 0.140 with 8.5mm curved display corners)
+    const tabletScreenGeo = createRoundedPanelGeometry(0.220, 0.140, 0.0085);
     const tabletScreen = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.216, 0.136),
-      new THREE.MeshBasicMaterial({ map: tabletTexture })
+      tabletScreenGeo,
+      new THREE.MeshBasicMaterial({ map: tabletTexture, toneMapped: false })
     );
-    tabletScreen.position.set(0.0, 0.13, 0.0185);
-    tabletScreen.rotation.x = -0.22;
-    tabletGroup.add(tabletScreen);
+    tabletScreen.position.set(0.0, 0.0, 0.0031);
+    tabletAssembly.add(tabletScreen);
 
+    // Landscape FaceTime camera lens centered in top glass bezel
     const tabletCamera = new THREE.Mesh(
-      new THREE.CircleGeometry(0.002, 12),
-      new THREE.MeshBasicMaterial({ color: 0x1f2937 })
+      new THREE.CircleGeometry(0.0018, 12),
+      new THREE.MeshBasicMaterial({ color: 0x162b4d })
     );
-    tabletCamera.position.set(0.0, 0.205, 0.018);
-    tabletCamera.rotation.x = -0.22;
-    tabletGroup.add(tabletCamera);
+    tabletCamera.position.set(0.0, 0.073, 0.0032);
+    tabletAssembly.add(tabletCamera);
 
+    // Tactile aluminum volume rocker & power button along curved top-right rim
     const tabletVolumeKeys = new THREE.Mesh(
-      new RoundedBoxGeometry(0.004, 0.026, 0.008, 1, 0.002),
-      silverMetal
+      new RoundedBoxGeometry(0.024, 0.0025, 0.0036, 1, 0.001),
+      standAluMat
     );
-    tabletVolumeKeys.position.set(0.122, 0.14, 0.008);
-    tabletVolumeKeys.rotation.x = -0.22;
-    tabletGroup.add(tabletVolumeKeys);
+    tabletVolumeKeys.position.set(0.088, 0.0792, 0.0);
+    tabletAssembly.add(tabletVolumeKeys);
 
+    tabletGroup.add(tabletAssembly);
     scene.add(tabletGroup);
     registerClickable(tabletBody, 'tablet');
+    registerClickable(tabletBezel, 'tablet');
     registerClickable(tabletScreen, 'tablet');
+    registerClickable(tabletStand, 'tablet');
+    registerClickable(tabletKickstand, 'tablet');
 
     // 9. Receipt Printer (Directly next to tablet, matching pradiplabs.dev)
     const printerGroup = new THREE.Group();
@@ -2491,12 +2569,20 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
     registerClickable(pot, 'plant');
     registerClickable(plantGroup, 'plant');
 
-    // 17. Framed Photo & Spectacles
-    const photoFrame = new THREE.Mesh(new RoundedBoxGeometry(0.08, 0.095, 0.008, 2, 0.003), blackPlastic);
-    photoFrame.position.set(0.14, 0.215, -0.20);
-    photoFrame.rotation.set(-0.18, -0.18, 0);
+    // 17. Framed Photo (Positioned cleanly right of the MacBook so it stays clearly visible)
+    const photoGroup = new THREE.Group();
+    photoGroup.position.set(0.225, 0.169, -0.185);
+    photoGroup.rotation.y = -0.26;
+
+    const photoFrame = new THREE.Mesh(
+      new RoundedBoxGeometry(0.08, 0.095, 0.008, 2, 0.003),
+      blackPlastic
+    );
+    photoFrame.position.set(0, 0.047, 0);
+    photoFrame.rotation.x = -0.18;
     photoFrame.castShadow = true;
-    scene.add(photoFrame);
+    photoFrame.receiveShadow = true;
+    photoGroup.add(photoFrame);
 
     const photoTexture = new THREE.TextureLoader().load('/images/profile_avatar.webp');
     photoTexture.colorSpace = THREE.SRGBColorSpace;
@@ -2504,17 +2590,20 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
       new THREE.PlaneGeometry(0.064, 0.078),
       new THREE.MeshBasicMaterial({ map: photoTexture, toneMapped: false }),
     );
-    framedPhoto.position.set(0.14, 0.215, -0.195);
-    framedPhoto.rotation.copy(photoFrame.rotation);
-    scene.add(framedPhoto);
+    framedPhoto.position.set(0, 0.047, 0.0045);
+    framedPhoto.rotation.x = -0.18;
+    photoGroup.add(framedPhoto);
 
-    const photoStand = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.04, 0.008), blackPlastic);
-    photoStand.position.set(0.14, 0.189, -0.218);
-    photoStand.rotation.x = -0.18;
+    const photoStand = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.042, 0.008), blackPlastic);
+    photoStand.position.set(0, 0.020, -0.017);
+    photoStand.rotation.x = 0.28;
     photoStand.castShadow = true;
-    scene.add(photoStand);
+    photoGroup.add(photoStand);
+
+    scene.add(photoGroup);
     registerClickable(photoFrame, 'photo');
     registerClickable(framedPhoto, 'photo');
+    registerClickable(photoStand, 'photo');
 
     // 17. Realistic Acetate Designer Spectacles (X-Ray Glasses from pradiplabs.dev)
     const glassesGroup = new THREE.Group();
@@ -3769,6 +3858,15 @@ export const BedroomDesk3D: React.FC<BedroomDesk3DProps> = ({
                 title="GitHub"
               >
                 <GithubIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </a>
+              <a
+                href="https://instagram.com/7osh___"
+                target="_blank"
+                rel="noreferrer"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/5 dark:bg-white/10 hover:bg-pink-500/20 text-slate-800 dark:text-zinc-200 hover:text-pink-400 flex items-center justify-center transition-all shrink-0"
+                title="Instagram · @7osh___"
+              >
+                <InstagramIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </a>
             </div>
 

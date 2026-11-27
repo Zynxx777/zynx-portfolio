@@ -49,6 +49,13 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const worlds: { id: EcosystemView; label: string; icon: React.ElementType; color: string; activeBg: string }[] = [
     {
+      id: "space",
+      label: "Work Desk",
+      icon: Monitor,
+      color: "text-purple-400",
+      activeBg: "bg-purple-500 text-white shadow-lg shadow-purple-500/25",
+    },
+    {
       id: "portfolio",
       label: "Works",
       icon: Terminal,
@@ -70,13 +77,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       activeBg: "bg-amber-200 text-black shadow-lg shadow-amber-200/20",
     },
     {
-      id: "space",
-      label: "3D Bedroom",
-      icon: Monitor,
-      color: "text-purple-400",
-      activeBg: "bg-purple-500 text-white shadow-lg shadow-purple-500/25",
-    },
-    {
       id: "community",
       label: "7YNX Music",
       icon: Disc3,
@@ -88,7 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const handleWorldClick = (id: EcosystemView) => {
     setCurrentView(id);
     setMobileMenuOpen(false);
-    window.location.hash = id === "portfolio" ? "" : id;
+    window.location.hash = id === "space" ? "" : id;
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 

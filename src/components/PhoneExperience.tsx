@@ -1321,6 +1321,24 @@ export const PhoneExperience: React.FC<PhoneExperienceProps> = ({
                       <Download className="w-4 h-4 text-cyan-400" />
                       <span>Save vCard</span>
                     </button>
+                    <a
+                      href={ZYNX_PROFILE.socials.instagram}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-center gap-1.5 p-3 rounded-2xl bg-pink-500/15 border border-pink-400/30 text-pink-200 font-semibold text-xs"
+                    >
+                      <span>IG · @7osh___</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                    <a
+                      href={ZYNX_PROFILE.socials.musicInstagram}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-center gap-1.5 p-3 rounded-2xl bg-purple-500/15 border border-purple-400/30 text-purple-200 font-semibold text-xs"
+                    >
+                      <span>7YNX · @7ynx777</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
                   </div>
                 </div>
               )}

@@ -413,6 +413,7 @@ TEL;type=CELL;type=VOICE;type=pref:+917259987691
 URL;type=WORK:https://zynx.is-a.dev
 URL;type=GitHub:https://github.com/Zynxx777
 URL;type=LinkedIn:https://linkedin.com/in/Zynx
+URL;type=Instagram:https://instagram.com/7osh___
 ADR;type=WORK:;;Channapatna;Karnataka;;India
 NOTE:Electronics & Communication Engineering (DBIT 2025). Arch Linux, Hardware, Three.js WebGL.
 END:VCARD`;

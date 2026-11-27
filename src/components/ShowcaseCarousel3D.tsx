@@ -13,20 +13,21 @@ interface ShowcaseCarousel3DProps {
 
 export const ShowcaseCarousel3D: React.FC<ShowcaseCarousel3DProps> = ({
   onOpenProfile,
+  onOpenNewsletter,
   onSwitchToBedroom,
   onOpenAnatomy,
 }) => {
   return (
-    <div className="relative w-full h-screen overflow-hidden select-none bg-[#020305]">
+    <div className="relative w-full h-screen overflow-hidden select-none bg-[#000000]">
       {/* Top Header Bar (Exact layout from jesperlandberg.com) */}
       <header className="absolute top-0 inset-x-0 z-40 p-6 md:p-8 flex items-center justify-between text-xs font-mono tracking-widest text-white uppercase pointer-events-none">
         <div className="pointer-events-auto font-bold flex items-center gap-3">
           <button
             onClick={onSwitchToBedroom}
-            className="flex items-center gap-2 hover:text-cyan-400 transition-colors"
+            className="flex items-center gap-2 hover:text-white/70 transition-colors"
           >
-            <ArrowLeft className="w-4 h-4 text-cyan-400" />
-            <span>JOSHUA D (ZYNX)</span>
+            <ArrowLeft className="w-4 h-4 text-white/75" />
+            <span>JOSHUA D</span>
           </button>
           <span className="text-[10px] px-2 py-0.5 rounded bg-white/10 text-slate-300 font-normal">
             SHOWCASE
@@ -36,16 +37,17 @@ export const ShowcaseCarousel3D: React.FC<ShowcaseCarousel3DProps> = ({
         <div className="pointer-events-auto flex items-center gap-4">
           <button
             onClick={onOpenProfile}
-            className="hover:text-cyan-400 transition-colors font-medium"
+            className="hover:text-white/70 transition-colors font-medium"
           >
             Profile
           </button>
         </div>
       </header>
 
-      {/* Real GLSL WebGL Ribbon Wave Engine */}
+      {/* Real GLSL WebGL Cylinder Ring Engine */}
       <Projects3D
         immersive
+        onOpenNewsletter={onOpenNewsletter}
         onOpenAnatomy={onOpenAnatomy}
       />
     </div>

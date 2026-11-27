@@ -14,11 +14,12 @@ const ShowcasePage = lazy(() => import("./pages/ShowcasePage").then((module) => 
 export default function App() {
   const [currentView, setCurrentView] = useState<EcosystemView>(() => {
     const hash = window.location.hash.toLowerCase();
+    if (hash.includes("portfolio") || hash.includes("works")) return "portfolio";
     if (hash.includes("space") || hash.includes("bedroom") || hash.includes("room")) return "space";
     if (hash.includes("community") || hash.includes("7ynx") || hash.includes("music") || hash.includes("gaming")) return "community";
     if (hash.includes("skills") || hash.includes("arsenal") || hash.includes("tech")) return "skills";
     if (hash.includes("showcase") || hash.includes("index")) return "showcase";
-    return "portfolio";
+    return "space";
   });
 
   const [isResumeOpen, setIsResumeOpen] = useState<boolean>(false);
@@ -27,7 +28,9 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.toLowerCase();
-      if (hash.includes("space") || hash.includes("bedroom") || hash.includes("room")) {
+      if (hash.includes("portfolio") || hash.includes("works")) {
+        setCurrentView("portfolio");
+      } else if (hash.includes("space") || hash.includes("bedroom") || hash.includes("room")) {
         setCurrentView("space");
       } else if (hash.includes("community") || hash.includes("7ynx") || hash.includes("music") || hash.includes("gaming")) {
         setCurrentView("community");
@@ -36,7 +39,7 @@ export default function App() {
       } else if (hash.includes("showcase") || hash.includes("index")) {
         setCurrentView("showcase");
       } else if (!hash || hash === "#") {
-        setCurrentView("portfolio");
+        setCurrentView("space");
       }
     };
 
@@ -46,7 +49,7 @@ export default function App() {
 
   const handleNavigate = (view: EcosystemView) => {
     setCurrentView(view);
-    window.location.hash = view === "portfolio" ? "" : view;
+    window.location.hash = view === "space" ? "" : view;
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 

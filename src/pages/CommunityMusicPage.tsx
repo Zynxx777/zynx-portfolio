@@ -488,13 +488,23 @@ export const CommunityMusicPage: React.FC<CommunityMusicPageProps> = () => {
           </p>
         </div>
 
-        <a
-          href="mailto:joshuadecedbit@gmail.com?subject=7YNX%20Music%20Collaboration"
-          className="px-7 py-3.5 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-mono text-xs font-bold flex items-center gap-2.5 transition-all shadow-xl shadow-pink-500/25 hover:scale-105 whitespace-nowrap"
-        >
-          <Send size={14} />
-          <span>Contact 7YNX Sound Lab</span>
-        </a>
+        <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
+          <a
+            href="https://instagram.com/7ynx777"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-5 py-3.5 rounded-full bg-white/5 hover:bg-pink-500/15 border border-pink-400/35 text-pink-200 hover:text-white font-mono text-xs font-semibold flex items-center gap-2 transition-all hover:scale-105 whitespace-nowrap"
+          >
+            <span>Instagram · @7ynx777</span>
+          </a>
+          <a
+            href="mailto:joshuadecedbit@gmail.com?subject=7YNX%20Music%20Collaboration"
+            className="px-7 py-3.5 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-mono text-xs font-bold flex items-center gap-2.5 transition-all shadow-xl shadow-pink-500/25 hover:scale-105 whitespace-nowrap"
+          >
+            <Send size={14} />
+            <span>Contact 7YNX Sound Lab</span>
+          </a>
+        </div>
       </div>
 
     </div>
