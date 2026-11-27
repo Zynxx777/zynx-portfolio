@@ -196,12 +196,12 @@ const PageInsidePageDialog: React.FC<PageInsidePageDialogProps> = ({
         role="dialog"
       >
         {immersive ? (
-          <div className="relative grid min-h-0 flex-1 md:grid-cols-[minmax(280px,0.72fr)_minmax(0,1.28fr)]">
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto md:grid md:overflow-hidden md:grid-cols-[minmax(280px,0.72fr)_minmax(0,1.28fr)]">
             {/* Fixed top-right black circular X close button (matches reference modal top-right) */}
             <button
               ref={closeButtonRef}
               aria-label="Close project details"
-              className="absolute right-4 top-4 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-[#09090b] text-white shadow-lg transition hover:scale-105 hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black sm:right-6 sm:top-6 sm:h-9 sm:w-9"
+              className="fixed right-4 top-4 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-[#09090b] text-white shadow-lg transition hover:scale-105 hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black sm:absolute sm:right-6 sm:top-6 sm:h-9 sm:w-9"
               onClick={onClose}
               type="button"
             >
@@ -209,7 +209,7 @@ const PageInsidePageDialog: React.FC<PageInsidePageDialogProps> = ({
             </button>
 
             {/* Left Sticky Summary Column */}
-            <div className="flex min-h-0 flex-col justify-between overflow-y-auto px-6 pb-6 pt-8 sm:px-9 sm:py-9 lg:px-12 lg:py-11">
+            <div className="flex flex-none flex-col justify-between px-5 pb-4 pt-7 sm:px-9 sm:py-9 md:min-h-0 md:flex-1 md:overflow-y-auto lg:px-12 lg:py-11">
               <div className="max-w-md pr-8 md:pr-0">
                 <h2
                   id="project-dialog-title"
@@ -303,7 +303,7 @@ const PageInsidePageDialog: React.FC<PageInsidePageDialogProps> = ({
             {/* Right Vertically Scrollable High-Res Visual Gallery Column (Matches Reference Stacking) */}
             <div
               ref={rightScrollRef}
-              className="min-h-0 space-y-4 overflow-y-auto px-4 pb-8 pt-4 sm:px-6 sm:pb-10 sm:pt-6 md:pr-14"
+              className="flex-none space-y-4 px-4 pb-8 pt-2 sm:px-6 sm:pb-10 sm:pt-6 md:min-h-0 md:overflow-y-auto md:pr-14"
             >
               {/* Block 1: Main Hero Render */}
               <div className="overflow-hidden rounded-[10px] bg-[#f4f4f2]">

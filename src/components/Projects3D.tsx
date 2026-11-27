@@ -319,25 +319,27 @@ float blobField(vec2 q, float openAmt, float t) {
 
 void main() {
   float aspect = u_resolution.x / max(u_resolution.y, 1.0);
-  float portraitLayout = 1.0 - smoothstep(0.8, 1.15, aspect);
-  vec2 lensCenter = vec2(0.5, mix(0.5, 0.62, portraitLayout));
+  float portraitLayout = 1.0 - smoothstep(0.78, 1.12, aspect);
+  vec2 lensCenter = vec2(0.5, mix(0.5, 0.56, portraitLayout));
   vec2 p = (vUv - lensCenter) * vec2(aspect, 1.0);
   float distanceFromCenter = length(p);
   float angle = atan(p.y, p.x);
 
-  // Pure circular Schwarzschild black hole shadow (matching adriwin06/black-hole representation)
-  float baseRadius = min(0.515, aspect * 0.455) * mix(0.24, 1.0, u_open);
+  // Pure circular Schwarzschild black hole shadow scaled for phones, tablets, and ultrawides
+  float portraitRadius = min(0.50, aspect * 0.59);
+  float landscapeRadius = min(0.51, aspect * 0.465);
+  float baseRadius = mix(landscapeRadius, portraitRadius, portraitLayout) * mix(0.24, 1.0, u_open);
   float lensRadius = baseRadius;
 
   float lensPosition = distanceFromCenter / max(lensRadius, 0.001);
-  float rShadow = 0.785;
+  float rShadow = mix(0.785, 0.835, portraitLayout);
   float dEdge = max(0.001, lensPosition - rShadow);
 
   // Schwarzschild 1/(r - r_s) photon deflection & gravitational light-sucking warp
   float deflect = (0.044 / (dEdge + 0.042)) * exp(-dEdge * 2.1) * u_open;
   float photonRing = exp(-pow((lensPosition - (rShadow + 0.005)) / 0.0055, 2.0));
   float outerHalo = exp(-dEdge * 8.2) * step(rShadow - 0.002, lensPosition);
-  float rimMask = exp(-pow((lensPosition - 0.835) / 0.068, 2.0));
+  float rimMask = exp(-pow((lensPosition - (rShadow + 0.05)) / 0.068, 2.0));
 
   vec2 radial = normalize(p + vec2(0.00001));
   vec2 tangent = vec2(-radial.y, radial.x);
@@ -347,7 +349,7 @@ void main() {
   vec2 bentP = p * (1.0 + deflect * 0.55)
     - radial * (deflect * 0.24)
     + tangent * (deflect * 0.22);
-  vec2 sampleUv = clamp(0.5 + bentP / vec2(aspect, 1.0), 0.001, 0.999);
+  vec2 sampleUv = clamp(lensCenter + bentP / vec2(aspect, 1.0), 0.001, 0.999);
 
   // Chromatic dispersion splitting RGB light along the gravitational lensing rim
   float fringe = (rimMask * 0.022 + deflect * 0.048) * u_open;
@@ -362,7 +364,7 @@ void main() {
   color *= mix(1.0, shadowMask, horizonStrength);
 
   // Dark obsidian shadow band hugging the outside of the event horizon
-  float horizonShadow = exp(-pow((lensPosition - 0.806) / 0.030, 2.0)) * 0.86 * u_open;
+  float horizonShadow = exp(-pow((lensPosition - (rShadow + 0.021)) / 0.030, 2.0)) * 0.86 * u_open;
   color *= 1.0 - horizonShadow;
 
   // Relativistic Doppler beaming (approaching blue/cyan-white vs receding warm amber/crimson) + rainbow fade
@@ -407,20 +409,23 @@ const PROJECT_GALLERY_FOV = 46;
 function getProjectCardMetrics(width: number, height: number, immersive = false) {
   const safeHeight = Math.max(height, 1);
   const aspect = width / safeHeight;
+  const isShortLandscape = safeHeight < 520 && aspect >= 1.35;
+  const isUltrawide = aspect > 1.95 || width >= 1920;
+
   const cameraZ = immersive
-    ? (width < 480 ? 5.15 : width < 768 ? 4.45 : 3.92)
+    ? (isShortLandscape ? 4.35 : width < 480 ? 5.45 : width < 768 ? 4.65 : isUltrawide ? 3.85 : 3.92)
     : (width < 480 ? 6.15 : width < 768 ? 5.75 : 4.95);
   const visibleHeight = 2 * cameraZ * Math.tan((PROJECT_GALLERY_FOV * Math.PI) / 360);
   const visibleWidth = visibleHeight * aspect;
   const cardAspect = immersive
-    ? aspect < 0.72 ? 1.18 : aspect < 1.15 ? 1.52 : 1.72
-    : aspect < 0.72 ? 1.18 : aspect < 1.15 ? 1.35 : 1.55;
+    ? (aspect < 0.72 ? 1.46 : aspect < 1.15 ? 1.54 : 1.72)
+    : (aspect < 0.72 ? 1.32 : aspect < 1.15 ? 1.38 : 1.55);
   const widthRatio = immersive
-    ? aspect < 0.72 ? 0.88 : aspect < 1.15 ? 0.68 : 0.56
-    : aspect < 0.72 ? 0.9 : aspect < 1.15 ? 0.82 : 0.72;
+    ? (aspect < 0.72 ? 0.90 : aspect < 1.15 ? 0.72 : isUltrawide ? 0.44 : 0.56)
+    : (aspect < 0.72 ? 0.9 : aspect < 1.15 ? 0.82 : 0.72);
   const heightRatio = immersive
-    ? aspect < 0.72 ? 0.54 : aspect < 1.15 ? 0.46 : 0.44
-    : aspect < 0.72 ? 0.7 : aspect < 1.15 ? 0.74 : 0.75;
+    ? (isShortLandscape ? 0.52 : aspect < 0.72 ? 0.46 : aspect < 1.15 ? 0.46 : 0.46)
+    : (aspect < 0.72 ? 0.7 : aspect < 1.15 ? 0.74 : 0.75);
   const cardWidth = Math.min(visibleWidth * widthRatio, visibleHeight * heightRatio * cardAspect);
 
   return {
@@ -802,9 +807,10 @@ export const Projects3D: React.FC<Projects3DProps> = ({
 
       if (isDragging) {
         dragDistance = Math.max(dragDistance, Math.abs(clientX - dragStartX));
+        const dragBaseWidth = Math.max(340, Math.min(rect.width, 1380));
         const delta = immersive
-          ? ((clientX - dragStartX) / Math.max(rect.width, 1)) * 3.8
-          : ((clientX - dragStartX) / Math.max(rect.width, 1)) * (cardWidth + cardGap) * 2.2;
+          ? ((clientX - dragStartX) / dragBaseWidth) * 2.45
+          : ((clientX - dragStartX) / dragBaseWidth) * (cardWidth + cardGap) * 2.1;
         targetOffsetRef.current = dragStartOffset - delta;
 
         const now = performance.now();
@@ -820,6 +826,9 @@ export const Projects3D: React.FC<Projects3DProps> = ({
       if (isDragging) {
         isDragging = false;
         setIsGrabbing(false);
+        if (immersive && Math.abs(velocityRef.current) > 0.008) {
+          targetOffsetRef.current += THREE.MathUtils.clamp(velocityRef.current * 4.5, -0.85, 0.85);
+        }
         hoverChangeRef.current?.(hoveredIndexRef.current >= 0 ? filteredProjects[hoveredIndexRef.current]?.name ?? null : null, false);
       }
     };
@@ -834,7 +843,7 @@ export const Projects3D: React.FC<Projects3DProps> = ({
       }
     };
 
-    container.style.touchAction = "pan-y";
+    container.style.touchAction = immersive ? "none" : "pan-y";
     container.addEventListener("wheel", handleWheel, { passive: false });
     container.addEventListener("mousedown", onPointerDown);
     window.addEventListener("mousemove", onPointerMove);
@@ -916,7 +925,7 @@ export const Projects3D: React.FC<Projects3DProps> = ({
       profileProgress = THREE.MathUtils.lerp(
         profileProgress,
         profileOpenRef.current ? 1 : 0,
-        prefersReducedMotion ? 1 : 0.085,
+        prefersReducedMotion ? 1 : 1 - Math.exp(-deltaSec * 7.5),
       );
 
       if (immersive) {
@@ -1033,9 +1042,10 @@ export const Projects3D: React.FC<Projects3DProps> = ({
           mesh.scale.x = THREE.MathUtils.lerp(mesh.scale.x, cardWidth * scaleMul, 0.12);
           mesh.scale.y = THREE.MathUtils.lerp(mesh.scale.y, cardHeight * scaleMul, 0.12);
 
-          // Fade cards very near or behind the camera lens on tiny screens
+          // Fade cards cleanly once they wrap past the sides toward the rear of the camera
+          const angleFade = 1 - THREE.MathUtils.smoothstep(mesh.userData.wrappedAngleAbs, 1.45, 2.05);
           const distToCamZ = camera.position.z - mesh.position.z;
-          mat.uniforms.u_alpha.value = THREE.MathUtils.smoothstep(distToCamZ, -0.4, 1.15);
+          mat.uniforms.u_alpha.value = THREE.MathUtils.smoothstep(distToCamZ, 0.5, 2.0) * angleFade;
 
           // Update animated multi-slide canvas texture (skip offscreen or while profile overlay is open)
           const isCardVisible = !profileOpenRef.current && (mesh.userData.wrappedAngleAbs ?? 0) < 1.85;
@@ -1175,7 +1185,7 @@ export const Projects3D: React.FC<Projects3DProps> = ({
               className={`absolute inset-0 h-full w-full touch-pan-y ${
                 isGrabbing ? "cursor-grabbing" : isCardHovered ? "cursor-pointer" : "cursor-grab"
               }`}
-              style={{ touchAction: "pan-y" }}
+              style={{ touchAction: "none" }}
               aria-label="Interactive 3D project carousel. Scroll or drag horizontally to browse projects."
               role="region"
               tabIndex={0}
@@ -1192,8 +1202,9 @@ export const Projects3D: React.FC<Projects3DProps> = ({
             />
 
             {!hasInteracted && !profileOpen && (
-              <div className="pointer-events-none absolute inset-x-0 bottom-[3.3rem] z-20 hidden text-center font-mono text-[9px] uppercase tracking-[0.22em] text-white/35 transition-opacity duration-500 sm:block">
-                Scroll or drag · click card to inspect
+              <div className="pointer-events-none absolute inset-x-0 bottom-[3.4rem] z-20 text-center font-mono text-[8.5px] uppercase tracking-[0.2em] text-white/40 transition-opacity duration-500 sm:bottom-[3.3rem] sm:text-[9px] sm:tracking-[0.22em] sm:text-white/35">
+                <span className="sm:hidden">Swipe or tap card to inspect</span>
+                <span className="hidden sm:inline">Scroll or drag · click card to inspect</span>
               </div>
             )}
           </>
@@ -1215,7 +1226,7 @@ export const Projects3D: React.FC<Projects3DProps> = ({
               </div>
             )}
 
-            <div className="relative z-20 mx-auto flex min-h-full max-w-5xl flex-wrap content-center items-center justify-center gap-x-3 gap-y-2 text-center">
+            <div className="relative z-20 mx-auto flex min-h-full max-w-5xl flex-wrap content-center items-center justify-center gap-x-2.5 gap-y-2 text-center sm:gap-x-3 2xl:max-w-6xl">
               {filteredProjects.map((project, index) => (
                 <React.Fragment key={project.id}>
                   <button
@@ -1223,7 +1234,7 @@ export const Projects3D: React.FC<Projects3DProps> = ({
                     onMouseEnter={() => setHoveredIndexItem(project)}
                     onMouseLeave={() => setHoveredIndexItem(null)}
                     onClick={() => setSelectedProject(project)}
-                    className="showcase-index-project text-[clamp(1.15rem,3.6vw,3rem)] font-normal tracking-[-0.055em] text-white/80 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                    className="showcase-index-project min-h-[40px] px-1 text-[clamp(1.2rem,3.6vw,3.1rem)] font-normal tracking-[-0.055em] text-white/80 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white sm:min-h-0 sm:px-0"
                   >
                     {project.name}
                   </button>
@@ -1240,7 +1251,7 @@ export const Projects3D: React.FC<Projects3DProps> = ({
 
         {/* Exact bottom-left FEATURED / FULL & bottom-right NEWSLETTER footer from jesperlandberg.com */}
         <nav
-          className="showcase-replica-footer pointer-events-none absolute inset-x-0 bottom-0 z-40 flex h-[54px] items-center justify-between gap-3 px-5 font-mono text-[9px] uppercase tracking-[0.16em] sm:px-8 sm:text-[10px] lg:px-[5vw]"
+          className="showcase-replica-footer pointer-events-none absolute inset-x-0 bottom-0 z-40 flex h-[54px] items-center justify-between gap-3 px-4 font-mono text-[9px] uppercase tracking-[0.16em] sm:px-8 sm:text-[10px] lg:px-[5vw]"
           aria-label="Showcase navigation"
         >
           <div className="pointer-events-auto flex items-center gap-2 sm:gap-3">
@@ -1254,7 +1265,7 @@ export const Projects3D: React.FC<Projects3DProps> = ({
                 setActiveIndex(0);
               }}
               aria-current={viewMode === "strip" ? "page" : undefined}
-              className={`transition hover:text-white ${viewMode === "strip" ? "text-white" : "text-white/40"}`}
+              className={`inline-flex min-h-[44px] items-center px-1 transition hover:text-white sm:min-h-0 sm:px-0 ${viewMode === "strip" ? "text-white" : "text-white/40"}`}
             >
               Featured
             </button>
@@ -1268,7 +1279,7 @@ export const Projects3D: React.FC<Projects3DProps> = ({
                 setViewMode("index");
               }}
               aria-current={viewMode === "index" ? "page" : undefined}
-              className={`transition hover:text-white ${viewMode === "index" ? "text-white" : "text-white/40"}`}
+              className={`inline-flex min-h-[44px] items-center px-1 transition hover:text-white sm:min-h-0 sm:px-0 ${viewMode === "index" ? "text-white" : "text-white/40"}`}
             >
               Full
             </button>
@@ -1278,13 +1289,13 @@ export const Projects3D: React.FC<Projects3DProps> = ({
             <button
               type="button"
               onClick={onOpenNewsletter}
-              className="pointer-events-auto uppercase text-white/85 transition hover:text-white"
+              className="pointer-events-auto inline-flex min-h-[44px] items-center px-1 uppercase text-white/85 transition hover:text-white sm:min-h-0 sm:px-0"
             >
               Newsletter
             </button>
           ) : (
             <a
-              className="pointer-events-auto uppercase text-white/85 transition hover:text-white"
+              className="pointer-events-auto inline-flex min-h-[44px] items-center px-1 uppercase text-white/85 transition hover:text-white sm:min-h-0 sm:px-0"
               href={`mailto:${profileData.basics.email}?subject=${encodeURIComponent("Portfolio enquiry")}`}
             >
               Newsletter <ArrowUpRight size={11} className="ml-0.5 inline" />

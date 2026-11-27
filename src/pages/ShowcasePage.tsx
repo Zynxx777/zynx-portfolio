@@ -188,7 +188,7 @@ export const ShowcasePage: React.FC<ShowcasePageProps> = ({
 
       <section className="showcase-replica-home relative h-full w-full overflow-hidden" aria-label="Featured projects">
         {/* Top Bar matching Jesper Landberg: JOSHUA D top-left, PROFILE / CLOSE top-right */}
-        <header className="pointer-events-none absolute inset-x-0 top-0 z-40 flex h-[58px] items-center justify-between px-5 sm:px-8 lg:px-[5vw]">
+        <header className="pointer-events-none absolute inset-x-0 top-0 z-40 flex h-[58px] items-center justify-between px-4 pt-[env(safe-area-inset-top)] sm:px-8 lg:px-[5vw]">
           <div
             className="pointer-events-auto relative"
             onMouseLeave={() => setWorldMenuOpen(false)}
@@ -197,7 +197,7 @@ export const ShowcasePage: React.FC<ShowcasePageProps> = ({
               type="button"
               onClick={() => setWorldMenuOpen((v) => !v)}
               onMouseEnter={() => setWorldMenuOpen(true)}
-              className="inline-flex items-center gap-2 py-2 font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/90 transition hover:text-white sm:text-[10px]"
+              className="inline-flex min-h-[44px] items-center gap-2 py-2 font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/90 transition hover:text-white sm:min-h-9 sm:text-[10px]"
               aria-expanded={worldMenuOpen}
               aria-label="Joshua D portfolio navigation"
             >
@@ -250,7 +250,7 @@ export const ShowcasePage: React.FC<ShowcasePageProps> = ({
             <button
               type="button"
               onClick={() => setProfileOpen(true)}
-              className="pointer-events-auto inline-flex min-h-9 items-center font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/85 transition hover:text-white sm:text-[10px]"
+              className="pointer-events-auto inline-flex min-h-[44px] items-center px-1 font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/85 transition hover:text-white sm:min-h-9 sm:px-0 sm:text-[10px]"
             >
               Profile
             </button>
@@ -294,28 +294,28 @@ export const ShowcasePage: React.FC<ShowcasePageProps> = ({
             type="button"
             onClick={() => setProfileOpen(false)}
             aria-label="Close profile"
-            className="showcase-profile-close pointer-events-auto absolute right-5 top-4 z-20 inline-flex min-h-9 items-center font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/85 transition hover:text-white sm:right-8 sm:top-[11px] lg:right-[5vw]"
+            className="showcase-profile-close pointer-events-auto absolute right-4 top-2 z-20 inline-flex min-h-[44px] items-center px-1 pt-[env(safe-area-inset-top)] font-mono text-[9.5px] uppercase tracking-[0.16em] text-white/85 transition hover:text-white sm:right-8 sm:top-[11px] sm:min-h-9 sm:px-0 lg:right-[5vw]"
           >
             Close
           </button>
 
           <section
-            className="showcase-profile-content pointer-events-none z-10 flex w-full max-w-[390px] flex-col items-center px-6"
+            className="showcase-profile-content pointer-events-none z-10 flex w-full max-w-[min(74vw,300px)] flex-col items-center px-3 sm:max-w-[400px] sm:px-6 xl:max-w-[500px] 2xl:max-w-[560px]"
             role="dialog"
             aria-modal="true"
             aria-label={`Profile for ${profileData.basics.name}`}
             data-profile-dialog
           >
-            <p className="w-full text-left text-[12px] font-light leading-[1.6] text-white/95 sm:text-[13px]">
+            <p className="w-full text-left text-[10.5px] font-light leading-[1.5] text-white/95 sm:text-[13px] sm:leading-[1.6] xl:text-[15.5px] 2xl:text-[17px]">
               {profileData.basics.name}, ECE graduate &amp; systems craftsman focused on Arch Linux
               administration, embedded hardware prototyping, and tactile 3D WebGL interfaces — building
               visually expressive systems alongside independent engineering practice.
             </p>
-            <p className="mt-4 text-center font-mono text-[8px] uppercase tracking-[0.12em] text-white/65 sm:text-[9px]">
+            <p className="mt-2.5 text-center font-mono text-[7px] uppercase tracking-[0.11em] text-white/65 sm:mt-4 sm:text-[9px] sm:tracking-[0.12em] xl:text-[10px] 2xl:text-[11px]">
               B.E. ECE · DBIT — ARCH LINUX, THREE.JS WEBGL, EMBEDDED C, 7CHATS BUG BOUNTY
             </p>
             <nav
-              className="pointer-events-auto mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 font-mono text-[9px] uppercase tracking-[0.14em] text-white/90"
+              className="pointer-events-auto mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 font-mono text-[8px] uppercase tracking-[0.12em] text-white/90 sm:mt-5 sm:gap-x-5 sm:gap-y-2 sm:text-[9px] sm:tracking-[0.14em] xl:text-[10.5px] 2xl:text-[11.5px]"
               aria-label="Profile links"
             >
               <a

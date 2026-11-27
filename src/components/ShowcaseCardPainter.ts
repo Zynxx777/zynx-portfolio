@@ -58,15 +58,15 @@ function renderSlideHero(
     ctx.shadowColor = "rgba(0,0,0,0.45)";
     ctx.shadowBlur = 30;
     ctx.shadowOffsetY = 12;
-    drawRoundedRectClip(ctx, W - 360, 44, 304, 192, 16);
-    drawCoverImage(ctx, secondary, W - 360, 44, 304, 192);
+    drawRoundedRectClip(ctx, W - 392, 44, 296, 186, 16);
+    drawCoverImage(ctx, secondary, W - 392, 44, 296, 186);
     ctx.restore();
 
     ctx.save();
     ctx.strokeStyle = "rgba(255,255,255,0.22)";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.roundRect(W - 360, 44, 304, 192, 16);
+    ctx.roundRect(W - 392, 44, 296, 186, 16);
     ctx.stroke();
     ctx.restore();
   }
@@ -74,7 +74,7 @@ function renderSlideHero(
   // Subtle top editorial caption badge matching reference cards
   ctx.fillStyle = "rgba(255,255,255,0.72)";
   ctx.font = "500 20px 'JetBrains Mono', monospace";
-  ctx.fillText(project.slideTheme.chapterLabel, 54, 62);
+  ctx.fillText(project.slideTheme.chapterLabel, 102, 62);
 }
 
 function renderSlideEditorial(
@@ -103,29 +103,29 @@ function renderSlideEditorial(
   ctx.save();
   ctx.fillStyle = accent;
   ctx.globalAlpha = 0.9;
-  ctx.font = "700 84px 'Space Grotesk', Inter, sans-serif";
+  ctx.font = "700 80px 'Space Grotesk', Inter, sans-serif";
   nums.forEach((num, idx) => {
-    ctx.fillText(num, 58, 128 + idx * 82);
+    ctx.fillText(num, 102, 128 + idx * 82);
   });
   ctx.restore();
 
   // Middle editorial headline + bullet points (Nathan Riley style)
   ctx.fillStyle = ink;
-  ctx.font = "500 56px 'Space Grotesk', Inter, sans-serif";
-  ctx.fillText(project.name, 224, 134, 540);
+  ctx.font = "500 52px 'Space Grotesk', Inter, sans-serif";
+  ctx.fillText(project.name, 250, 134, 520);
 
   ctx.fillStyle = `${ink}b8`;
   ctx.font = "400 24px Inter, sans-serif";
-  ctx.fillText(editorialQuote, 224, 184, 540);
+  ctx.fillText(editorialQuote, 250, 184, 520);
 
   ctx.font = "500 21px Inter, sans-serif";
   highlights.slice(0, 4).forEach((item, idx) => {
     ctx.fillStyle = accent;
     ctx.beginPath();
-    ctx.arc(232, 250 + idx * 42, 4, 0, Math.PI * 2);
+    ctx.arc(258, 250 + idx * 42, 4, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = `${ink}e6`;
-    ctx.fillText(item, 250, 257 + idx * 42, 420);
+    ctx.fillText(item, 276, 257 + idx * 42, 410);
   });
 
   // Right framed preview plate
@@ -195,9 +195,9 @@ export function createShowcaseCardPainter(project: ShowcaseProject): DynamicCard
     targetCtx.fillRect(0, 0, W, H);
 
     targetCtx.fillStyle = "rgba(255,255,255,0.95)";
-    targetCtx.font = "500 38px Inter, -apple-system, sans-serif";
+    targetCtx.font = "500 36px Inter, -apple-system, sans-serif";
     targetCtx.textBaseline = "middle";
-    targetCtx.fillText(project.name, 52, H - 56, W - 180);
+    targetCtx.fillText(project.name, 102, H - 56, W - 260);
   };
 
   const bakeSlides = () => {
@@ -236,7 +236,7 @@ export function createShowcaseCardPainter(project: ShowcaseProject): DynamicCard
   bakeSlides();
 
   const scale = OUT_W / W;
-  const bx = Math.round((W - 56) * scale);
+  const bx = Math.round((W - 106) * scale);
   const by = Math.round((H - 56) * scale);
 
   const update = (elapsedSeconds: number, phaseOffset: number, hoverAmount: number, visible = true) => {
